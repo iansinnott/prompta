@@ -23,10 +23,10 @@
       throw new Error("Timed out trying to initialize");
     }, 15000);
 
+    // @note The whole app assumes the db exists and is ready. Do not render before that
     await initDb();
 
     clearTimeout(_timeout);
-
     appReady = true;
     console.debug(`App initialized.`);
   });

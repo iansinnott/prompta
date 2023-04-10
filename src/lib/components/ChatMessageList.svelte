@@ -9,7 +9,7 @@
   $: messageList = $currentChatThread?.messages || [];
 </script>
 
-<div class={classNames("relative", _class)}>
+<div class={classNames("relative flex flex-col space-y-4 pt-2", _class)}>
   {#each messageList as x (x.id)}
     <ChatMessageItem item={x} />
   {/each}
