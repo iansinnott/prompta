@@ -1,8 +1,6 @@
 <script lang="ts">
-  import { tick } from "svelte";
-  import { Configuration, OpenAIApi } from "openai";
-  import type { ChatCompletionRequestMessage, ChatCompletionRequestMessageRoleEnum } from "openai";
-  import { db, openAiConfig, sqlite, thread } from "../lib/stores/stores";
+  import { onMount, tick } from "svelte";
+  import { db, openAiConfig, sqlite, thread, currentChatThread } from "../lib/stores/stores";
   import initWasm from "@vlcn.io/crsqlite-wasm";
   import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
   import { DB_NAME } from "../lib/constants";
@@ -11,23 +9,8 @@
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
 
-  let initialLoad = true;
   let message = "";
   let textarea: HTMLTextAreaElement | null = null;
-  let configuration: Configuration;
-  let openai: OpenAIApi;
-
-  const initDb = async () => {
-    $sqlite = await initWasm(() => wasmUrl);
-    $db = await $sqlite.open(DB_NAME);
-  };
-
-  const initOpenAi = () => {
-    configuration = new Configuration({
-      apiKey: $openAiConfig.apiKey,
-    });
-    openai = new OpenAIApi(configuration);
-  };
 
   const resizeChatInput = () => {
     if (!textarea) return;
@@ -37,12 +20,25 @@
   };
 
   async function handleSubmit(s: string) {
-    console.log("Should submit: ", s);
+    const msg = await currentChatThread.sendMessage({
+      threadId: $thread.id,
+      role: "user",
+      content: s,
+    });
+    console.log({ msg });
     message = "";
     await tick();
     resizeChatInput();
   }
 </script>
+
+<svelte:window
+  on:beforeunload={() => {
+    if ($db) {
+      $db.close();
+    }
+  }}
+/>
 
 <div class="chat-container">
   <header class="chat-header p-4 flex items-center justify-between border-b border-zinc-700 w-full">
@@ -66,12 +62,9 @@
     </div>
   </header>
   <div class="chat-body p-2">
-    <h2>chat messages will go here</h2>
-    <p>
-      Lorem, ipsum dolor sit amet consectetur adipisicing elit. Cum laborum error assumenda quas
-      earum eum dolorem saepe. Assumenda voluptatum culpa tenetur, eaque atque illum quo eum debitis
-      vitae id dolorum.
-    </p>
+    {#each $currentChatThread.messages as x}
+      <div>{x.content}</div>
+    {/each}
   </div>
   <div class="chat-input p-3 border-b border-zinc-700 relative -top-px rounded-lg">
     <form

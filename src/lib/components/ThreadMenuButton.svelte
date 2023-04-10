@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { threadMenu, thread } from "$lib/stores/stores";
+  import { threadMenu, thread, isNewThread } from "$lib/stores/stores";
   import classNames from "classnames";
   import IconChevronDown from "./IconChevronDown.svelte";
   import IconSparkle from "./IconSparkle.svelte";
@@ -16,7 +16,7 @@
     $threadMenu.open = !$threadMenu.open;
   }}
 >
-  {#if $thread.id === "new-thread"}
+  {#if isNewThread($thread)}
     <div class="relative top-[2px] left-px mr-2">
       <IconSparkle />
     </div>

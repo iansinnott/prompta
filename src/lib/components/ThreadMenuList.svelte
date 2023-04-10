@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { thread, threadMenu } from "$lib/stores/stores";
+  import { thread, threadList, threadMenu } from "$lib/stores/stores";
   import classNames from "classnames";
   import { onMount, tick } from "svelte";
   import IconSparkle from "./IconSparkle.svelte";
@@ -8,14 +8,9 @@
   let input: HTMLInputElement;
   let searchText = "";
 
-  $: threadList = [
-    { id: "test1", title: "Testing threads" },
-    { id: "test2", title: "果冻是人民最爱的零食" },
-    {
-      id: "test3",
-      title: "here is some much longer text that will need to be truncated to fit in the UI",
-    },
-  ].filter((x) => x.title.toLowerCase().includes(searchText.toLowerCase()));
+  $: filteredThreads = $threadList.filter((x) =>
+    x.title.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   // Automatically focus the input when opened
   $: if ($threadMenu.open) {
@@ -25,8 +20,17 @@
   }
 </script>
 
+{#if $threadMenu.open}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <div
+    on:click={(e) => ($threadMenu.open = false)}
+    class="Overlay z-10 fixed inset-0 bg-transparent"
+  />
+{/if}
+
 <div
   class={classNames(
+    "z-20",
     "absolute top-full w-[70vw] rounded bg-zinc-800 border border-zinc-700 p-2",
     _class
   )}
@@ -35,6 +39,7 @@
   <input
     bind:this={input}
     bind:value={searchText}
+    placeholder="Search Chats..."
     type="text"
     class="appearance-none outline-none px-2 py-1 w-full bg-transparent text-white"
   />
@@ -51,8 +56,10 @@
     </span>
     <span> New Chat </span>
   </button>
-  <div class="Separator h-px bg-zinc-700 my-2" />
-  {#each threadList as t (t.id)}
+  {#if filteredThreads.length > 0}
+    <div class="Separator h-px bg-zinc-700 my-2" />
+  {/if}
+  {#each filteredThreads as t (t.id)}
     {@const active = t.id === $thread.id}
     <button
       on:click={(e) => {
