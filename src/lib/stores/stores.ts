@@ -3,9 +3,28 @@ import { derived, readable, writable } from "svelte/store";
 import type { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import { ChatMessage, Preferences, Thread } from "$lib/db";
 
-export const openAiConfig = writable<Partial<Configuration>>({
-  apiKey: "",
-});
+export const openAiConfig = (() => {
+  const { subscribe, set, update } = writable<Partial<Configuration>>({});
+
+  const persistentSet = (x: Configuration) => {
+    Preferences.set("openai-config", x);
+    set(x);
+  };
+
+  const persistentUpdate = (fn: (config: Configuration) => Configuration) => {
+    update((x) => {
+      const v = fn(x);
+      Preferences.set("openai-config", v);
+      return v;
+    });
+  };
+
+  return {
+    subscribe,
+    set: persistentSet,
+    update: persistentUpdate,
+  };
+})();
 
 export const sqlite = writable<SQLite3 | null>(null);
 export const db = writable<DB | null>(null);

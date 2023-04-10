@@ -4,6 +4,7 @@
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
   import ChatMessageList from "$lib/components/ChatMessageList.svelte";
+  import ActionsMenu from "$lib/components/ActionsMenu.svelte";
 
   let message = "";
   let textarea: HTMLTextAreaElement | null = null;
@@ -16,6 +17,9 @@
   };
 
   async function handleSubmit(s: string) {
+    s = s.trim();
+    if (!s) return;
+
     const msg = await currentChatThread.sendMessage({
       threadId: $currentThread.id,
       role: "user",
@@ -86,6 +90,7 @@
         class="appearance-none flex-1 w-full px-4 py-2 bg-transparent outline-none resize-none"
       />
       <button class="font-bold px-4 py-2" type="submit">Send</button>
+      <ActionsMenu />
     </form>
   </div>
 </div>

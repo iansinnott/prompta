@@ -41,7 +41,7 @@
     bind:value={searchText}
     placeholder="Search Chats..."
     type="text"
-    class="appearance-none outline-none px-2 py-1 w-full bg-transparent text-white"
+    class="FilterInput"
   />
   <div class="Separator h-px bg-zinc-700 my-2" />
   <button
