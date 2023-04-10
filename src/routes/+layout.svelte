@@ -22,16 +22,10 @@
     let _timeout = setTimeout(() => {
       throw new Error("Timed out trying to initialize");
     }, 15000);
+
     await initDb();
+
     clearTimeout(_timeout);
-
-    const threadId = await Preferences.get("current-thread-id");
-
-    if (threadId) {
-      const thread = await Thread.findUnique({ where: { id: threadId } });
-      console.debug("hydrate thread", thread);
-      currentThread.set(thread);
-    }
 
     appReady = true;
     console.debug(`App initialized.`);

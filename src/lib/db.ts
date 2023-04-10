@@ -21,8 +21,17 @@ export const initDb = async () => {
   _db = await _sqlite.open(DB_NAME);
   db.set(_db);
 
+  // Migrate schema. Super simple, assumes idempotent migrations as it re-runs them every time
   for (const x of schema.split(";")) {
     await _db.exec(x);
+  }
+
+  const threadId = await Preferences.get("current-thread-id");
+
+  if (threadId) {
+    const thread = await Thread.findUnique({ where: { id: threadId } });
+    console.debug("hydrate thread", thread);
+    currentThread.set(thread);
   }
 
   if (dev) {
