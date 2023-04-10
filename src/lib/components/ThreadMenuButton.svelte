@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { threadMenu, thread, isNewThread } from "$lib/stores/stores";
+  import { threadMenu, currentThread, isNewThread } from "$lib/stores/stores";
   import classNames from "classnames";
   import IconChevronDown from "./IconChevronDown.svelte";
   import IconSparkle from "./IconSparkle.svelte";
@@ -16,13 +16,13 @@
     $threadMenu.open = !$threadMenu.open;
   }}
 >
-  {#if isNewThread($thread)}
+  {#if isNewThread($currentThread)}
     <div class="relative top-[2px] left-px mr-2">
       <IconSparkle />
     </div>
   {/if}
 
-  <div class="flex-1 w-full truncate text-left">{$thread.title}</div>
+  <div class="flex-1 w-full truncate text-left">{$currentThread.title}</div>
   <div class="scale-75 text-zinc-400 pl-4">
     <IconChevronDown />
   </div>

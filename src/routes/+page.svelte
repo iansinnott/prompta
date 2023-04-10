@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
-  import { db, openAiConfig, sqlite, thread, currentChatThread } from "../lib/stores/stores";
+  import { db, openAiConfig, sqlite, currentThread, currentChatThread } from "../lib/stores/stores";
   import initWasm from "@vlcn.io/crsqlite-wasm";
   import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
   import { DB_NAME } from "../lib/constants";
@@ -21,7 +21,7 @@
 
   async function handleSubmit(s: string) {
     const msg = await currentChatThread.sendMessage({
-      threadId: $thread.id,
+      threadId: $currentThread.id,
       role: "user",
       content: s,
     });

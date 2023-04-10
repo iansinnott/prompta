@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { thread, threadList, threadMenu } from "$lib/stores/stores";
+  import { currentThread, threadList, threadMenu } from "$lib/stores/stores";
   import classNames from "classnames";
   import { onMount, tick } from "svelte";
   import IconSparkle from "./IconSparkle.svelte";
@@ -46,7 +46,7 @@
   <div class="Separator h-px bg-zinc-700 my-2" />
   <button
     on:click={(e) => {
-      thread.reset();
+      currentThread.reset();
       $threadMenu.open = false;
     }}
     class="p-2 mb-1 hover:bg-white/10 rounded w-full text-left truncate flex"
@@ -60,10 +60,10 @@
     <div class="Separator h-px bg-zinc-700 my-2" />
   {/if}
   {#each filteredThreads as t (t.id)}
-    {@const active = t.id === $thread.id}
+    {@const active = t.id === $currentThread.id}
     <button
       on:click={(e) => {
-        $thread = t;
+        $currentThread = t;
         $threadMenu.open = false;
       }}
       class={classNames("p-2 mb-1 hover:bg-white/10 rounded block w-full text-left truncate", {

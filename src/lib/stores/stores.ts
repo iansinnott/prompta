@@ -1,7 +1,7 @@
 import type { Configuration } from "openai";
 import { derived, readable, writable } from "svelte/store";
 import type { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
-import { ChatMessage, Thread } from "$lib/db";
+import { ChatMessage, Preferences, Thread } from "$lib/db";
 
 export const openAiConfig = writable<Partial<Configuration>>({
   apiKey: "",
@@ -22,15 +22,20 @@ export const isNewThread = (t: { id: Thread["id"] }) => {
 const createThreadStore = () => {
   const { subscribe, set, update } = writable<Thread>(newThread);
 
+  const persistentSet = (x: Thread) => {
+    Preferences.set("current-thread-id", x.id);
+    set(x);
+  };
+
   return {
     subscribe,
-    set,
+    set: persistentSet,
     update,
     reset: () => set(newThread),
   };
 };
 
-export const thread = createThreadStore();
+export const currentThread = createThreadStore();
 
 export const threadMenu = writable({
   open: false,
@@ -41,13 +46,11 @@ export const threadList = readable<Thread[]>([], (set) => {
 });
 
 export const currentChatThread = (() => {
-  const validationToken = writable(Date.now());
+  const invalidationToken = writable(Date.now());
   const { subscribe } = derived<
-    [typeof thread, typeof validationToken],
-    {
-      messages: ChatMessage[];
-    }
-  >([thread, validationToken], ([t, _], set) => {
+    [typeof currentThread, typeof invalidationToken],
+    { messages: ChatMessage[] }
+  >([currentThread, invalidationToken], ([t, _], set) => {
     if (isNewThread(t)) {
       set({ messages: [] });
       return;
@@ -57,7 +60,7 @@ export const currentChatThread = (() => {
   });
 
   const invalidate = () => {
-    validationToken.set(Date.now());
+    invalidationToken.set(Date.now());
   };
 
   return {
@@ -68,7 +71,7 @@ export const currentChatThread = (() => {
       if (isNewThread({ id: msg.threadId })) {
         const newThread = await Thread.create({ title: msg.content.trim().slice(0, 80) });
         msg.threadId = newThread.id;
-        thread.set(newThread);
+        currentThread.set(newThread);
       }
       const x = await ChatMessage.create(msg);
       invalidate();

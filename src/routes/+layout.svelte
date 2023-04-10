@@ -3,7 +3,7 @@
   import initWasm from "@vlcn.io/crsqlite-wasm";
   import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
   import { DB_NAME } from "../lib/constants";
-  import { db, openAiConfig, sqlite, thread } from "../lib/stores/stores";
+  import { db, openAiConfig, sqlite, currentThread } from "../lib/stores/stores";
   import { Configuration, OpenAIApi } from "openai";
   import type { ChatCompletionRequestMessage, ChatCompletionRequestMessageRoleEnum } from "openai";
   import { onMount } from "svelte";

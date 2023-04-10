@@ -1,7 +1,7 @@
 import initWasm, { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { DB_NAME } from "../lib/constants";
-import { db, sqlite, thread } from "../lib/stores/stores";
+import { db, sqlite, currentThread } from "../lib/stores/stores";
 import { dev } from "$app/environment";
 import schema from "$lib/schema.sql?raw";
 
@@ -24,6 +24,12 @@ export const initDb = async () => {
   for (const x of schema.split(";")) {
     await _db.exec(x);
   }
+
+  Preferences.get("current-thread-id").then(async (id) => {
+    if (id) {
+      currentThread.set(await Thread.findUnique({ where: { id } }));
+    }
+  });
 
   if (dev) {
     (window as any).db = _db;
@@ -124,6 +130,11 @@ export const Thread = {
     return this.rowToModel(xs[0]);
   },
 
+  async findUnique(x: { where: { id: number } }) {
+    const xs = await _db.execO<ThreadRow>(`select * from thread where id=?`, [x.where.id]);
+    return this.rowToModel(xs[0]);
+  },
+
   async create(t: { title: string }) {
     await _db.exec(`insert into "thread" ("title") values(?)`, [t.title]);
     return this.findFirst({ where: { title: t.title } });
@@ -132,13 +143,18 @@ export const Thread = {
 
 export const Preferences = {
   get: async (k: string) => {
-    const rows = await _db.execO<{ value: string }>(`select value from preferences where key=?`, [
-      k,
-    ]);
-    return rows[0].value;
+    const rows = await _db.execO<{ value: string | number | boolean | null | undefined }>(
+      `select value from preferences where key=?`,
+      [k]
+    );
+    // @ts-ignore
+    return rows[0]?.value ? JSON.parse(rows[0].value) : rows[0]?.value;
   },
-  set: async (k: string, v: string) => {
-    await _db.exec(`insert into preferences(key, value) values(?, ?)`, [k, v]);
+  set: async (k: string, v: string | number | boolean | null | undefined) => {
+    await _db.exec(`insert or replace into preferences(key, value) values(?, ?)`, [
+      k,
+      JSON.stringify(v),
+    ]);
     return v;
   },
 };
