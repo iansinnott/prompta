@@ -8,3 +8,14 @@ export const openAiConfig = writable<Partial<Configuration>>({
 
 export const sqlite = writable<SQLite3 | null>(null);
 export const db = writable<DB | null>(null);
+
+interface Thread {
+  id: string;
+  title: string;
+}
+const newThread: Thread = {
+  id: "new-thread",
+  title: "New Thread",
+};
+
+export const thread = writable<Thread>(newThread);

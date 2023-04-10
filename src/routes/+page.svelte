@@ -2,10 +2,12 @@
   import { tick } from "svelte";
   import { Configuration, OpenAIApi } from "openai";
   import type { ChatCompletionRequestMessage, ChatCompletionRequestMessageRoleEnum } from "openai";
-  import { db, openAiConfig, sqlite } from "../lib/stores/stores";
+  import { db, openAiConfig, sqlite, thread } from "../lib/stores/stores";
   import initWasm from "@vlcn.io/crsqlite-wasm";
   import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
   import { DB_NAME } from "../lib/constants";
+  import IconSparkle from "$lib/components/IconSparkle.svelte";
+  import IconChevronDown from "$lib/components/IconChevronDown.svelte";
 
   let initialLoad = true;
   let message = "";
@@ -38,13 +40,63 @@
     await tick();
     resizeChatInput();
   }
+
+  let showThreadDropdown = false;
 </script>
 
-<div class="p-2 chat-container">
-  <header class="chat-header">
-    <h1 class="text-2xl font-bold">SvelteKit Chat</h1>
+<div class="chat-container">
+  <header class="chat-header p-4 flex items-center justify-between border-b border-zinc-700 w-full">
+    <button
+      class="text-zinc-200 p-1 rounded hover:bg-white/10 hover:text-white mr-4"
+      on:click={(e) => {
+        console.log("CLose");
+      }}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="w-5 h-5 scale-75">
+        <path
+          stroke="currentcolor"
+          fill="currentcolor"
+          d="M 7.21875 5.78125 L 5.78125 7.21875 L 14.5625 16 L 5.78125 24.78125 L 7.21875 26.21875 L 16 17.4375 L 24.78125 26.21875 L 26.21875 24.78125 L 17.4375 16 L 26.21875 7.21875 L 24.78125 5.78125 L 16 14.5625 Z"
+        />
+      </svg>
+    </button>
+    <div class="flex-1 flex justify-end relative">
+      <button
+        class="border border-zinc-700 rounded-lg p-2 flex items-center min-w-[240px]"
+        on:click={() => {
+          showThreadDropdown = !showThreadDropdown;
+        }}
+      >
+        {#if $thread.id === "new-thread"}
+          <div class="relative top-[2px] left-px mr-2">
+            <IconSparkle />
+          </div>
+        {/if}
+
+        <div class="flex-1 w-full truncate text-left">{$thread.title}</div>
+        <div class="scale-75 text-zinc-400 pl-4">
+          <IconChevronDown />
+        </div>
+      </button>
+
+      <div
+        class="absolute top-full w-[70vw] rounded bg-zinc-800 border border-zinc-700 p-2"
+        class:hidden={!showThreadDropdown}
+      >
+        {#each [{ id: "test1", title: "Testing threads" }, { id: "test2", title: "果冻是人民最爱的零食" }, { id: "test3", title: "here is some much longer text that will need to be truncated to fit in the UI" }] as t (t.id)}
+          <button
+            on:click={(e) => {
+              $thread = t;
+            }}
+            class="p-2 hover:bg-white/10 rounded block w-full text-left truncate"
+          >
+            {t.title}
+          </button>
+        {/each}
+      </div>
+    </div>
   </header>
-  <div class="chat-body">
+  <div class="chat-body p-2">
     <h2>chat messages will go here</h2>
     <p>
       Lorem, ipsum dolor sit amet consectetur adipisicing elit. Cum laborum error assumenda quas
@@ -52,7 +104,7 @@
       vitae id dolorum.
     </p>
   </div>
-  <div class="chat-input">
+  <div class="chat-input p-3 border-b border-zinc-700 relative -top-px rounded-lg">
     <form
       on:submit={(e) => {
         e.preventDefault();
@@ -85,7 +137,7 @@
 <style>
   .chat-container {
     display: grid;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas:
       "top"
       "middle"
