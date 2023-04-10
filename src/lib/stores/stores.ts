@@ -31,7 +31,7 @@ const createThreadStore = () => {
     subscribe,
     set: persistentSet,
     update,
-    reset: () => set(newThread),
+    reset: () => persistentSet(newThread),
   };
 };
 
@@ -49,14 +49,17 @@ export const currentChatThread = (() => {
   const invalidationToken = writable(Date.now());
   const { subscribe } = derived<
     [typeof currentThread, typeof invalidationToken],
-    { messages: ChatMessage[] }
+    { messages: ChatMessage[]; status: "loading" | "idle" }
   >([currentThread, invalidationToken], ([t, _], set) => {
     if (isNewThread(t)) {
-      set({ messages: [] });
+      set({ messages: [], status: "idle" });
       return;
     }
 
-    ChatMessage.findMany({ threadId: t.id }).then((xs) => set({ messages: xs }));
+    // This is the default value, and the value while a thread is loading
+    set({ status: "loading", messages: [] });
+
+    ChatMessage.findMany({ threadId: t.id }).then((xs) => set({ messages: xs, status: "idle" }));
   });
 
   const invalidate = () => {

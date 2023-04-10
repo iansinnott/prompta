@@ -25,12 +25,6 @@ export const initDb = async () => {
     await _db.exec(x);
   }
 
-  Preferences.get("current-thread-id").then(async (id) => {
-    if (id) {
-      currentThread.set(await Thread.findUnique({ where: { id } }));
-    }
-  });
-
   if (dev) {
     (window as any).db = _db;
     (window as any).Thread = Thread;

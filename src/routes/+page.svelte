@@ -1,13 +1,9 @@
 <script lang="ts">
-  import { onMount, tick } from "svelte";
-  import { db, openAiConfig, sqlite, currentThread, currentChatThread } from "../lib/stores/stores";
-  import initWasm from "@vlcn.io/crsqlite-wasm";
-  import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
-  import { DB_NAME } from "../lib/constants";
-  import IconSparkle from "$lib/components/IconSparkle.svelte";
-  import IconChevronDown from "$lib/components/IconChevronDown.svelte";
+  import { tick } from "svelte";
+  import { db, currentThread, currentChatThread } from "../lib/stores/stores";
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
+  import ChatMessageList from "$lib/components/ChatMessageList.svelte";
 
   let message = "";
   let textarea: HTMLTextAreaElement | null = null;
@@ -62,9 +58,7 @@
     </div>
   </header>
   <div class="chat-body p-2">
-    {#each $currentChatThread.messages as x}
-      <div>{x.content}</div>
-    {/each}
+    <ChatMessageList />
   </div>
   <div class="chat-input p-3 border-b border-zinc-700 relative -top-px rounded-lg">
     <form

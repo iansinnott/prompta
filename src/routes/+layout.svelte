@@ -1,13 +1,9 @@
 <script lang="ts">
   import "../app.postcss";
-  import initWasm from "@vlcn.io/crsqlite-wasm";
-  import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
-  import { DB_NAME } from "../lib/constants";
-  import { db, openAiConfig, sqlite, currentThread } from "../lib/stores/stores";
+  import { openAiConfig, currentThread } from "../lib/stores/stores";
   import { Configuration, OpenAIApi } from "openai";
-  import type { ChatCompletionRequestMessage, ChatCompletionRequestMessageRoleEnum } from "openai";
   import { onMount } from "svelte";
-  import { initDb } from "$lib/db";
+  import { Preferences, Thread, initDb } from "$lib/db";
 
   let openai: OpenAIApi;
   let configuration: Configuration;
@@ -22,11 +18,21 @@
   };
 
   onMount(async () => {
+    // throw up after a time if the app is hanging
     let _timeout = setTimeout(() => {
       throw new Error("Timed out trying to initialize");
     }, 15000);
     await initDb();
     clearTimeout(_timeout);
+
+    const threadId = await Preferences.get("current-thread-id");
+
+    if (threadId) {
+      const thread = await Thread.findUnique({ where: { id: threadId } });
+      console.debug("hydrate thread", thread);
+      currentThread.set(thread);
+    }
+
     appReady = true;
     console.debug(`App initialized.`);
   });
