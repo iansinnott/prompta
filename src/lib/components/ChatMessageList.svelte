@@ -2,6 +2,7 @@
   import { chooseRandomPrompts } from "$lib/llm";
   import { currentChatThread, currentThread, isNewThread } from "$lib/stores/stores";
   import classNames from "classnames";
+  import ChatMessageItem from "./ChatMessageItem.svelte";
   let _class: string = "";
   export { _class as class };
 
@@ -9,8 +10,8 @@
 </script>
 
 <div class={classNames("relative", _class)}>
-  {#each messageList as x}
-    <div>{x.content}</div>
+  {#each messageList as x (x.id)}
+    <ChatMessageItem item={x} />
   {/each}
 
   <!-- Give the user some examples to get them started -->
