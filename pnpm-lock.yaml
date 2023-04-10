@@ -8,6 +8,7 @@ specifiers:
   '@tauri-apps/cli': 1.2.3
   '@vlcn.io/crsqlite-wasm': 0.9.1
   autoprefixer: ^10.4.7
+  classnames: 2.3.2
   openai: 3.2.1
   postcss: ^8.4.14
   postcss-load-config: ^4.0.1
@@ -22,6 +23,7 @@ specifiers:
 
 dependencies:
   '@vlcn.io/crsqlite-wasm': 0.9.1
+  classnames: 2.3.2
   openai: 3.2.1
 
 devDependencies:
@@ -661,6 +663,10 @@ packages:
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
+
+  /classnames/2.3.2:
+    resolution: {integrity: sha512-CSbhY4cFEJRe6/GQzIk5qXZ4Jeg5pcsP7b5peFSDpffpe1cqjASH/n9UTjBwOp6XpMSTwQ8Za2K5V02ueA7Tmw==}
+    dev: false
 
   /color-name/1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}

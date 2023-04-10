@@ -15,7 +15,24 @@ interface Thread {
 }
 const newThread: Thread = {
   id: "new-thread",
-  title: "New Thread",
+  title: "New Chat",
 };
 
-export const thread = writable<Thread>(newThread);
+const createThreadStore = () => {
+  const { subscribe, set, update } = writable<Thread>(newThread);
+
+  return {
+    subscribe,
+    set,
+    update,
+    reset() {
+      set(newThread);
+    },
+  };
+};
+
+export const thread = createThreadStore();
+
+export const threadMenu = writable({
+  open: false,
+});

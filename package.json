@@ -32,6 +32,7 @@
   "type": "module",
   "dependencies": {
     "@vlcn.io/crsqlite-wasm": "0.9.1",
+    "classnames": "2.3.2",
     "openai": "3.2.1"
   }
 }

@@ -8,6 +8,8 @@
   import { DB_NAME } from "../lib/constants";
   import IconSparkle from "$lib/components/IconSparkle.svelte";
   import IconChevronDown from "$lib/components/IconChevronDown.svelte";
+  import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
+  import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
 
   let initialLoad = true;
   let message = "";
@@ -40,8 +42,6 @@
     await tick();
     resizeChatInput();
   }
-
-  let showThreadDropdown = false;
 </script>
 
 <div class="chat-container">
@@ -61,39 +61,8 @@
       </svg>
     </button>
     <div class="flex-1 flex justify-end relative">
-      <button
-        class="border border-zinc-700 rounded-lg p-2 flex items-center min-w-[240px]"
-        on:click={() => {
-          showThreadDropdown = !showThreadDropdown;
-        }}
-      >
-        {#if $thread.id === "new-thread"}
-          <div class="relative top-[2px] left-px mr-2">
-            <IconSparkle />
-          </div>
-        {/if}
-
-        <div class="flex-1 w-full truncate text-left">{$thread.title}</div>
-        <div class="scale-75 text-zinc-400 pl-4">
-          <IconChevronDown />
-        </div>
-      </button>
-
-      <div
-        class="absolute top-full w-[70vw] rounded bg-zinc-800 border border-zinc-700 p-2"
-        class:hidden={!showThreadDropdown}
-      >
-        {#each [{ id: "test1", title: "Testing threads" }, { id: "test2", title: "果冻是人民最爱的零食" }, { id: "test3", title: "here is some much longer text that will need to be truncated to fit in the UI" }] as t (t.id)}
-          <button
-            on:click={(e) => {
-              $thread = t;
-            }}
-            class="p-2 hover:bg-white/10 rounded block w-full text-left truncate"
-          >
-            {t.title}
-          </button>
-        {/each}
-      </div>
+      <ThreadMenuButton />
+      <ThreadMenuList />
     </div>
   </header>
   <div class="chat-body p-2">
