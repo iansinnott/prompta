@@ -146,6 +146,8 @@ export const ChatMessage = {
     }
 
     await _db.exec(`delete from "message" where 1=1`);
+
+    return true;
   },
 };
 
@@ -193,6 +195,8 @@ export const Thread = {
     }
 
     await _db.exec(`delete from "thread" where 1=1`);
+
+    return true;
   },
 };
 
@@ -236,14 +240,21 @@ export const Preferences = {
     }
 
     await _db.exec(`delete from "preferences" where 1=1`);
+
+    return true;
   },
 };
 
-if (dev) {
-  (window as any)._clearDatabase = async () => {
-    await ChatMessage._removeAll();
+export async function _clearDatabase() {
+  // If the first one was accepted, proceed with the rest
+  const removed = await ChatMessage._removeAll();
+  if (removed) {
     await Thread._removeAll();
     await Preferences._removeAll();
     window.location.reload();
-  };
+  }
+}
+
+if (dev) {
+  (window as any)._clearDatabase = _clearDatabase;
 }

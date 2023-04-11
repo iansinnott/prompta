@@ -4,6 +4,8 @@
   import IconSparkle from "./IconSparkle.svelte";
   import IconGear from "./IconGear.svelte";
   import IconHistoryClock from "./IconHistoryClock.svelte";
+  import { dev } from "$app/environment";
+  import { _clearDatabase } from "$lib/db";
   let input: HTMLInputElement;
   let menuOpen = false;
   let filterText = "";
@@ -29,7 +31,14 @@
         $showSettings = true;
       },
     },
+    {
+      when: dev,
+      name: "Reset Database",
+      color: "red",
+      execute: _clearDatabase,
+    },
   ];
+
   let index = 0;
 
   function toggleMenu() {
@@ -85,9 +94,9 @@
     };
   });
 
-  $: filteredActions = actionItems.filter((item) =>
-    item.name.toLowerCase().includes(filterText.toLowerCase())
-  );
+  $: filteredActions = actionItems
+    .filter((item) => item.when ?? true)
+    .filter((item) => item.name.toLowerCase().includes(filterText.toLowerCase()));
 </script>
 
 {#if menuOpen}
@@ -106,6 +115,7 @@
           on:click={executeCurrentAction}
           class="rounded px-2 py-2 flex w-full items-center"
           class:active={i === index}
+          class:danger={action.color === "red"}
         >
           {#if action.icon}
             <span class="w-6 h-6 mr-2 inline-flex items-center">
@@ -133,5 +143,8 @@
   }
   .active {
     @apply bg-white/10;
+  }
+  .danger {
+    @apply text-red-400;
   }
 </style>
