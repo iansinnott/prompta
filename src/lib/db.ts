@@ -32,8 +32,12 @@ export const initDb = async () => {
 
   if (threadId) {
     const thread = await Thread.findUnique({ where: { id: threadId } });
-    console.debug("hydrate thread", thread);
-    currentThread.set(thread);
+    if (thread) {
+      console.debug("hydrate thread", thread);
+      currentThread.set(thread);
+    } else {
+      console.warn("Could not find thread:", threadId);
+    }
   }
 
   const conf = await Preferences.get("openai-config");
@@ -115,9 +119,9 @@ export const ChatMessage = {
     return this.rowToModel(xs[0]);
   },
 
-  async findUnique(x: { where: { id: string } }) {
+  async findUnique(x: { where: { id: string } }): Promise<ChatMessage | undefined> {
     const xs = await _db.execO<ChatMessageRow>(`select * from "message" where id=?`, [x.where.id]);
-    return this.rowToModel(xs[0]);
+    return xs.length ? this.rowToModel(xs[0]) : undefined;
   },
 
   async create(x: { content: string; role: ChatMessage["role"]; threadId: string }) {
@@ -166,15 +170,15 @@ export const Thread = {
     return this.rowToModel(xs[0]);
   },
 
-  async findUnique(x: { where: { id: string } }) {
+  async findUnique(x: { where: { id: string } }): Promise<Thread | undefined> {
     const xs = await _db.execO<ThreadRow>(`select * from thread where id=?`, [x.where.id]);
-    return this.rowToModel(xs[0]);
+    return xs[0] ? this.rowToModel(xs[0]) : undefined;
   },
 
   async create(t: { title: string }) {
     const cid = nanoid();
     await _db.exec(`insert into "thread" ("id", "title") values(?, ?)`, [cid, t.title]);
-    return this.findUnique({ where: { id: cid } });
+    return this.findUnique({ where: { id: cid } }) as Promise<Thread>;
   },
 
   async _removeAll() {

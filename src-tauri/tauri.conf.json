@@ -57,10 +57,10 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 600,
+        "height": 700,
         "resizable": true,
         "title": "Prompta",
-        "width": 800,
+        "width": 880,
         "transparent": true,
         "decorations": false
       }
