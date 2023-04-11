@@ -77,7 +77,7 @@ const onDataCallback: StreamCallback<MsgData> = (data: MsgData): void => {
   console.log(`Received: ${JSON.stringify(data)}`);
 };
 
-(async () => {
-  await simulateLLMStreamResponse(onDataCallback, 10, 1000);
-  console.log("Simulation finished");
-})();
+// (async () => {
+//   await simulateLLMStreamResponse(onDataCallback, 10, 1000);
+//   console.log("Simulation finished");
+// })();

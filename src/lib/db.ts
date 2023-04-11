@@ -183,7 +183,7 @@ export const Preferences = {
     // @ts-ignore
     return rows[0]?.value ? JSON.parse(rows[0].value) : rows[0]?.value;
   },
-  set: async (k: string, v: string | number | boolean | null | undefined) => {
+  set: async (k: string, v: any) => {
     await _db.exec(`insert or replace into preferences(key, value) values(?, ?)`, [
       k,
       JSON.stringify(v),
