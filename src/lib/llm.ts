@@ -1,3 +1,5 @@
+import { Configuration, OpenAIApi } from "openai";
+
 // Prompts curtesy of chatgpt, of course
 const prompts = [
   // gpt-4:
@@ -39,3 +41,19 @@ export function chooseRandomPrompts() {
 
   return chosenPrompts;
 }
+
+let openai: OpenAIApi;
+let configuration: Configuration;
+
+export const initOpenAi = ({ apiKey = "" } = {}) => {
+  if (openai) {
+    return openai;
+  }
+
+  configuration = new Configuration({
+    apiKey,
+  });
+  openai = new OpenAIApi(configuration);
+
+  return openai;
+};

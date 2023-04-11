@@ -1,7 +1,7 @@
 import initWasm, { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { DB_NAME } from "../lib/constants";
-import { db, sqlite, currentThread } from "../lib/stores/stores";
+import { db, sqlite, currentThread, openAiConfig } from "../lib/stores/stores";
 import { dev } from "$app/environment";
 import schema from "$lib/schema.sql?raw";
 
@@ -34,9 +34,21 @@ export const initDb = async () => {
     currentThread.set(thread);
   }
 
+  const conf = await Preferences.get("openai-config");
+  if (conf) {
+    openAiConfig.set(conf);
+  }
+
   if (dev) {
-    (window as any).db = _db;
-    (window as any).Thread = Thread;
+    for (const [k, v] of [
+      ["Thread", Thread],
+      ["ChatMessage", ChatMessage],
+      ["Preferences", Preferences],
+      ["db", _db],
+    ]) {
+      // @ts-expect-error Just for dev, and the error is not consequential
+      (window as any)[k] = v;
+    }
   }
 };
 
@@ -145,6 +157,17 @@ export const Thread = {
 };
 
 export const Preferences = {
+  async findMany() {
+    const rows = await _db.execO<{ key: string; value: string }>(
+      `select * from preferences order by ROWID asc`
+    );
+    return rows.map((row) => {
+      return {
+        key: row.key,
+        value: JSON.parse(row.value),
+      };
+    });
+  },
   get: async (k: string) => {
     const rows = await _db.execO<{ value: string | number | boolean | null | undefined }>(
       `select value from preferences where key=?`,

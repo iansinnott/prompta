@@ -3,8 +3,16 @@ import { derived, readable, writable } from "svelte/store";
 import type { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import { ChatMessage, Preferences, Thread } from "$lib/db";
 
+export const showSettings = writable(false);
+
 export const openAiConfig = (() => {
-  const { subscribe, set, update } = writable<Partial<Configuration>>({});
+  const { subscribe, set, update } = writable<
+    Partial<Configuration> & { model: string; replicationHost: string }
+  >({
+    model: "gpt-3.5-turbo",
+    apiKey: "",
+    replicationHost: "",
+  });
 
   const persistentSet = (x: Configuration) => {
     Preferences.set("openai-config", x);
