@@ -3,10 +3,14 @@
   import { currentChatThread, currentThread, isNewThread } from "$lib/stores/stores";
   import classNames from "classnames";
   import ChatMessageItem from "./ChatMessageItem.svelte";
+  import { onMount } from "svelte";
   let _class: string = "";
   export { _class as class };
 
   $: messageList = $currentChatThread?.messages || [];
+  onMount(() => {
+    console.log("%cmounted", "color:salmon;font-size:18px;");
+  });
 </script>
 
 <div class={classNames("relative flex flex-col space-y-4 pt-2", _class)}>

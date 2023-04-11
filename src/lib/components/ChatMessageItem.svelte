@@ -2,13 +2,14 @@
   import type { ChatMessage } from "$lib/db";
   import classNames from "classnames";
   import IconUserAvatar from "./IconUserAvatar.svelte";
+  import { onMount } from "svelte";
   let _class: string = "";
   export { _class as class };
 
   export let item: ChatMessage;
 </script>
 
-<div class={classNames("ChatMessage", _class)}>
+<div class={classNames("ChatMessage", _class)} data-message-id={item.id}>
   <div class="Avatar text-zinc-400 pl-2">
     {#if item.role === "user"}
       <IconUserAvatar />

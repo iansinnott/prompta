@@ -129,6 +129,20 @@ export const ChatMessage = {
 
     return this.findUnique({ where: { id: cid } });
   },
+
+  async _removeAll() {
+    if (!dev) {
+      console.warn(
+        "_removeAll is meant for dev use. revisit the source code if you think this is a mistake."
+      );
+    }
+
+    if (!window.confirm("All messages will be removed. Continue?")) {
+      return;
+    }
+
+    await _db.exec(`delete from "message" where 1=1`);
+  },
 };
 
 export const Thread = {
@@ -162,6 +176,20 @@ export const Thread = {
     await _db.exec(`insert into "thread" ("id", "title") values(?, ?)`, [cid, t.title]);
     return this.findUnique({ where: { id: cid } });
   },
+
+  async _removeAll() {
+    if (!dev) {
+      console.warn(
+        "_removeAll is meant for dev use. revisit the source code if you think this is a mistake."
+      );
+    }
+
+    if (!window.confirm("All records will be removed. Continue?")) {
+      return;
+    }
+
+    await _db.exec(`delete from "thread" where 1=1`);
+  },
 };
 
 export const Preferences = {
@@ -191,4 +219,27 @@ export const Preferences = {
     ]);
     return v;
   },
+
+  async _removeAll() {
+    if (!dev) {
+      console.warn(
+        "_removeAll is meant for dev use. revisit the source code if you think this is a mistake."
+      );
+    }
+
+    if (!window.confirm("All records will be removed. Continue?")) {
+      return;
+    }
+
+    await _db.exec(`delete from "preferences" where 1=1`);
+  },
 };
+
+if (dev) {
+  (window as any)._clearDatabase = async () => {
+    await ChatMessage._removeAll();
+    await Thread._removeAll();
+    await Preferences._removeAll();
+    window.location.reload();
+  };
+}

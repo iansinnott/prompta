@@ -56,6 +56,10 @@
       e.preventDefault();
       executeCurrentAction();
     }
+
+    if (e.key === "Escape" && menuOpen) {
+      toggleMenu();
+    }
   }
 
   onMount(() => {

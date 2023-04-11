@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import { db, currentThread, currentChatThread } from "../lib/stores/stores";
+  import { db, currentThread, currentChatThread, isNewThread } from "../lib/stores/stores";
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
   import ChatMessageList from "$lib/components/ChatMessageList.svelte";
@@ -35,6 +35,12 @@
     await tick();
     resizeChatInput();
   }
+
+  $: if ($currentThread) {
+    tick().then(() => {
+      textarea?.focus();
+    });
+  }
 </script>
 
 <div class="chat-container">
@@ -61,7 +67,8 @@
   <div class="chat-body p-2">
     <ChatMessageList />
   </div>
-  <div class="chat-input p-3 border-b border-zinc-700 relative -top-px rounded-lg">
+  <!-- No padding top in order to let chat messages appaer to scroll behind -->
+  <div class="chat-input p-3 pt-0 border-b border-zinc-700 relative -top-px rounded-lg">
     <form
       on:submit={(e) => {
         e.preventDefault();
