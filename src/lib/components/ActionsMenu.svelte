@@ -98,6 +98,7 @@
       <input
         class="FilterInput py-3 mt-2 border-t border-zinc-600 px-2"
         bind:value={filterText}
+        on:input={() => (index = 0)}
         bind:this={input}
         type="text"
         placeholder="Search for actions..."

@@ -4,6 +4,7 @@ import { DB_NAME } from "../lib/constants";
 import { db, sqlite, currentThread, openAiConfig } from "../lib/stores/stores";
 import { dev } from "$app/environment";
 import schema from "$lib/schema.sql?raw";
+import { nanoid } from "nanoid";
 
 let _sqlite: SQLite3;
 let _db: DB;
@@ -53,25 +54,25 @@ export const initDb = async () => {
 };
 
 export interface ChatMessageRow {
-  id: number;
+  id: string;
   content: string;
   role: "system" | "user" | "assistant";
   created_at: string;
 }
 export interface ChatMessage {
-  id: number;
+  id: string;
   content: string;
   role: "system" | "user" | "assistant";
   createdAt: Date;
 }
 
 export interface ThreadRow {
-  id: number;
+  id: string;
   title: string;
   created_at: string;
 }
 export interface Thread {
-  id: number;
+  id: string;
   title: string;
   createdAt: Date;
 }
@@ -88,7 +89,7 @@ export const ChatMessage = {
     };
   },
 
-  async findMany({ threadId }: { threadId: number }): Promise<ChatMessage[]> {
+  async findMany({ threadId }: { threadId: string }): Promise<ChatMessage[]> {
     if (!threadId) {
       throw new Error("Tried to query messages without thread id");
     }
@@ -105,7 +106,7 @@ export const ChatMessage = {
     return rows.map((row) => this.rowToModel(row));
   },
 
-  async findFirst(x: { where: { threadId: number; content: string } }) {
+  async findFirst(x: { where: { threadId: string; content: string } }) {
     const xs = await _db.execO<ChatMessageRow>(
       `select * from message where thread_id=? and content=? order by created_at desc limit 1`,
       [x.where.threadId, x.where.content]
@@ -113,14 +114,19 @@ export const ChatMessage = {
     return this.rowToModel(xs[0]);
   },
 
-  async create(x: { content: string; role: ChatMessage["role"]; threadId: number }) {
-    await _db.exec(`insert into "message" ("content", "role", "thread_id") values(?, ?, ?)`, [
-      x.content,
-      x.role,
-      x.threadId,
-    ]);
+  async findUnique(x: { where: { id: string } }) {
+    const xs = await _db.execO<ChatMessageRow>(`select * from "message" where id=?`, [x.where.id]);
+    return this.rowToModel(xs[0]);
+  },
 
-    return this.findFirst({ where: { content: x.content, threadId: x.threadId } });
+  async create(x: { content: string; role: ChatMessage["role"]; threadId: string }) {
+    const cid = nanoid();
+    await _db.exec(
+      `insert into "message" ("id", "content", "role", "thread_id") values(?, ?, ?, ?)`,
+      [cid, x.content, x.role, x.threadId]
+    );
+
+    return this.findUnique({ where: { id: cid } });
   },
 };
 
@@ -145,14 +151,15 @@ export const Thread = {
     return this.rowToModel(xs[0]);
   },
 
-  async findUnique(x: { where: { id: number } }) {
+  async findUnique(x: { where: { id: string } }) {
     const xs = await _db.execO<ThreadRow>(`select * from thread where id=?`, [x.where.id]);
     return this.rowToModel(xs[0]);
   },
 
   async create(t: { title: string }) {
-    await _db.exec(`insert into "thread" ("title") values(?)`, [t.title]);
-    return this.findFirst({ where: { title: t.title } });
+    const cid = nanoid();
+    await _db.exec(`insert into "thread" ("id", "title") values(?, ?)`, [cid, t.title]);
+    return this.findUnique({ where: { id: cid } });
   },
 };
 

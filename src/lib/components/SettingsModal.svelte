@@ -2,6 +2,7 @@
   import { fade } from "svelte/transition";
   import { writable } from "svelte/store";
   import { openAiConfig, showSettings } from "$lib/stores/stores";
+  import { DB_NAME } from "$lib/constants";
 </script>
 
 <!-- Hide on escape -->
@@ -30,6 +31,7 @@
     >
       <h1 class="text-3xl mb-4 col-span-2 border-b border-zinc-600 pb-4">Settings</h1>
       <h3 class="text-xl mb-4 col-span-2">OpenAI</h3>
+
       <label class="label" for="b"> API Key: </label>
       <div class:warning={!$openAiConfig.apiKey}>
         <input
@@ -63,6 +65,7 @@
           </small>
         </p>
       </div>
+
       <label for="a" class="label"> Model: </label>
       <div class:info={$openAiConfig.model === "gpt-4"}>
         <select id="a" class="input rounded w-full" bind:value={$openAiConfig.model}>
@@ -86,7 +89,8 @@
           >(todo) Syncing, replication and backup of your stored chats is not yet supported.</small
         >
       </p>
-      <label for="c" class="label"> Replication Service Host: </label>
+
+      <label for="c" class="label">Replication Service Host:</label>
       <input
         disabled={true}
         id="c"
@@ -95,6 +99,14 @@
         placeholder="Ex: http://localhost:8080"
         bind:value={$openAiConfig.replicationHost}
       />
+
+      <label for="c" class="label">Database:</label>
+      <div>
+        <pre class="py-1 px-2 rounded text-slate-300 border border-zinc-700 table">{DB_NAME}</pre>
+        <p class="opacity-60">
+          <small> Database identifier used locally for persistent storage. </small>
+        </p>
+      </div>
     </form>
   </div>
 {/if}

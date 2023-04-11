@@ -1,5 +1,3 @@
-import { Configuration, OpenAIApi } from "openai";
-
 // Prompts curtesy of chatgpt, of course
 const prompts = [
   // gpt-4:
@@ -42,18 +40,44 @@ export function chooseRandomPrompts() {
   return chosenPrompts;
 }
 
-let openai: OpenAIApi;
-let configuration: Configuration;
+// MsgData is a type for the data sent through the stream
+interface MsgData {
+  id: number;
+  data: string;
+}
 
-export const initOpenAi = ({ apiKey = "" } = {}) => {
-  if (openai) {
-    return openai;
+// StreamCallback type is a callback function that processes the data sent through the stream
+type StreamCallback<T> = (data: T) => void;
+
+async function simulateLLMStreamResponse(
+  onData: StreamCallback<MsgData>,
+  totalData: number,
+  delay: number
+): Promise<void> {
+  function generateData(id: number): MsgData {
+    return {
+      id,
+      data: `Simulated data ${id}`,
+    };
   }
 
-  configuration = new Configuration({
-    apiKey,
-  });
-  openai = new OpenAIApi(configuration);
+  for (let i = 0; i < totalData; i++) {
+    await new Promise((resolve) => {
+      setTimeout(() => {
+        onData(generateData(i));
+        resolve(null);
+      }, delay);
+    });
+  }
+}
 
-  return openai;
+// Usage:
+
+const onDataCallback: StreamCallback<MsgData> = (data: MsgData): void => {
+  console.log(`Received: ${JSON.stringify(data)}`);
 };
+
+(async () => {
+  await simulateLLMStreamResponse(onDataCallback, 10, 1000);
+  console.log("Simulation finished");
+})();

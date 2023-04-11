@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { chooseRandomPrompts } from "$lib/llm";
+  import { chooseRandomPrompts } from "$lib/llm/utils";
   import { currentChatThread, currentThread, isNewThread } from "$lib/stores/stores";
   import classNames from "classnames";
   import ChatMessageItem from "./ChatMessageItem.svelte";

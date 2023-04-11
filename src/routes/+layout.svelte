@@ -5,7 +5,7 @@
   import { onMount } from "svelte";
   import { Preferences, Thread, initDb } from "$lib/db";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
-  import { initOpenAi } from "$lib/llm";
+  import { initOpenAi } from "$lib/llm/openai";
   import { dev } from "$app/environment";
 
   let appReady = false;
@@ -21,20 +21,19 @@
     const apiKey = $openAiConfig.apiKey as string | undefined;
 
     clearTimeout(_timeout);
-    appReady = true;
 
     if (!$openAiConfig.apiKey) {
       $showSettings = true;
       console.warn(`No API key found. Please enter one in the settings.`);
-      return;
+    } else {
+      const openAi = initOpenAi({ apiKey });
+
+      if (dev) {
+        (window as any).openAi = openAi;
+      }
     }
 
-    const openAi = initOpenAi({ apiKey });
-
-    if (dev) {
-      (window as any).openAi = openAi;
-    }
-
+    appReady = true;
     console.debug(`App initialized.`);
   });
 </script>
