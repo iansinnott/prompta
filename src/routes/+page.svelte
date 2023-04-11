@@ -5,6 +5,7 @@
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
   import ChatMessageList from "$lib/components/ChatMessageList.svelte";
   import ActionsMenu from "$lib/components/ActionsMenu.svelte";
+  import { ChatCompletionRequestMessageRoleEnum } from "openai";
 
   let message = "";
   let textarea: HTMLTextAreaElement | null = null;
@@ -18,27 +19,23 @@
 
   async function handleSubmit(s: string) {
     s = s.trim();
-    if (!s) return;
 
-    const msg = await currentChatThread.sendMessage({
+    if (!s) {
+      console.debug("No string. Not sending.");
+      return;
+    }
+
+    await currentChatThread.sendMessage({
       threadId: $currentThread.id,
       role: "user",
       content: s,
     });
-    console.log({ msg });
+
     message = "";
     await tick();
     resizeChatInput();
   }
 </script>
-
-<svelte:window
-  on:beforeunload={() => {
-    if ($db) {
-      $db.close();
-    }
-  }}
-/>
 
 <div class="chat-container">
   <header class="chat-header p-4 flex items-center justify-between border-b border-zinc-700 w-full">

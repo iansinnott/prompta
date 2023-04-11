@@ -1,6 +1,6 @@
 <script lang="ts">
   import "../app.postcss";
-  import { openAiConfig, showSettings } from "../lib/stores/stores";
+  import { db, openAiConfig, showSettings } from "../lib/stores/stores";
   import { Configuration, OpenAIApi } from "openai";
   import { onMount } from "svelte";
   import { Preferences, Thread, initDb } from "$lib/db";
@@ -37,6 +37,15 @@
     console.debug(`App initialized.`);
   });
 </script>
+
+<svelte:window
+  on:beforeunload={() => {
+    if ($db) {
+      console.debug("Closing db connection");
+      $db.close();
+    }
+  }}
+/>
 
 <div class="min-h-screen text-white rounded-lg bg-[#1B1B1B] border border-zinc-700">
   {#if appReady}

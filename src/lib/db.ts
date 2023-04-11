@@ -5,6 +5,7 @@ import { db, sqlite, currentThread, openAiConfig } from "../lib/stores/stores";
 import { dev } from "$app/environment";
 import schema from "$lib/schema.sql?raw";
 import { nanoid } from "nanoid";
+import type { ChatCompletionResponseMessageRoleEnum } from "openai";
 
 let _sqlite: SQLite3;
 let _db: DB;
@@ -56,13 +57,13 @@ export const initDb = async () => {
 export interface ChatMessageRow {
   id: string;
   content: string;
-  role: "system" | "user" | "assistant";
+  role: ChatCompletionResponseMessageRoleEnum;
   created_at: string;
 }
 export interface ChatMessage {
   id: string;
   content: string;
-  role: "system" | "user" | "assistant";
+  role: ChatCompletionResponseMessageRoleEnum;
   createdAt: Date;
 }
 
