@@ -1,12 +1,20 @@
 <script lang="ts">
-  import { currentChatThread, currentThread, showSettings } from "$lib/stores/stores";
+  import { currentChatThread, currentThread, showSettings, threadMenu } from "$lib/stores/stores";
   import { onMount } from "svelte";
   import IconSparkle from "./IconSparkle.svelte";
   import IconGear from "./IconGear.svelte";
+  import IconHistoryClock from "./IconHistoryClock.svelte";
   let input: HTMLInputElement;
   let menuOpen = false;
   let filterText = "";
   let actionItems = [
+    {
+      name: "Chat History",
+      icon: IconHistoryClock,
+      execute: () => {
+        $threadMenu.open = true;
+      },
+    },
     {
       name: "New Chat",
       icon: IconSparkle,
@@ -38,6 +46,8 @@
     filterText = "";
   }
 
+  // Keybindings
+  // @todo These shuld maybe live somewhere else?
   function globalKeyPress(e: KeyboardEvent) {
     if (e.key.toLowerCase() === "k" && e.metaKey && !e.shiftKey && !e.altKey && !e.ctrlKey) {
       e.preventDefault();
@@ -57,8 +67,14 @@
       executeCurrentAction();
     }
 
-    if (e.key === "Escape" && menuOpen) {
-      toggleMenu();
+    if (e.key === "Escape") {
+      if ($threadMenu.open) {
+        $threadMenu.open = false;
+      }
+
+      if (menuOpen) {
+        toggleMenu();
+      }
     }
   }
 
@@ -79,7 +95,7 @@
 {/if}
 
 <div class="menu-container">
-  <button on:click={toggleMenu} class="font-bold px-4 py-2">Actions</button>
+  <button on:click={toggleMenu} class:active={menuOpen} class="font-bold px-4 py-2">Actions</button>
   {#if menuOpen}
     <div
       class="absolute bottom-[calc(100%+10px)] right-0 min-w-[300px] shadow-lg border border-zinc-700 bg-zinc-800 rounded-lg pt-2 px-2"

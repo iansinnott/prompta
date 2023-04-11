@@ -31,7 +31,7 @@
 <div
   class={classNames(
     "z-20",
-    "absolute top-full w-[70vw] rounded bg-zinc-800 border border-zinc-700 p-2",
+    "absolute top-[calc(100%+10px)] w-[70vw] rounded bg-zinc-800 border border-zinc-700 p-2",
     _class
   )}
   class:hidden={!$threadMenu.open}
