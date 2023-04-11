@@ -124,8 +124,12 @@ export const ChatMessage = {
     return xs.length ? this.rowToModel(xs[0]) : undefined;
   },
 
-  async create(x: { content: string; role: ChatMessage["role"]; threadId: string }) {
-    const cid = nanoid();
+  /**
+   * Create a record in the db. Accepts an optional ID so that we can create a
+   * message elsewhere and then persist it
+   */
+  async create(x: { content: string; role: ChatMessage["role"]; threadId: string; id?: string }) {
+    const cid = x.id || nanoid();
     await _db.exec(
       `insert into "message" ("id", "content", "role", "thread_id") values(?, ?, ?, ?)`,
       [cid, x.content, x.role, x.threadId]

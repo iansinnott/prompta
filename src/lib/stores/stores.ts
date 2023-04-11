@@ -107,12 +107,14 @@ export const currentChatThread = (() => {
   const invalidationToken = writable(Date.now());
   let lastThreadId: string | undefined = undefined;
 
+  const pendingMessage = writable<ChatMessage>();
+
   const { subscribe } = derived<
     [typeof currentThread, typeof invalidationToken],
     { messages: ChatMessage[]; status: "loading" | "idle" }
   >([currentThread, invalidationToken], ([t, _], set) => {
     if (isNewThread(t)) {
-      set({ messages: [], status: "idle" });
+      set({ status: "idle", messages: [] });
       return;
     }
 
@@ -146,9 +148,8 @@ export const currentChatThread = (() => {
         currentThread.set(newThread);
         threadList.invalidate();
       }
-      const x = await ChatMessage.create(msg);
+      await ChatMessage.create(msg);
       invalidate();
-      return x;
     },
   };
 })();

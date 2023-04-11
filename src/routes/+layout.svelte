@@ -47,7 +47,7 @@
   }}
 />
 
-<div class="min-h-screen text-white rounded-lg bg-[#1B1B1B] border border-zinc-700">
+<div class="min-h-screen overflow-hidden text-white rounded-lg bg-[#1B1B1B] border border-zinc-700">
   {#if appReady}
     <slot />
     <SettingsModal />

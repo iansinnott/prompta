@@ -44,7 +44,10 @@
 </script>
 
 <div class="chat-container">
-  <header class="chat-header p-4 flex items-center justify-between border-b border-zinc-700 w-full">
+  <header
+    data-tauri-drag-region
+    class="chat-header p-4 flex items-center justify-between border-b border-zinc-700 w-full"
+  >
     <button
       class="text-zinc-200 p-1 rounded hover:bg-white/10 hover:text-white mr-4"
       on:click={(e) => {

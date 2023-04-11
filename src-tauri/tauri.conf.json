@@ -7,12 +7,12 @@
     "distDir": "../build"
   },
   "package": {
-    "productName": "try-tauri-svelte",
+    "productName": "prompta",
     "version": "0.1.0"
   },
   "tauri": {
     "allowlist": {
-      "all": false
+      "all": true
     },
     "macOSPrivateApi": true,
     "bundle": {
@@ -30,7 +30,7 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.tauri.dev",
+      "identifier": "com.prompta.dev",
       "longDescription": "",
       "macOS": {
         "entitlements": null,
@@ -61,6 +61,7 @@
         "resizable": true,
         "title": "Prompta",
         "width": 880,
+        "minWidth": 430,
         "transparent": true,
         "decorations": false
       }

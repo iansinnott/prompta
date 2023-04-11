@@ -3,7 +3,7 @@
   import { currentChatThread, currentThread, isNewThread } from "$lib/stores/stores";
   import classNames from "classnames";
   import ChatMessageItem from "./ChatMessageItem.svelte";
-  import { onMount } from "svelte";
+  import IconBrain from "./IconBrain.svelte";
   let _class: string = "";
   export { _class as class };
 
@@ -18,7 +18,7 @@
   <!-- Give the user some examples to get them started -->
   {#if isNewThread($currentThread)}
     <div class="absolute inset-0 flex flex-col items-center pt-40 w-3/4 mx-auto space-y-4">
-      <img class="w-32" src="/brain.svg" alt="AI Brain" />
+      <IconBrain class="text-[#6BCFC6] w-20 h-20 flex-shrink-0" />
       <h3 class="font-bold text-lg">Ask GPT</h3>
       <div class="opacity-60 text-center flex flex-col space-y-2">
         {#each chooseRandomPrompts() as prompt}

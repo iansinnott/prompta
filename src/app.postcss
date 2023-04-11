@@ -4,13 +4,12 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    /* @apply bg-gray-800 text-white rounded-lg; */
-  }
-
   html,
   body {
     background: transparent;
+    /* This is to act like a mac app, where the overall app frame doesn't scroll
+     * but specific areas within the app will */
+    overflow: hidden;
   }
 }
 

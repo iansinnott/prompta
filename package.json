@@ -1,5 +1,5 @@
 {
-  "name": "try-tauri-svelte",
+  "name": "prompta",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -13,21 +13,20 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.28.1",
-    "@sveltejs/adapter-auto": "^2.0.0",
-    "@sveltejs/adapter-static": "1.0.0-next.50",
+    "@sveltejs/adapter-static": "~1.0.0-next.50",
     "@sveltejs/kit": "^1.5.0",
     "@tauri-apps/cli": "1.2.3",
-    "autoprefixer": "^10.4.7",
-    "postcss": "^8.4.14",
-    "postcss-load-config": "^4.0.1",
-    "svelte": "^3.54.0",
-    "svelte-check": "^3.0.1",
-    "svelte-preprocess": "^4.10.7",
+    "autoprefixer": "~10.4.7",
+    "postcss": "~8.4.14",
+    "postcss-load-config": "~4.0.1",
+    "svelte": "^3.55.0",
+    "svelte-check": "~3.2.0",
+    "svelte-preprocess": "~4.10.7",
     "tailwindcss": "^3.1.5",
-    "tslib": "^2.4.1",
+    "tslib": "~2.4.1",
     "typescript": "^4.0.0",
     "vite": "^4.2.0",
-    "vitest": "^0.25.3"
+    "vitest": "~0.25.3"
   },
   "type": "module",
   "dependencies": {
