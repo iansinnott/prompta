@@ -105,6 +105,8 @@ export const threadList = invalidatable<Thread[]>([], (set) => {
 
 export const currentChatThread = (() => {
   const invalidationToken = writable(Date.now());
+  let lastThreadId: string | undefined = undefined;
+
   const { subscribe } = derived<
     [typeof currentThread, typeof invalidationToken],
     { messages: ChatMessage[]; status: "loading" | "idle" }
@@ -114,10 +116,19 @@ export const currentChatThread = (() => {
       return;
     }
 
-    // This is the default value, and the value while a thread is loading
-    set({ status: "loading", messages: [] });
+    // Start loading on change thread
+    if (t.id !== lastThreadId) {
+      set({ status: "loading", messages: [] });
+    }
 
-    ChatMessage.findMany({ threadId: t.id }).then((xs) => set({ messages: xs, status: "idle" }));
+    lastThreadId = t.id;
+
+    ChatMessage.findMany({ threadId: t.id })
+      .then((xs) => set({ messages: xs, status: "idle" }))
+      .catch((err) => {
+        set({ messages: [], status: "idle" });
+        throw err;
+      });
   });
 
   const invalidate = () => {

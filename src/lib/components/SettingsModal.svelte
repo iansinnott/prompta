@@ -27,7 +27,7 @@
       on:click={(e) => {
         e.stopPropagation();
       }}
-      class="content bg-zinc-800 w-[calc(100%-80px)] border border-zinc-700"
+      class="content bg-zinc-800 w-[calc(100%-80px)] max-h-[90vh] border border-zinc-700"
     >
       <h1 class="text-3xl mb-4 col-span-2 border-b border-zinc-600 pb-4">Settings</h1>
       <h3 class="text-xl mb-4 col-span-2">OpenAI</h3>
