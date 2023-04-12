@@ -15,6 +15,7 @@
     "@playwright/test": "^1.28.1",
     "@sveltejs/adapter-static": "~1.0.0-next.50",
     "@sveltejs/kit": "^1.5.0",
+    "@tailwindcss/typography": "0.5.9",
     "@tauri-apps/cli": "1.2.3",
     "autoprefixer": "~10.4.7",
     "postcss": "~8.4.14",
@@ -30,6 +31,7 @@
   },
   "type": "module",
   "dependencies": {
+    "@microsoft/fetch-event-source": "2.0.1",
     "@vlcn.io/crsqlite-wasm": "0.9.1",
     "classnames": "2.3.2",
     "nanoid": "4.0.2",

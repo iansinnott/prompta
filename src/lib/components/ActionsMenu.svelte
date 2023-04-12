@@ -5,7 +5,7 @@
   import IconGear from "./IconGear.svelte";
   import IconHistoryClock from "./IconHistoryClock.svelte";
   import { dev } from "$app/environment";
-  import { _clearDatabase } from "$lib/db";
+  import { ChatMessage, _clearDatabase } from "$lib/db";
   let input: HTMLInputElement;
   let menuOpen = false;
   let filterText = "";
@@ -30,6 +30,12 @@
       execute: () => {
         $showSettings = true;
       },
+    },
+    {
+      when: dev,
+      name: "Reset Current Thread",
+      color: "red",
+      execute: currentChatThread.deleteMessages,
     },
     {
       when: dev,

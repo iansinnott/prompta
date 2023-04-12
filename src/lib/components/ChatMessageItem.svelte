@@ -4,6 +4,7 @@
   import IconUserAvatar from "./IconUserAvatar.svelte";
   import { onMount } from "svelte";
   import IconBrainAiHybrid from "./IconBrainAiHybrid.svelte";
+  import SvelteMarkdown from "svelte-markdown";
   import IconBrain from "./IconBrain.svelte";
   let _class: string = "";
   export { _class as class };
@@ -16,7 +17,7 @@
   // });
 </script>
 
-<div class={classNames("ChatMessage", _class)} data-message-id={item.id}>
+<div class={classNames("ChatMessage pr-2", _class)} data-message-id={item.id}>
   <div class="Avatar text-zinc-400 pl-2">
     {#if item.role === "user"}
       <IconUserAvatar class="opacity-60" />
@@ -25,11 +26,20 @@
     {/if}
   </div>
   <div
-    class={classNames("Content", {
+    class={classNames("Content prose prose-invert", {
       "opacity-60": item.role === "user",
     })}
   >
-    {item.content}
+    {#if item.role === "user"}
+      <!-- User input is not considered markdown, but whitespace should be respected -->
+      <div class="whitespace-pre-wrap">{item.content}</div>
+      <div class="text-zinc-400 text-xs mt-1">
+        {item.createdAt.toLocaleTimeString()}
+      </div>
+    {:else}
+      <!-- Only render markdown for bot responses -->
+      <SvelteMarkdown source={item.content} />
+    {/if}
   </div>
 </div>
 

@@ -3,7 +3,7 @@ import { Configuration, OpenAIApi, type ChatCompletionResponseMessage } from "op
 let openai: OpenAIApi;
 let configuration: Configuration;
 
-export const initOpenAi = ({ apiKey = "" } = {}) => {
+export const initOpenAi = ({ apiKey = "" }: { apiKey: string }) => {
   if (openai) {
     return openai;
   }

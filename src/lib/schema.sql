@@ -9,6 +9,7 @@ CREATE TABLE
   if NOT EXISTS "message" (
     "id" VARCHAR(255) PRIMARY KEY,
     "role" VARCHAR(63) NOT NULL, -- system, user, assistant
+    "model" VARCHAR(255), -- Only applicable for role=assistant
     "content" TEXT,
     "thread_id" VARCHAR(255) REFERENCES "thread",
     "created_at" TIMESTAMMP NOT NULL DEFAULT CURRENT_TIMESTAMP

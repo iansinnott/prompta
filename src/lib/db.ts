@@ -62,6 +62,7 @@ export interface ChatMessageRow {
   id: string;
   content: string;
   role: ChatCompletionResponseMessageRoleEnum;
+  model?: string | null;
   thread_id: string;
   created_at: string;
 }
@@ -69,6 +70,7 @@ export interface ChatMessage {
   id: string;
   content: string;
   role: ChatCompletionResponseMessageRoleEnum;
+  model?: string | null;
   createdAt: Date;
   threadId: string;
 }
@@ -141,6 +143,19 @@ export const ChatMessage = {
     return this.findUnique({ where: { id: cid } });
   },
 
+  async delete(x: { where: { id?: string; threadId?: string } }) {
+    const { id, threadId } = x.where;
+    if (!id && !threadId) {
+      throw new Error("Must provide either id or threadId");
+    }
+
+    const where = id ? `id=?` : `thread_id=?`;
+    const args = id ? [id] : [threadId];
+
+    // @ts-ignore
+    await _db.exec(`delete from "message" where ${where}`, args);
+  },
+
   async _removeAll() {
     if (!dev) {
       console.warn(
@@ -148,7 +163,7 @@ export const ChatMessage = {
       );
     }
 
-    if (!window.confirm("All messages will be removed. Continue?")) {
+    if (!(await window.confirm("All messages will be removed. Continue?"))) {
       return;
     }
 
@@ -197,7 +212,7 @@ export const Thread = {
       );
     }
 
-    if (!window.confirm("All records will be removed. Continue?")) {
+    if (!(await window.confirm("All records will be removed. Continue?"))) {
       return;
     }
 
@@ -242,7 +257,7 @@ export const Preferences = {
       );
     }
 
-    if (!window.confirm("All records will be removed. Continue?")) {
+    if (!(await window.confirm("All records will be removed. Continue?"))) {
       return;
     }
 
