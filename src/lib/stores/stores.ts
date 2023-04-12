@@ -6,9 +6,12 @@ import {
   type Readable,
   type Writable,
   type Subscriber,
+  get,
 } from "svelte/store";
 import type { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import { ChatMessage, Preferences, Thread } from "$lib/db";
+import { nanoid } from "nanoid";
+import { simulateLLMStreamResponse } from "$lib/llm/utils";
 
 export const showSettings = writable(false);
 
@@ -107,12 +110,12 @@ export const currentChatThread = (() => {
   const invalidationToken = writable(Date.now());
   let lastThreadId: string | undefined = undefined;
 
-  const pendingMessage = writable<ChatMessage>();
+  const pendingMessage = writable<ChatMessage | null>(null);
 
   const { subscribe } = derived<
-    [typeof currentThread, typeof invalidationToken],
+    [typeof currentThread, typeof pendingMessage, typeof invalidationToken],
     { messages: ChatMessage[]; status: "loading" | "idle" }
-  >([currentThread, invalidationToken], ([t, _], set) => {
+  >([currentThread, pendingMessage, invalidationToken], ([t, pending, _], set) => {
     if (isNewThread(t)) {
       set({ status: "idle", messages: [] });
       return;
@@ -126,7 +129,14 @@ export const currentChatThread = (() => {
     lastThreadId = t.id;
 
     ChatMessage.findMany({ threadId: t.id })
-      .then((xs) => set({ messages: xs, status: "idle" }))
+      .then((xs) => {
+        if (pending) {
+          console.debug("Pending message", pending);
+          set({ messages: [...xs, pending], status: "loading" });
+        } else {
+          set({ messages: xs, status: "idle" });
+        }
+      })
       .catch((err) => {
         set({ messages: [], status: "idle" });
         throw err;
@@ -137,19 +147,63 @@ export const currentChatThread = (() => {
     invalidationToken.set(Date.now());
   };
 
+  const promptGpt = async ({ threadId }: { threadId: string }) => {
+    pendingMessage.set({
+      id: nanoid(),
+      role: "assistant",
+      createdAt: new Date(),
+      content: "",
+      threadId,
+    });
+
+    const context = await ChatMessage.findMany({ threadId });
+    console.log("%ccontext", "color:salmon;font-size:13px;", context);
+    await simulateLLMStreamResponse(
+      (msg) => {
+        pendingMessage.update((x) => {
+          if (!x) {
+            console.warn("should never happen", x);
+            return x;
+          }
+
+          return { ...x, content: x.content + msg.data };
+        });
+      },
+      10,
+      200
+    );
+
+    // Store a reference to the pending message
+    const x = get(pendingMessage);
+
+    if (!x) throw new Error("No pending message found when one was expected.");
+
+    // Store it fully in the db
+    await ChatMessage.create(x);
+
+    // Clear the pending message. Do this afterwards because it invalidates the chat message list
+    pendingMessage.set(null);
+  };
+
   return {
     subscribe,
     invalidate,
     sendMessage: async (...args: Parameters<typeof ChatMessage.create>) => {
       const [msg] = args;
+
       if (isNewThread({ id: msg.threadId })) {
         const newThread = await Thread.create({ title: msg.content.trim().slice(0, 80) });
         msg.threadId = newThread.id;
         currentThread.set(newThread);
         threadList.invalidate();
       }
+
       await ChatMessage.create(msg);
-      invalidate();
+
+      // @todo remove? We shouldn't need this manual validation since pending message will invalidate for u
+      // invalidate();
+
+      promptGpt({ threadId: msg.threadId });
     },
   };
 })();

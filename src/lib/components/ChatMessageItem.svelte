@@ -3,21 +3,34 @@
   import classNames from "classnames";
   import IconUserAvatar from "./IconUserAvatar.svelte";
   import { onMount } from "svelte";
+  import IconBrainAiHybrid from "./IconBrainAiHybrid.svelte";
+  import IconBrain from "./IconBrain.svelte";
   let _class: string = "";
   export { _class as class };
 
   export let item: ChatMessage;
+
+  /// For checking perf on these list items
+  // onMount(() => {
+  //   console.log("%cmounted", "color:salmon;font-size:18px;", item.id);
+  // });
 </script>
 
 <div class={classNames("ChatMessage", _class)} data-message-id={item.id}>
   <div class="Avatar text-zinc-400 pl-2">
     {#if item.role === "user"}
-      <IconUserAvatar />
+      <IconUserAvatar class="opacity-60" />
     {:else}
-      <img class="w-6 h-6" src="/assistant.svg" alt="" />
+      <IconBrain class="w-6 h-6 text-[#30CEC0] scale-[1.2]" />
     {/if}
   </div>
-  {item.content}
+  <div
+    class={classNames("Content", {
+      "opacity-60": item.role === "user",
+    })}
+  >
+    {item.content}
+  </div>
 </div>
 
 <style>

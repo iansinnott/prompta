@@ -71,7 +71,7 @@
     <ChatMessageList />
   </div>
   <!-- No padding top in order to let chat messages appaer to scroll behind -->
-  <div class="chat-input p-3 pt-0 border-b border-zinc-700 relative -top-px rounded-lg">
+  <footer class="chat-input p-3 pt-0 border-b border-zinc-700 relative -top-px">
     <form
       on:submit={(e) => {
         e.preventDefault();
@@ -99,7 +99,7 @@
       <button class="font-bold px-4 py-2" type="submit">Send</button>
       <ActionsMenu />
     </form>
-  </div>
+  </footer>
 </div>
 
 <style>

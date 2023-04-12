@@ -1,10 +1,16 @@
+<script lang="ts">
+  import classNames from "classnames";
+  let _class: string = "";
+  export { _class as class };
+</script>
+
 <svg
   viewBox="0 0 512 512"
   xmlns="http://www.w3.org/2000/svg"
   xmlns:xlink="http://www.w3.org/1999/xlink"
   xml:space="preserve"
   style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2"
-  class="h-10 w-10"
+  class={classNames("w-10 h-10", _class)}
   ><use xlink:href="#logo_svg__a" x="39" y="7" width="426" height="505" /><defs
     ><image
       id="logo_svg__a"

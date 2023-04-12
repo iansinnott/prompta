@@ -4,6 +4,7 @@
   import classNames from "classnames";
   import ChatMessageItem from "./ChatMessageItem.svelte";
   import IconBrain from "./IconBrain.svelte";
+  import IconBrainAiHybrid from "./IconBrainAiHybrid.svelte";
   let _class: string = "";
   export { _class as class };
 
@@ -17,8 +18,12 @@
 
   <!-- Give the user some examples to get them started -->
   {#if isNewThread($currentThread)}
-    <div class="absolute inset-0 flex flex-col items-center pt-40 w-3/4 mx-auto space-y-4">
-      <IconBrain class="text-[#6BCFC6] w-20 h-20 flex-shrink-0" />
+    <div
+      class="absolute inset-0 flex flex-col items-center pt-[10vh] sm:pt-[20vh] w-3/4 mx-auto space-y-4"
+    >
+      <div>
+        <IconBrainAiHybrid class="w-20 h-20" />
+      </div>
       <h3 class="font-bold text-lg">Ask GPT</h3>
       <div class="opacity-60 text-center flex flex-col space-y-2">
         {#each chooseRandomPrompts() as prompt}

@@ -62,6 +62,7 @@ export interface ChatMessageRow {
   id: string;
   content: string;
   role: ChatCompletionResponseMessageRoleEnum;
+  thread_id: string;
   created_at: string;
 }
 export interface ChatMessage {
@@ -69,6 +70,7 @@ export interface ChatMessage {
   content: string;
   role: ChatCompletionResponseMessageRoleEnum;
   createdAt: Date;
+  threadId: string;
 }
 
 export interface ThreadRow {
@@ -87,10 +89,11 @@ const dateFromSqlite = (s: string) => {
 };
 
 export const ChatMessage = {
-  rowToModel: ({ created_at, ...x }: ChatMessageRow): ChatMessage => {
+  rowToModel: ({ created_at, thread_id, ...x }: ChatMessageRow): ChatMessage => {
     return {
       ...x,
       createdAt: dateFromSqlite(created_at),
+      threadId: thread_id,
     };
   },
 

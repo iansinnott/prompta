@@ -49,7 +49,7 @@ interface MsgData {
 // StreamCallback type is a callback function that processes the data sent through the stream
 type StreamCallback<T> = (data: T) => void;
 
-async function simulateLLMStreamResponse(
+export async function simulateLLMStreamResponse(
   onData: StreamCallback<MsgData>,
   totalData: number,
   delay: number
@@ -57,7 +57,7 @@ async function simulateLLMStreamResponse(
   function generateData(id: number): MsgData {
     return {
       id,
-      data: `Simulated data ${id}`,
+      data: `Simulated data ${id} `,
     };
   }
 
@@ -70,14 +70,3 @@ async function simulateLLMStreamResponse(
     });
   }
 }
-
-// Usage:
-
-const onDataCallback: StreamCallback<MsgData> = (data: MsgData): void => {
-  console.log(`Received: ${JSON.stringify(data)}`);
-};
-
-// (async () => {
-//   await simulateLLMStreamResponse(onDataCallback, 10, 1000);
-//   console.log("Simulation finished");
-// })();
