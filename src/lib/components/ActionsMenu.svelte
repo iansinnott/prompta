@@ -13,6 +13,8 @@
   import { dev } from "$app/environment";
   import { ChatMessage, _clearDatabase } from "$lib/db";
   import IconThreadTitle from "./IconThreadTitle.svelte";
+  import IconRefresh from "./IconRefresh.svelte";
+  import IconRefreshOutline from "./IconRefreshOutline.svelte";
   let input: HTMLInputElement;
   let menuOpen = false;
   let filterText = "";
@@ -23,6 +25,11 @@
       execute: () => {
         generateThreadTitle({ threadId: $currentThread.id });
       },
+    },
+    {
+      name: "Regenerate Response",
+      icon: IconRefreshOutline,
+      execute: currentChatThread.regenerateResponse,
     },
     {
       name: "Chat History",

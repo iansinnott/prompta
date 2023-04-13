@@ -6,10 +6,12 @@
   import IconBrainAiHybrid from "./IconBrainAiHybrid.svelte";
   import SvelteMarkdown from "svelte-markdown";
   import IconBrain from "./IconBrain.svelte";
+  import IconVerticalDots from "./IconVerticalDots.svelte";
   let _class: string = "";
   export { _class as class };
 
   export let item: ChatMessage;
+  let viewRaw = false;
 
   /// For checking perf on these list items
   // onMount(() => {
@@ -17,12 +19,22 @@
   // });
 </script>
 
-<div class={classNames("ChatMessage pr-2", _class)} data-message-id={item.id}>
-  <div class="Avatar text-zinc-400 pl-2">
+<div class={classNames("ChatMessage pr-2 group", _class)} data-message-id={item.id}>
+  <div class="Avatar text-zinc-400 pl-2 flex flex-col items-center space-y-4">
     {#if item.role === "user"}
       <IconUserAvatar class="opacity-60" />
     {:else}
       <IconBrain class="w-6 h-6 text-[#30CEC0] scale-[1.2]" />
+      <div class="group-hover:block hidden">
+        <button
+          on:click={(e) => {
+            viewRaw = !viewRaw;
+          }}
+          class="hover:bg-white/20 hover:text-white rounded-full p-[2px]"
+        >
+          <IconVerticalDots class="scale-75" />
+        </button>
+      </div>
     {/if}
   </div>
   <div
@@ -38,7 +50,11 @@
       </div>
     {:else}
       <!-- Only render markdown for bot responses -->
-      <SvelteMarkdown source={item.content} />
+      {#if viewRaw}
+        <div class="whitespace-pre-wrap">{item.content}</div>
+      {:else}
+        <SvelteMarkdown source={item.content} />
+      {/if}
     {/if}
   </div>
 </div>

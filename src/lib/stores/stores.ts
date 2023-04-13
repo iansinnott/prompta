@@ -68,11 +68,10 @@ export const profilesStore = writable<{ [key: string]: GPTProfile }>({
     name: "default",
     model: "gpt-3.5-turbo",
     systemMessage: `
-You are a helpful assistant.
-You will respond to user messages as accurately as possible. 
-If you do not have confidence in your response you will ask the user to clarify.
+You are a helpful assistant. Respond to user messages as accurately as possible. 
 You will be concise, unless the user asks for more detail.
 Assume the user has a technical background and understands software programming.
+When producing code, insert the language identifier after opening fences.
     `.trim(),
   },
 });
@@ -366,6 +365,30 @@ export const currentChatThread = (() => {
       });
 
       invalidate();
+    },
+    regenerateResponse: async () => {
+      const lastMessage = get(currentChatThread).messages.at(-1);
+
+      if (!lastMessage) {
+        throw new Error("No last message found. Empty thread?");
+      }
+
+      if (lastMessage.role !== "assistant") {
+        throw new Error("Last message was not from the assistant");
+      }
+
+      await ChatMessage.delete({
+        where: {
+          id: lastMessage.id,
+        },
+      });
+
+      invalidate();
+
+      promptGpt({ threadId: lastMessage.threadId }).catch((err) => {
+        console.error("[gpt]", err);
+        invalidate();
+      });
     },
     sendMessage: async (...args: Parameters<typeof ChatMessage.create>) => {
       const [msg] = args;
