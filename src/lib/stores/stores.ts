@@ -29,6 +29,49 @@ const hasThreadTitle = (t: Thread) => {
   return t.title !== PENDING_THREAD_TITLE;
 };
 
+const persistentStore = <T extends Record<string, any>>(prefix: string, defaultValue: T) => {
+  const { subscribe, set, update } = writable<T>(defaultValue);
+
+  const persistentSet = (x: T) => {
+    const entries = Object.entries(x).map(([k, v]) => [`${prefix}/${k}`, v] as [string, any]);
+    Preferences.setEntries(entries);
+    set(x);
+  };
+
+  const persistentUpdate = (fn: (x: T) => T) => {
+    update((x) => {
+      const v = fn(x);
+      persistentSet(v);
+      return v;
+    });
+  };
+
+  const init = async () => {
+    const entries = await Preferences.getEntries({
+      where: { like: `${prefix}/%` },
+    });
+
+    // If we call set with empty entries, we remove all values from the store
+    if (entries.length) {
+      set(
+        Object.fromEntries(
+          entries.map(([k, v]) => {
+            const key = k.replace(`${prefix}/`, "");
+            return [key, v];
+          })
+        ) as T
+      );
+    }
+  };
+
+  return {
+    subscribe,
+    set: persistentSet,
+    update: persistentUpdate,
+    init,
+  };
+};
+
 export const openAiConfig = (() => {
   type OpenAiAppConfig = Partial<Configuration> & { replicationHost: string };
   const { subscribe, set, update } = writable<OpenAiAppConfig>({
@@ -62,17 +105,19 @@ interface GPTProfile {
   systemMessage: string;
 }
 
-export const activeProfileName = writable("default");
-export const profilesStore = writable<{ [key: string]: GPTProfile }>({
-  default: {
-    name: "default",
-    model: "gpt-3.5-turbo",
-    systemMessage: `
+export const DEFAULT_SYSTEM_MESSAGE = `
 You are a helpful assistant. Respond to user messages as accurately as possible. 
 You will be concise, unless the user asks for more detail.
 Assume the user has a technical background and understands software programming.
 When producing code, insert the language identifier after opening fences.
-    `.trim(),
+    `.trim();
+
+export const activeProfileName = writable("default");
+export const profilesStore = persistentStore<{ [key: string]: GPTProfile }>("profile", {
+  default: {
+    name: "default",
+    model: "gpt-3.5-turbo",
+    systemMessage: DEFAULT_SYSTEM_MESSAGE,
   },
 });
 
@@ -84,6 +129,11 @@ export const gptProfileStore = (() => {
 
   return {
     subscribe: activeProfileStore.subscribe,
+    set: (profile: GPTProfile) => {
+      profilesStore.update((x) => {
+        return { ...x, [profile.name]: profile };
+      });
+    },
     selectProfile: (name: string) => {
       activeProfileName.set(name);
     },

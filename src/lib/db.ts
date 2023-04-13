@@ -1,7 +1,7 @@
 import initWasm, { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { DB_NAME } from "../lib/constants";
-import { db, sqlite, currentThread, openAiConfig } from "../lib/stores/stores";
+import { db, sqlite, currentThread, openAiConfig, profilesStore } from "../lib/stores/stores";
 import { dev } from "$app/environment";
 import schema from "$lib/schema.sql?raw";
 import { nanoid } from "nanoid";
@@ -39,6 +39,8 @@ export const initDb = async () => {
       console.warn("Could not find thread:", threadId);
     }
   }
+
+  await Promise.all([profilesStore.init()]);
 
   const conf = await Preferences.get("openai-config");
   if (conf) {
@@ -257,6 +259,22 @@ export const Preferences = {
       JSON.stringify(v),
     ]);
     return v;
+  },
+  setEntries: async (entries: [string, any][]) => {
+    const values = entries.map(([k, v]) => `(?, ?)`).join(", ");
+    const args = entries.flatMap(([k, v]) => [k, JSON.stringify(v)]);
+    await _db.exec(`INSERT OR REPLACE INTO "preferences" (key, value) values ${values}`, args);
+    return entries;
+  },
+
+  getEntries: async (x: { where: { like: string } }) => {
+    const rows = await _db.execO<{ key: string; value: string }>(
+      `select * from "preferences" where "key" like ?`,
+      [x.where.like]
+    );
+    return rows.map((row) => {
+      return [row.key, JSON.parse(row.value)];
+    });
   },
 
   async _removeAll() {
