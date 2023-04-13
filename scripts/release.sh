@@ -17,6 +17,11 @@ main() {
   # upsert the tag. if running yarn version the tag will have been created already
   git tag -d "v$version" || true
   git tag -a "v$version" -m "v$version"
+  
+  echo "    Tag: v$version"
+  echo "    Commit: $(git rev-parse HEAD)"
+  echo
+  echo "Push the tag to GitHub to trigger the release workflow."
 }
 
 main
