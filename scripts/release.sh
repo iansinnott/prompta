@@ -15,6 +15,7 @@ main() {
   git commit --amend --no-edit
 
   # upsert the tag. if running yarn version the tag will have been created already
+  git tag -d "v$version" || true
   git tag -a "v$version" -m "v$version"
 }
 
