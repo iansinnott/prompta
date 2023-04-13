@@ -1,11 +1,10 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import { db, currentThread, currentChatThread, isNewThread } from "../lib/stores/stores";
+  import { currentThread, currentChatThread } from "../lib/stores/stores";
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
   import ChatMessageList from "$lib/components/ChatMessageList.svelte";
   import ActionsMenu from "$lib/components/ActionsMenu.svelte";
-  import { ChatCompletionRequestMessageRoleEnum } from "openai";
 
   let message = "";
   let textarea: HTMLTextAreaElement | null = null;
@@ -17,7 +16,14 @@
     textarea.style.height = textarea.scrollHeight + "px";
   };
 
+  $: sending = $currentChatThread.status === "loading";
+
   async function handleSubmit(s: string) {
+    if (sending) {
+      currentChatThread.cancel();
+      return;
+    }
+
     s = s.trim();
 
     if (!s) {
@@ -92,11 +98,11 @@
         on:input={(e) => {
           resizeChatInput();
         }}
-        placeholder="Type your message here"
+        placeholder={sending ? "Enter to cancel" : "Ask GPT something..."}
         rows="1"
         class="appearance-none flex-1 w-full px-4 py-2 bg-transparent outline-none resize-none"
       />
-      <button class="font-bold px-4 py-2" type="submit">Send</button>
+      <button class="font-bold px-4 py-2" type="submit">{sending ? "Cancel" : "Send"}</button>
       <ActionsMenu />
     </form>
   </footer>

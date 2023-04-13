@@ -55,6 +55,9 @@
       {:else}
         <SvelteMarkdown source={item.content} />
       {/if}
+      {#if item.cancelled}
+        <div class="text-zinc-400 text-xs -mt-2">Cancelled</div>
+      {/if}
     {/if}
   </div>
 </div>

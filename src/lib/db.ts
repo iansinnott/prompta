@@ -65,6 +65,7 @@ export interface ChatMessageRow {
   content: string;
   role: ChatCompletionResponseMessageRoleEnum;
   model?: string | null;
+  cancelled?: boolean | null;
   thread_id: string;
   created_at: string;
 }
@@ -73,6 +74,7 @@ export interface ChatMessage {
   content: string;
   role: ChatCompletionResponseMessageRoleEnum;
   model?: string | null;
+  cancelled?: boolean | null;
   createdAt: Date;
   threadId: string;
 }
@@ -135,11 +137,18 @@ export const ChatMessage = {
    * Create a record in the db. Accepts an optional ID so that we can create a
    * message elsewhere and then persist it
    */
-  async create(x: { content: string; role: ChatMessage["role"]; threadId: string; id?: string }) {
+  async create(x: {
+    content: string;
+    role: ChatMessage["role"];
+    threadId: string;
+    id?: string;
+    model?: string | null;
+    cancelled?: boolean | null;
+  }) {
     const cid = x.id || nanoid();
     await _db.exec(
-      `insert into "message" ("id", "content", "role", "thread_id") values(?, ?, ?, ?)`,
-      [cid, x.content, x.role, x.threadId]
+      `insert into "message" ("id", "content", "role", "model", "cancelled", "thread_id") values(?, ?, ?, ?, ?, ?)`,
+      [cid, x.content, x.role, x.model ?? "", x.cancelled ? 1 : 0, x.threadId]
     );
 
     return this.findUnique({ where: { id: cid } });
@@ -169,7 +178,7 @@ export const ChatMessage = {
       return;
     }
 
-    await _db.exec(`delete from "message" where 1=1`);
+    await _db.exec(`drop table "message"`);
 
     return true;
   },
@@ -227,7 +236,7 @@ export const Thread = {
       return;
     }
 
-    await _db.exec(`delete from "thread" where 1=1`);
+    await _db.exec(`drop table "thread"`);
 
     return true;
   },
@@ -299,7 +308,8 @@ export async function _clearDatabase() {
   const removed = await ChatMessage._removeAll();
   if (removed) {
     await Thread._removeAll();
-    await Preferences._removeAll();
+    // Not removing preferences.
+    // await Preferences._removeAll();
     window.location.reload();
   }
 }

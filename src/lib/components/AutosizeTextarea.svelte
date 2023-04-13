@@ -8,7 +8,7 @@
   export let value: string = "";
 
   const autosize = () => {
-    textarea.style.height = "1px";
+    textarea.style.height = "auto";
     textarea.style.height = textarea.scrollHeight + "px";
   };
 

@@ -10,6 +10,7 @@ CREATE TABLE
     "id" VARCHAR(255) PRIMARY KEY,
     "role" VARCHAR(63) NOT NULL, -- system, user, assistant
     "model" VARCHAR(255), -- Only applicable for role=assistant
+    "cancelled" BOOLEAN DEFAULT FALSE,
     "content" TEXT,
     "thread_id" VARCHAR(255) REFERENCES "thread",
     "created_at" TIMESTAMMP NOT NULL DEFAULT CURRENT_TIMESTAMP

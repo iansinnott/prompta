@@ -342,6 +342,8 @@ export const currentChatThread = (() => {
 
     console.log("%cprompt", "color:salmon;font-size:13px;", prompt);
 
+    abortController = new AbortController();
+
     await fetchEventSource("https://api.openai.com/v1/chat/completions", {
       headers: {
         "Content-Type": "application/json",
@@ -349,6 +351,7 @@ export const currentChatThread = (() => {
       },
       method: "POST",
       body: JSON.stringify(prompt),
+      signal: abortController.signal,
       onerror(err) {
         console.error("Error in stream", err);
         throw err;
@@ -388,7 +391,10 @@ export const currentChatThread = (() => {
     if (!botMessage) throw new Error("No pending message found when one was expected.");
 
     // Store it fully in the db
-    await ChatMessage.create(botMessage);
+    await ChatMessage.create({
+      ...botMessage,
+      cancelled: abortController.signal.aborted,
+    });
 
     // Clear the pending message. Do this afterwards because it invalidates the chat message list
     pendingMessageStore.set(null);
@@ -398,6 +404,8 @@ export const currentChatThread = (() => {
       await generateThreadTitle({ threadId: botMessage.threadId });
     }
   };
+
+  let abortController: AbortController;
 
   return {
     subscribe,
@@ -439,6 +447,9 @@ export const currentChatThread = (() => {
         console.error("[gpt]", err);
         invalidate();
       });
+    },
+    cancel: async () => {
+      abortController.abort();
     },
     sendMessage: async (...args: Parameters<typeof ChatMessage.create>) => {
       const [msg] = args;
