@@ -3,7 +3,6 @@
 main() {
   echo "Releasing new version..."
   echo "    PWD: $PWD"
-  echo
 
   local version=$(jq -r '.version' package.json)
   
@@ -11,12 +10,12 @@ main() {
   sed -i '' -e "s/\"version\": \".*\"/\"version\": \"$version\"/g" src-tauri/tauri.conf.json
   
   # amend last commit
-  git add src-tauri/tauri.conf.json
-  git commit --amend --no-edit
+  git add src-tauri/tauri.conf.json > /dev/null
+  git commit --amend --no-edit > /dev/null
 
   # upsert the tag. if running yarn version the tag will have been created already
-  git tag -d "v$version" || true
-  git tag -a "v$version" -m "v$version"
+  git tag -d "v$version" || true > /dev/null
+  git tag -a "v$version" -m "v$version" > /dev/null
   
   echo "    Tag: v$version"
   echo "    Commit: $(git rev-parse HEAD)"
