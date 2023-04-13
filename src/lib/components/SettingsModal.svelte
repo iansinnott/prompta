@@ -1,8 +1,11 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
   import { writable } from "svelte/store";
-  import { openAiConfig, showSettings } from "$lib/stores/stores";
+  import { gptProfileStore, openAiConfig, showSettings, profilesStore } from "$lib/stores/stores";
   import { DB_NAME } from "$lib/constants";
+
+  $: profiles = Object.keys($profilesStore);
+  $: activeProfile = $gptProfileStore;
 </script>
 
 <!-- Hide on escape -->
@@ -67,12 +70,12 @@
       </div>
 
       <label for="a" class="label"> Model: </label>
-      <div class:info={$openAiConfig.model === "gpt-4"}>
-        <select id="a" class="input rounded w-full" bind:value={$openAiConfig.model}>
+      <div class:info={activeProfile.model === "gpt-4"}>
+        <select id="a" class="input rounded w-full" bind:value={activeProfile.model}>
           <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
           <option value="gpt-4">gpt-4</option>
         </select>
-        {#if $openAiConfig.model === "gpt-4"}
+        {#if activeProfile.model === "gpt-4"}
           <p>
             <small
               >Warning: gpt-4 may require an invite. If chat doesn't work make sure your account has
@@ -81,6 +84,20 @@
           </p>
         {/if}
       </div>
+
+      <label for="d" class="label">System Message:</label>
+      <div>
+        <textarea
+          id="d"
+          class="input rounded w-full text-xs"
+          placeholder=""
+          bind:value={activeProfile.systemMessage}
+        />
+        <p>
+          <small> The system message affects how the model responds. </small>
+        </p>
+      </div>
+
       <!-- separator -->
       <div class="Separator h-px bg-zinc-700 my-4" />
       <h3 class="text-xl mb-4 col-span-2">Chat History Sync</h3>
@@ -134,10 +151,11 @@
     padding: 6px 10px;
     font-size: 16px;
     border-radius: 4px;
+    appearance: none;
+    @apply text-white bg-zinc-700 border border-zinc-500;
   }
   input {
-    @apply text-white bg-zinc-700 border border-zinc-500;
-    appearance: none;
+    @apply input;
   }
   select {
     @apply text-white bg-zinc-700 border border-zinc-500;

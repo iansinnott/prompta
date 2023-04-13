@@ -30,9 +30,8 @@ const hasThreadTitle = (t: Thread) => {
 };
 
 export const openAiConfig = (() => {
-  type OpenAiAppConfig = Partial<Configuration> & { model: string; replicationHost: string };
+  type OpenAiAppConfig = Partial<Configuration> & { replicationHost: string };
   const { subscribe, set, update } = writable<OpenAiAppConfig>({
-    model: "gpt-3.5-turbo",
     apiKey: "",
     replicationHost: "",
   });
@@ -57,22 +56,65 @@ export const openAiConfig = (() => {
   };
 })();
 
-export const generateThreadTitle = async ({ threadId }: { threadId: string }) => {
+interface GPTProfile {
+  name: string;
+  model: string;
+  systemMessage: string;
+}
+
+export const activeProfileName = writable("default");
+export const profilesStore = writable<{ [key: string]: GPTProfile }>({
+  default: {
+    name: "default",
+    model: "gpt-3.5-turbo",
+    systemMessage: `
+You are a helpful assistant.
+You will respond to user messages as accurately as possible. 
+If you do not have confidence in your response you will ask the user to clarify.
+You will be concise, unless the user asks for more detail.
+Assume the user has a technical background and understands software programming.
+    `.trim(),
+  },
+});
+
+// @todo Persist
+export const gptProfileStore = (() => {
+  const activeProfileStore = derived([profilesStore, activeProfileName], ([profiles, name]) => {
+    return profiles[name];
+  });
+
+  return {
+    subscribe: activeProfileStore.subscribe,
+    selectProfile: (name: string) => {
+      activeProfileName.set(name);
+    },
+  };
+})();
+
+export const getOpenAi = () => {
   const conf = get(openAiConfig);
   const apiKey = conf.apiKey as string;
-  const openAi = initOpenAi({ apiKey });
+
+  if (!apiKey) {
+    throw new Error("No API key");
+  }
+
+  return initOpenAi({ apiKey });
+};
+
+export const generateThreadTitle = async ({ threadId }: { threadId: string }) => {
+  const openAi = getOpenAi();
   const context = await ChatMessage.findMany({ threadId });
   const messageContext = context.map((x) => ({ content: x.content, role: x.role }));
 
-  // Generate a thread title
-  const res = await openAi.createChatCompletion({
+  const prompt: CreateChatCompletionRequest = {
     model: "gpt-3.5-turbo", // @note Using the cheaper and faster model for title generation
     temperature: 0.2, // Playing around with this value the lower value seems to be more accurate?
     messages: [
       ...messageContext,
       {
         content: `
-Summarize the chat into a short title using 9 words or less on a single line.
+Summarize the chat into a short, concise title using 9 words or less on a single line.
 Do not include any of the chat instructions or prompts in the summary.
 Do not prefix with "title" or "example" etc
 Do not provide a word count or add quotation marks.
@@ -80,7 +122,10 @@ Do not provide a word count or add quotation marks.
         role: "user",
       },
     ],
-  });
+  };
+
+  // Generate a thread title
+  const res = await openAi.createChatCompletion(prompt);
 
   let newTitle = res.data.choices[0].message?.content || "Untitled";
 
@@ -205,22 +250,21 @@ export const currentChatThread = (() => {
 
   const promptGpt = async ({ threadId }: { threadId: string }) => {
     const conf = get(openAiConfig);
-    const apiKey = conf.apiKey as string;
-
-    if (!apiKey) {
-      throw new Error("No API key");
-    }
-
-    const openAi = initOpenAi({ apiKey });
 
     if (get(pendingMessageStore)) {
       throw new Error("Already a message in progres");
     }
 
+    const profile = get(gptProfileStore);
+
+    if (!profile) {
+      throw new Error("No GPT profile found. activeProfile=" + get(activeProfileName));
+    }
+
     pendingMessageStore.set({
       id: nanoid(),
       role: "assistant",
-      model: conf.model,
+      model: profile.model,
       createdAt: new Date(),
       content: "",
       threadId,
@@ -228,10 +272,21 @@ export const currentChatThread = (() => {
 
     const context = await ChatMessage.findMany({ threadId });
 
-    const messageContext = context.map((x) => ({ content: x.content, role: x.role }));
+    let messageContext = context.map((x) => ({ content: x.content, role: x.role }));
+
+    if (profile.systemMessage) {
+      messageContext = [
+        {
+          content: profile.systemMessage,
+          role: "system",
+        },
+        ...messageContext,
+      ];
+    }
+
     const prompt: CreateChatCompletionRequest = {
       messages: messageContext,
-      model: conf.model,
+      model: profile.model,
       // max_tokens: 100, // just for testing
       stream: true,
     };
@@ -241,7 +296,7 @@ export const currentChatThread = (() => {
     await fetchEventSource("https://api.openai.com/v1/chat/completions", {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${conf.apiKey}`,
       },
       method: "POST",
       body: JSON.stringify(prompt),
