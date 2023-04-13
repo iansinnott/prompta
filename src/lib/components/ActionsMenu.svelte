@@ -1,15 +1,29 @@
 <script lang="ts">
-  import { currentChatThread, currentThread, showSettings, threadMenu } from "$lib/stores/stores";
+  import {
+    currentChatThread,
+    currentThread,
+    generateThreadTitle,
+    showSettings,
+    threadMenu,
+  } from "$lib/stores/stores";
   import { onMount } from "svelte";
   import IconSparkle from "./IconSparkle.svelte";
   import IconGear from "./IconGear.svelte";
   import IconHistoryClock from "./IconHistoryClock.svelte";
   import { dev } from "$app/environment";
   import { ChatMessage, _clearDatabase } from "$lib/db";
+  import IconThreadTitle from "./IconThreadTitle.svelte";
   let input: HTMLInputElement;
   let menuOpen = false;
   let filterText = "";
   let actionItems = [
+    {
+      name: "Generate Title...",
+      icon: IconThreadTitle,
+      execute: () => {
+        generateThreadTitle({ threadId: $currentThread.id });
+      },
+    },
     {
       name: "Chat History",
       icon: IconHistoryClock,

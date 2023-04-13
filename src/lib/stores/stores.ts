@@ -23,6 +23,12 @@ import { fetchEventSource } from "@microsoft/fetch-event-source";
 
 export const showSettings = writable(false);
 
+const PENDING_THREAD_TITLE = "New Thread";
+
+const hasThreadTitle = (t: Thread) => {
+  return t.title !== PENDING_THREAD_TITLE;
+};
+
 export const openAiConfig = (() => {
   type OpenAiAppConfig = Partial<Configuration> & { model: string; replicationHost: string };
   const { subscribe, set, update } = writable<OpenAiAppConfig>({
@@ -50,6 +56,49 @@ export const openAiConfig = (() => {
     update: persistentUpdate,
   };
 })();
+
+export const generateThreadTitle = async ({ threadId }: { threadId: string }) => {
+  const conf = get(openAiConfig);
+  const apiKey = conf.apiKey as string;
+  const openAi = initOpenAi({ apiKey });
+  const context = await ChatMessage.findMany({ threadId });
+  const messageContext = context.map((x) => ({ content: x.content, role: x.role }));
+
+  // Generate a thread title
+  const res = await openAi.createChatCompletion({
+    model: "gpt-3.5-turbo", // @note Using the cheaper and faster model for title generation
+    temperature: 0.2, // Playing around with this value the lower value seems to be more accurate?
+    messages: [
+      ...messageContext,
+      {
+        content: `
+Summarize the chat into a short title using 9 words or less on a single line.
+Do not include any of the chat instructions or prompts in the summary.
+Do not prefix with "title" or "example" etc
+Do not provide a word count or add quotation marks.
+          `.trim(),
+        role: "user",
+      },
+    ],
+  });
+
+  let newTitle = res.data.choices[0].message?.content || "Untitled";
+
+  // Trim trailing period, if found
+  if (newTitle.endsWith(".")) {
+    newTitle = newTitle.slice(0, -1);
+  }
+
+  await Thread.update({
+    where: { id: threadId },
+    data: { title: newTitle },
+  });
+
+  currentThread.update((x) => {
+    return { ...x, title: newTitle };
+  });
+  threadList.invalidate();
+};
 
 const NEWTHREAD = "newthread";
 export const sqlite = writable<SQLite3 | null>(null);
@@ -179,8 +228,9 @@ export const currentChatThread = (() => {
 
     const context = await ChatMessage.findMany({ threadId });
 
+    const messageContext = context.map((x) => ({ content: x.content, role: x.role }));
     const prompt: CreateChatCompletionRequest = {
-      messages: context.map((x) => ({ content: x.content, role: x.role })),
+      messages: messageContext,
       model: conf.model,
       // max_tokens: 100, // just for testing
       stream: true,
@@ -229,39 +279,20 @@ export const currentChatThread = (() => {
       },
     });
 
-    // const res = await openAi.createChatCompletion(prompt, { responseType: "stream" });
-    // await new Promise((resolve, reject) => {
-    //   res.data.on("data", (data) => {
-    //     const lines = data
-    //       .toString()
-    //       .split("\n")
-    //       .filter((line) => line.trim() !== "");
-    //     for (const line of lines) {
-    //       const message = line.replace(/^data: /, "");
-    //       if (message === "[DONE]") {
-    //         resolve(null);
-    //         return; // Stream finished
-    //       }
-    //       try {
-    //         const parsed = JSON.parse(message);
-    //         console.log(parsed.choices[0].text);
-    //       } catch (error) {
-    //         console.error("Could not JSON parse stream message", message, error);
-    //         reject(error);
-    //       }
-    //     }
-    //   });
-    // });
+    const botMessage = get(pendingMessageStore);
 
-    const pendingMessage = get(pendingMessageStore);
-
-    if (!pendingMessage) throw new Error("No pending message found when one was expected.");
+    if (!botMessage) throw new Error("No pending message found when one was expected.");
 
     // Store it fully in the db
-    await ChatMessage.create(pendingMessage);
+    await ChatMessage.create(botMessage);
 
     // Clear the pending message. Do this afterwards because it invalidates the chat message list
     pendingMessageStore.set(null);
+
+    if (!hasThreadTitle(get(currentThread))) {
+      console.log("Generating thread title...");
+      await generateThreadTitle({ threadId: botMessage.threadId });
+    }
   };
 
   return {
@@ -285,7 +316,7 @@ export const currentChatThread = (() => {
       const [msg] = args;
 
       if (isNewThread({ id: msg.threadId })) {
-        const newThread = await Thread.create({ title: msg.content.trim().slice(0, 80) });
+        const newThread = await Thread.create({ title: PENDING_THREAD_TITLE });
         msg.threadId = newThread.id;
         currentThread.set(newThread);
         threadList.invalidate();

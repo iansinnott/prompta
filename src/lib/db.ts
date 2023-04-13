@@ -205,6 +205,15 @@ export const Thread = {
     return this.findUnique({ where: { id: cid } }) as Promise<Thread>;
   },
 
+  async update(x: { where: { id: string }; data: { title: string } }) {
+    if (!x.where.id) {
+      throw new Error("Must provide id");
+    }
+
+    await _db.exec(`update "thread" set title=? where id=?`, [x.data.title, x.where.id]);
+    return this.findUnique({ where: x.where }) as Promise<Thread>;
+  },
+
   async _removeAll() {
     if (!dev) {
       console.warn(
