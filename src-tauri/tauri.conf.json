@@ -7,8 +7,8 @@
     "distDir": "../build"
   },
   "package": {
-    "productName": "prompta",
-    "version": "0.1.0"
+    "productName": "Prompta",
+    "version": "0.2.0"
   },
   "tauri": {
     "allowlist": {
