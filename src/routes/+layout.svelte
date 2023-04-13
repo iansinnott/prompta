@@ -1,12 +1,10 @@
 <script lang="ts">
   import "../app.postcss";
   import { db, openAiConfig, showSettings } from "../lib/stores/stores";
-  import { Configuration, OpenAIApi } from "openai";
   import { onMount } from "svelte";
-  import { Preferences, Thread, initDb } from "$lib/db";
+  import { initDb } from "$lib/db";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
-  import { initOpenAi } from "$lib/llm/openai";
-  import { dev } from "$app/environment";
+  import { openExternal } from "$lib/native/gui";
 
   let appReady = false;
   onMount(async () => {
@@ -18,27 +16,36 @@
     // @note The whole app assumes the db exists and is ready. Do not render before that
     await initDb();
 
-    const apiKey = $openAiConfig.apiKey as string | undefined;
-
     clearTimeout(_timeout);
 
     if (!$openAiConfig.apiKey) {
       $showSettings = true;
       console.warn(`No API key found. Please enter one in the settings.`);
-    } else {
-      const openAi = initOpenAi({ apiKey });
-
-      if (dev) {
-        (window as any).openAi = openAi;
-      }
     }
 
     appReady = true;
     console.debug(`App initialized.`);
   });
+
+  function isExternalUrl(href: string) {
+    const url = new URL(href);
+    return url.origin !== window.location.origin;
+  }
+
+  function handleExternalUrls(e: MouseEvent) {
+    // @ts-ignore
+    const isATag = e.target && e.target.tagName === "A";
+    // @ts-ignore
+    const href = e.target.href;
+    if (isATag && isExternalUrl(href)) {
+      e.preventDefault();
+      openExternal(href);
+    }
+  }
 </script>
 
 <svelte:window
+  on:click={handleExternalUrls}
   on:beforeunload={() => {
     if ($db) {
       console.debug("Closing db connection");

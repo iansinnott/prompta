@@ -9,7 +9,6 @@
   import IconVerticalDots from "./IconVerticalDots.svelte";
   let _class: string = "";
   export { _class as class };
-
   export let item: ChatMessage;
   let viewRaw = false;
 

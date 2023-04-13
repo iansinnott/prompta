@@ -32,6 +32,7 @@
   "type": "module",
   "dependencies": {
     "@microsoft/fetch-event-source": "2.0.1",
+    "@tauri-apps/api": "1.2.0",
     "@vlcn.io/crsqlite-wasm": "0.9.1",
     "classnames": "2.3.2",
     "nanoid": "4.0.2",
