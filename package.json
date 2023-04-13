@@ -3,8 +3,10 @@
   "version": "0.3.9",
   "private": true,
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "ui:dev": "vite dev",
+    "ui:build": "vite build",
     "release": "yarn version && ./scripts/release.sh",
     "preview": "vite preview",
     "test": "playwright test",
