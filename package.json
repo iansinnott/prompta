@@ -1,10 +1,11 @@
 {
   "name": "prompta",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "postversion": "./scripts/release.sh",
     "preview": "vite preview",
     "test": "playwright test",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
