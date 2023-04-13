@@ -2,6 +2,7 @@
 
 main() {
   echo "Releasing new version..."
+  echo
   echo "    PWD: $PWD"
 
   local version=$(jq -r '.version' package.json)
@@ -14,7 +15,7 @@ main() {
   git commit --amend --no-edit > /dev/null
 
   # upsert the tag. if running yarn version the tag will have been created already
-  git tag -d "v$version" || true > /dev/null
+  git tag -d "v$version" > /dev/null 2>&1 || true 
   git tag -a "v$version" -m "v$version" > /dev/null
   
   echo "    Tag: v$version"
