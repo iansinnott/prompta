@@ -23,9 +23,12 @@
 
 <svelte:window
   on:keydown={(e) => {
+    if (!$threadMenu.open) return;
+
+    // @todo its somewhat messy having this here, considering most keyboard shortcuts are in the actions menu
+
     // use the arrow keys to move index up and down
     if (e.key === "ArrowDown") {
-      console.log("JE");
       index = Math.min(index + 1, filteredThreads.length - 1);
     } else if (e.key === "ArrowUp") {
       index = Math.max(index - 1, 0);

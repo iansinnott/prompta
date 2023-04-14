@@ -188,7 +188,7 @@
   <div class="fixed inset-0 bg-transparent" on:click={toggleMenu} />
 {/if}
 
-<div class="menu-container">
+<div class="relative">
   <button on:click={toggleMenu} class:active={menuOpen} class="font-bold px-4 py-2">Actions</button>
   {#if menuOpen}
     <div
@@ -225,9 +225,6 @@
 </div>
 
 <style>
-  .menu-container {
-    position: relative;
-  }
   .active {
     @apply bg-white/10;
   }
