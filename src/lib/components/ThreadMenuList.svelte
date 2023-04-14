@@ -16,7 +16,12 @@
   // When the thread menu is opened...
   $: if ($threadMenu.open) {
     // Update the index to be the active thread
-    index = filteredThreads.findIndex((t) => t.id === $currentThread.id);
+    const i = filteredThreads.findIndex((t) => t.id === $currentThread.id);
+    if (i === -1 && filteredThreads.length > 0) {
+      index = 0;
+    } else {
+      index = i;
+    }
 
     // Automatically focus the input when opened
     tick().then(() => {
