@@ -13,11 +13,6 @@ jobs:
       fail-fast: false
       matrix:
         platform: [macos-latest]
-        include:
-          - target: x86_64-apple-darwin
-            name: macos-latest
-          - target: aarch64-apple-darwin
-            name: macos-latest
 
     runs-on: ${{ matrix.platform }}
 
@@ -27,8 +22,6 @@ jobs:
 
       - name: Rust setup
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -55,4 +48,3 @@ jobs:
           releaseBody: "See the assets to download this version and install."
           releaseDraft: true
           prerelease: false
-          args: -- --target "${{ matrix.target }}" -v
