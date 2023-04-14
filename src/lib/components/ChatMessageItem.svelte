@@ -2,14 +2,11 @@
   import type { ChatMessage } from "$lib/db";
   import classNames from "classnames";
   import IconUserAvatar from "./IconUserAvatar.svelte";
-  import { onMount } from "svelte";
-  import IconBrainAiHybrid from "./IconBrainAiHybrid.svelte";
   import SvelteMarkdown from "svelte-markdown";
   import IconBrain from "./IconBrain.svelte";
   import IconVerticalDots from "./IconVerticalDots.svelte";
   import CodeBlock from "./CodeBlock.svelte";
   import { inProgressMessageId } from "$lib/stores/stores";
-  import BlinkingCursor from "./BlinkingCursor.svelte";
   let _class: string = "";
   export { _class as class };
   export let item: ChatMessage;
