@@ -261,7 +261,7 @@ export const threadList = invalidatable<Thread[]>([], (set) => {
 
 const pendingMessageStore = writable<ChatMessage | null>(null);
 
-export const isAssistantWriting = derived(pendingMessageStore, (x) => !!x);
+export const inProgressMessageId = derived(pendingMessageStore, (x) => x?.id);
 
 export const currentChatThread = (() => {
   const invalidationToken = writable(Date.now());

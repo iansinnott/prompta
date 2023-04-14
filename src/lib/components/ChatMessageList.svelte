@@ -5,16 +5,39 @@
   import ChatMessageItem from "./ChatMessageItem.svelte";
   import IconBrain from "./IconBrain.svelte";
   import IconBrainAiHybrid from "./IconBrainAiHybrid.svelte";
+  import { onMount, afterUpdate } from "svelte";
+
   let _class: string = "";
   export { _class as class };
 
+  let listBottom: HTMLDivElement;
+  let isAtListBottom = true;
+
   $: messageList = $currentChatThread?.messages || [];
+
+  const scrollToBottom = () => {
+    if (!isAtListBottom) {
+      console.log("Not scrolling to bottom because user is not at the bottom");
+      return;
+    }
+    listBottom.scrollIntoView();
+  };
+
+  onMount(() => {
+    scrollToBottom();
+  });
+
+  afterUpdate(() => {
+    scrollToBottom();
+  });
 </script>
 
 <div class={classNames("relative flex flex-col space-y-4 pt-2", _class)}>
   {#each messageList as x (x.id)}
     <ChatMessageItem item={x} />
   {/each}
+
+  <div bind:this={listBottom} />
 
   <!-- Give the user some examples to get them started -->
   {#if isNewThread($currentThread)}

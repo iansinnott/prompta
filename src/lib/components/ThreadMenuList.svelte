@@ -31,6 +31,14 @@
 
   $: threadGroups = Object.entries(groupBy(filteredThreads, (x) => humanizeDate(x.createdAt)));
 
+  $: if (index) {
+    // scroll the list to the current index
+    const el = document.querySelector(`[data-index="${index}"]`);
+    if (el) {
+      el.scrollIntoView({ block: "nearest", inline: "nearest" });
+    }
+  }
+
   // When the thread menu is opened...
   $: if ($threadMenu.open) {
     // Update the index to be the active thread
@@ -75,6 +83,7 @@
     } else if (e.key === "ArrowUp") {
       index = Math.max(index - 1, -1); // -1 is for the new chat button
     } else if (e.key === "Enter") {
+      console.log("DAAF", $threadMenu.open);
       // select the current index
       if (index === -1) {
         openNewThread();
@@ -113,6 +122,7 @@
   <!-- Scroll area -->
   <div class="overflow-auto max-h-[400px]">
     <button
+      data-index="-1"
       on:mouseenter={(e) => (index = -1)}
       on:click={openNewThread}
       class={classNames("p-2 mb-1 rounded w-full text-left truncate flex", {
@@ -127,14 +137,16 @@
     {#if filteredThreads.length > 0}
       <div class="Separator h-px bg-zinc-700 my-2" />
     {/if}
-    {#each threadGroups as [dateString, threads] (dateString)}
+    {#each threadGroups as [dateString, threads], i (dateString)}
       <div class="text-zinc-500 text- mb-1 ml-2 pt-2 font-bold">{dateString}</div>
-      {#each threads as t, i (t.id)}
+      {#each threads as t, j (t.id)}
+        {@const serialIndex = i ? threadGroups.slice(0, i).flat().length + j : j}
         <button
+          data-index={serialIndex}
           on:click={openThread}
-          on:mouseenter={(e) => (index = i)}
+          on:mouseenter={(e) => (index = serialIndex)}
           class={classNames("p-2 mb-1 rounded block w-full text-left truncate", {
-            "bg-white/10": index === i,
+            "bg-white/10": index === serialIndex,
           })}
         >
           {t.title}

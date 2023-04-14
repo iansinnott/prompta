@@ -8,7 +8,7 @@
   import IconBrain from "./IconBrain.svelte";
   import IconVerticalDots from "./IconVerticalDots.svelte";
   import CodeBlock from "./CodeBlock.svelte";
-  import { isAssistantWriting } from "$lib/stores/stores";
+  import { inProgressMessageId } from "$lib/stores/stores";
   let _class: string = "";
   export { _class as class };
   export let item: ChatMessage;
@@ -39,7 +39,7 @@
     {/if}
   </div>
   <div
-    class={classNames("Content prose prose-invert", {
+    class={classNames("Content prose max-w-4xl prose-invert", {
       "opacity-60": item.role === "user",
     })}
   >
@@ -56,7 +56,7 @@
       {:else}
         <SvelteMarkdown
           source={item.content}
-          renderers={$isAssistantWriting ? {} : { code: CodeBlock }}
+          renderers={$inProgressMessageId === item.id ? {} : { code: CodeBlock }}
         />
       {/if}
       {#if item.cancelled}
