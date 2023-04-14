@@ -61,7 +61,8 @@
         "resizable": true,
         "title": "Prompta",
         "width": 880,
-        "minWidth": 430,
+        "minWidth": 500,
+        "maxWidth": 1080,
         "transparent": true,
         "decorations": false
       }

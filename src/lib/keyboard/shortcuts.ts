@@ -31,3 +31,21 @@ export function getShortcutFromEvent(event: KeyboardEvent): string {
     ? `${pressedModifiers}+${event.key.toLowerCase()}`
     : event.key.toLowerCase();
 }
+
+export function mapKeysToMacSymbols(shortcut: string) {
+  const keyMap: Record<string, string> = {
+    ctrl: "⌃",
+    alt: "⌥",
+    shift: "⇧",
+    cmd: "⌘",
+    meta: "⌘",
+    // "enter": "⌅",
+    return: "↩",
+    enter: "↩",
+  };
+
+  return shortcut
+    .toLowerCase()
+    .split("+")
+    .map((key) => keyMap[key.trim()] ?? key.trim().toUpperCase());
+}

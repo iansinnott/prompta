@@ -13,12 +13,31 @@
     x.title.toLowerCase().includes(searchText.toLowerCase())
   );
 
-  // Automatically focus the input when opened
+  // When the thread menu is opened...
   $: if ($threadMenu.open) {
+    // Update the index to be the active thread
+    index = filteredThreads.findIndex((t) => t.id === $currentThread.id);
+
+    // Automatically focus the input when opened
     tick().then(() => {
       input.focus();
     });
   }
+
+  const openNewThread = () => {
+    currentThread.reset();
+    $threadMenu.open = false;
+    searchText = "";
+  };
+
+  const openThread = () => {
+    const t = filteredThreads[index];
+    if (t) {
+      $currentThread = t;
+      $threadMenu.open = false;
+      searchText = "";
+    }
+  };
 </script>
 
 <svelte:window
@@ -31,12 +50,13 @@
     if (e.key === "ArrowDown") {
       index = Math.min(index + 1, filteredThreads.length - 1);
     } else if (e.key === "ArrowUp") {
-      index = Math.max(index - 1, 0);
+      index = Math.max(index - 1, -1); // -1 is for the new chat button
     } else if (e.key === "Enter") {
       // select the current index
-      if (filteredThreads.length > 0) {
-        $currentThread = filteredThreads[index];
-        $threadMenu.open = false;
+      if (index === -1) {
+        openNewThread();
+      } else if (filteredThreads.length > 0) {
+        openThread();
       }
     }
   }}
@@ -53,7 +73,7 @@
 <div
   class={classNames(
     "z-20",
-    "absolute top-[calc(100%+10px)] w-[70vw] rounded bg-zinc-800 border border-zinc-700 p-2",
+    "absolute top-[calc(100%+10px)] w-dropdown rounded bg-zinc-800 border border-zinc-700 p-2",
     _class
   )}
   class:hidden={!$threadMenu.open}
@@ -67,11 +87,11 @@
   />
   <div class="Separator h-px bg-zinc-700 my-2" />
   <button
-    on:click={(e) => {
-      currentThread.reset();
-      $threadMenu.open = false;
-    }}
-    class="p-2 mb-1 hover:bg-white/10 rounded w-full text-left truncate flex"
+    on:mouseenter={(e) => (index = -1)}
+    on:click={openNewThread}
+    class={classNames("p-2 mb-1 rounded w-full text-left truncate flex", {
+      "bg-white/10": index === -1,
+    })}
   >
     <span class="relative top-[2px] left-px mr-2">
       <IconSparkle />
@@ -82,17 +102,20 @@
     <div class="Separator h-px bg-zinc-700 my-2" />
   {/if}
   {#each filteredThreads as t, i (t.id)}
-    {@const active = t.id === $currentThread.id || index === i}
     <button
-      on:click={(e) => {
-        $currentThread = t;
-        $threadMenu.open = false;
-      }}
-      class={classNames("p-2 mb-1 hover:bg-white/10 rounded block w-full text-left truncate", {
-        "bg-white/10": active,
+      on:click={openThread}
+      on:mouseenter={(e) => (index = i)}
+      class={classNames("p-2 mb-1 rounded block w-full text-left truncate", {
+        "bg-white/10": index === i,
       })}
     >
       {t.title}
     </button>
   {/each}
 </div>
+
+<style>
+  .active {
+    @apply hover:bg-white/10;
+  }
+</style>

@@ -15,7 +15,11 @@
   import IconThreadTitle from "./IconThreadTitle.svelte";
   import IconRefresh from "./IconRefresh.svelte";
   import IconRefreshOutline from "./IconRefreshOutline.svelte";
-  import { createShortcutPredicate, getShortcutFromEvent } from "$lib/keyboard/shortcuts";
+  import {
+    createShortcutPredicate,
+    getShortcutFromEvent,
+    mapKeysToMacSymbols,
+  } from "$lib/keyboard/shortcuts";
   let input: HTMLInputElement;
   let menuOpen = false;
   let filterText = "";
@@ -38,9 +42,10 @@
     {
       name: "Chat History",
       icon: IconHistoryClock,
-      execute: () => {
-        $threadMenu.open = true;
+      keyboard: {
+        shortcut: "meta+p",
       },
+      execute: () => ($threadMenu.open = !$threadMenu.open),
     },
     {
       name: "New Chat",
@@ -98,12 +103,6 @@
         shortcut: "meta+k",
       },
       execute: toggleMenu,
-    },
-    {
-      keyboard: {
-        shortcut: "meta+p",
-      },
-      execute: () => ($threadMenu.open = !$threadMenu.open),
     },
     {
       keyboard: {
@@ -192,7 +191,7 @@
   <button on:click={toggleMenu} class:active={menuOpen} class="font-bold px-4 py-2">Actions</button>
   {#if menuOpen}
     <div
-      class="absolute bottom-[calc(100%+10px)] right-0 min-w-[300px] shadow-lg border border-zinc-700 bg-zinc-800 rounded-lg pt-2 px-2"
+      class="absolute bottom-[calc(100%+10px)] right-0 min-w-[425px] shadow-lg border border-zinc-700 bg-zinc-800 rounded-lg pt-2 px-2"
     >
       {#each filteredActions as action, i (action.name)}
         <button
@@ -207,7 +206,20 @@
               <svelte:component this={action.icon} />
             </span>
           {/if}
-          {action.name}
+          <span class="flex-1 flex">
+            {action.name}
+          </span>
+          {#if action.keyboard?.shortcut}
+            <span class="flex items-center space-x-1">
+              {#each mapKeysToMacSymbols(action.keyboard.shortcut) as key}
+                <kbd
+                  style="font-family:system-ui, -apple-system;"
+                  class="bg-white/20 inline-flex items-center justify-center rounded font-mono w-6 h-6 text-sm"
+                  >{key}</kbd
+                >
+              {/each}
+            </span>
+          {/if}
         </button>
       {:else}
         <div class="text-zinc-500 text-sm px-2 py-2">No actions found</div>
