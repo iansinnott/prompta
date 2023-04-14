@@ -13,6 +13,12 @@ jobs:
       fail-fast: false
       matrix:
         platform: [macos-latest]
+        include:
+          - target: x86_64-apple-darwin
+            name: macos-latest
+          - target: aarch64-apple-darwin
+            name: macos-latest
+
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -47,3 +53,4 @@ jobs:
           releaseBody: "See the assets to download this version and install."
           releaseDraft: true
           prerelease: false
+          args: -- --target "${{ matrix.target }}" -v
