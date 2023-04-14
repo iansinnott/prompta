@@ -52,7 +52,7 @@
 <div class="app-container">
   <header
     data-tauri-drag-region
-    class="app-header p-4 flex items-center justify-between border-b border-zinc-700 w-full"
+    class="app-header p-4 pr-3 flex items-center justify-between border-b border-zinc-700 w-full"
   >
     <div class="Left flex items-center">
       <button

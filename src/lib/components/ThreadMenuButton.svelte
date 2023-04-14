@@ -8,7 +8,10 @@
 </script>
 
 <button
-  class={classNames("border border-zinc-700 rounded-lg p-2 flex items-center w-dropdown", _class)}
+  class={classNames(
+    "border border-zinc-700 rounded-lg py-2 pl-4 pr-3 flex items-center w-dropdown",
+    _class
+  )}
   on:click={() => {
     $threadMenu.open = !$threadMenu.open;
   }}

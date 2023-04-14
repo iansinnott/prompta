@@ -3,15 +3,33 @@
   import classNames from "classnames";
   import { onMount, tick } from "svelte";
   import IconSparkle from "./IconSparkle.svelte";
+  import { groupBy } from "$lib/utils";
   let _class: string = "";
   export { _class as class };
   let input: HTMLInputElement;
   let searchText = "";
   let index = 0;
 
+  const humanizeDate = (date: Date) => {
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isToday = date.toDateString() === today.toDateString();
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+    if (isToday) {
+      return "Today";
+    } else if (isYesterday) {
+      return "Yesterday";
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+
   $: filteredThreads = $threadList.filter((x) =>
     x.title.toLowerCase().includes(searchText.toLowerCase())
   );
+
+  $: threadGroups = Object.entries(groupBy(filteredThreads, (x) => humanizeDate(x.createdAt)));
 
   // When the thread menu is opened...
   $: if ($threadMenu.open) {
@@ -91,32 +109,39 @@
     class="FilterInput"
   />
   <div class="Separator h-px bg-zinc-700 my-2" />
-  <button
-    on:mouseenter={(e) => (index = -1)}
-    on:click={openNewThread}
-    class={classNames("p-2 mb-1 rounded w-full text-left truncate flex", {
-      "bg-white/10": index === -1,
-    })}
-  >
-    <span class="relative top-[2px] left-px mr-2">
-      <IconSparkle />
-    </span>
-    <span> New Chat </span>
-  </button>
-  {#if filteredThreads.length > 0}
-    <div class="Separator h-px bg-zinc-700 my-2" />
-  {/if}
-  {#each filteredThreads as t, i (t.id)}
+
+  <!-- Scroll area -->
+  <div class="overflow-auto max-h-[400px]">
     <button
-      on:click={openThread}
-      on:mouseenter={(e) => (index = i)}
-      class={classNames("p-2 mb-1 rounded block w-full text-left truncate", {
-        "bg-white/10": index === i,
+      on:mouseenter={(e) => (index = -1)}
+      on:click={openNewThread}
+      class={classNames("p-2 mb-1 rounded w-full text-left truncate flex", {
+        "bg-white/10": index === -1,
       })}
     >
-      {t.title}
+      <span class="relative top-[2px] left-px mr-2">
+        <IconSparkle />
+      </span>
+      <span> New Chat </span>
     </button>
-  {/each}
+    {#if filteredThreads.length > 0}
+      <div class="Separator h-px bg-zinc-700 my-2" />
+    {/if}
+    {#each threadGroups as [dateString, threads] (dateString)}
+      <div class="text-zinc-500 text- mb-1 ml-2 pt-2 font-bold">{dateString}</div>
+      {#each threads as t, i (t.id)}
+        <button
+          on:click={openThread}
+          on:mouseenter={(e) => (index = i)}
+          class={classNames("p-2 mb-1 rounded block w-full text-left truncate", {
+            "bg-white/10": index === i,
+          })}
+        >
+          {t.title}
+        </button>
+      {/each}
+    {/each}
+  </div>
 </div>
 
 <style>
