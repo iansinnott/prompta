@@ -15,9 +15,13 @@
   import IconThreadTitle from "./IconThreadTitle.svelte";
   import IconRefresh from "./IconRefresh.svelte";
   import IconRefreshOutline from "./IconRefreshOutline.svelte";
+  import { createShortcutPredicate, getShortcutFromEvent } from "$lib/keyboard/shortcuts";
   let input: HTMLInputElement;
   let menuOpen = false;
   let filterText = "";
+
+  const isMenuOpen = () => menuOpen;
+
   let actionItems = [
     {
       name: "Generate Title...",
@@ -41,6 +45,9 @@
     {
       name: "New Chat",
       icon: IconSparkle,
+      keyboard: {
+        shortcut: "meta+n", // @note Only works in the Tauri app. In a browser the browser takes precedence
+      },
       execute: () => {
         currentThread.reset();
       },
@@ -76,40 +83,90 @@
   }
 
   function executeCurrentAction() {
-    filteredActions[index].execute();
-    toggleMenu();
-    index = 0;
-    filterText = "";
+    const action = filteredActions[index];
+    if (action) {
+      action.execute();
+      toggleMenu();
+      index = 0;
+      filterText = "";
+    }
   }
+
+  const additionalActions = [
+    {
+      keyboard: {
+        shortcut: "meta+k",
+      },
+      execute: toggleMenu,
+    },
+    {
+      keyboard: {
+        shortcut: "meta+p",
+      },
+      execute: () => ($threadMenu.open = !$threadMenu.open),
+    },
+    {
+      keyboard: {
+        shortcut: "enter",
+        when: isMenuOpen,
+      },
+      execute: executeCurrentAction,
+    },
+    {
+      keyboard: {
+        shortcut: "escape",
+        when: () => menuOpen || $threadMenu.open,
+      },
+      execute: () => {
+        if ($threadMenu.open) {
+          $threadMenu.open = false;
+        }
+
+        if (menuOpen) {
+          toggleMenu();
+        }
+      },
+    },
+    {
+      keyboard: {
+        shortcut: "arrowup",
+        when: isMenuOpen,
+      },
+      execute: () => {
+        index = Math.max(0, index - 1);
+      },
+    },
+    {
+      keyboard: {
+        shortcut: "arrowdown",
+        when: isMenuOpen,
+      },
+      execute: () => {
+        index = Math.min(actionItems.length - 1, index + 1);
+      },
+    },
+  ];
+
+  const actions = [...actionItems.filter((x) => x.keyboard?.shortcut), ...additionalActions];
+  const knownShortcuts = new Set(actions.map((item) => item.keyboard?.shortcut as string));
+  const handlers = actions.map((item) => {
+    const shortcutPred = createShortcutPredicate(item.keyboard?.shortcut as string);
+    return {
+      // @ts-ignore
+      predicate: (e: KeyboardEvent) => shortcutPred(e) && (item.keyboard?.when ?? (() => true))(),
+      execute: item.execute,
+    };
+  });
 
   // Keybindings
   // @todo These shuld maybe live somewhere else?
   function globalKeyPress(e: KeyboardEvent) {
-    if (e.key.toLowerCase() === "k" && e.metaKey && !e.shiftKey && !e.altKey && !e.ctrlKey) {
+    const shortcut = getShortcutFromEvent(e);
+    if (knownShortcuts.has(shortcut)) {
       e.preventDefault();
-      toggleMenu();
-    }
-    if (e.key === "ArrowUp" && !e.metaKey && !e.shiftKey && !e.altKey && !e.ctrlKey) {
-      e.preventDefault();
-      index = Math.max(0, index - 1);
-    }
-    if (e.key === "ArrowDown" && !e.metaKey && !e.shiftKey && !e.altKey && !e.ctrlKey) {
-      e.preventDefault();
-      index = Math.min(actionItems.length - 1, index + 1);
-    }
-
-    if (e.key === "Enter" && !e.metaKey && !e.shiftKey && !e.altKey && !e.ctrlKey && menuOpen) {
-      e.preventDefault();
-      executeCurrentAction();
-    }
-
-    if (e.key === "Escape") {
-      if ($threadMenu.open) {
-        $threadMenu.open = false;
-      }
-
-      if (menuOpen) {
-        toggleMenu();
+      const handler = handlers.find((handler) => handler.predicate(e));
+      if (handler) {
+        handler.execute();
       }
     }
   }
@@ -127,6 +184,7 @@
 </script>
 
 {#if menuOpen}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div class="fixed inset-0 bg-transparent" on:click={toggleMenu} />
 {/if}
 
@@ -151,6 +209,8 @@
           {/if}
           {action.name}
         </button>
+      {:else}
+        <div class="text-zinc-500 text-sm px-2 py-2">No actions found</div>
       {/each}
       <input
         class="FilterInput py-3 mt-2 border-t border-zinc-600 px-2"
