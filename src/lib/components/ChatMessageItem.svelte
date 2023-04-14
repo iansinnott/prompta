@@ -86,7 +86,7 @@
   /* @note Global is important, otherwise this does not work */
   /* @note blockquote is an odd one, but it's because the blockquote has a p tag inside it */
   :global .has-cursor > *:last-child:not(ul):not(ol):not(blockquote)::after,
-  :global .has-cursor > *:last-child > :last-child::after {
+  :global .has-cursor > *:not(p):last-child > :last-child::after {
     content: "";
     display: inline-block;
     background-color: #18d4f1;
