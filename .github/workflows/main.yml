@@ -14,8 +14,10 @@ jobs:
       matrix:
         platform: [macos-latest]
         include:
-          - targets: x86_64-apple-darwin,aarch64-apple-darwin
-            platform: macos-latest
+          - target: x86_64-apple-darwin
+            name: macos-latest
+          - target: aarch64-apple-darwin
+            name: macos-latest
 
     runs-on: ${{ matrix.platform }}
 
@@ -26,7 +28,7 @@ jobs:
       - name: Rust setup
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.targets }}
+          targets: ${{ matrix.target }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
