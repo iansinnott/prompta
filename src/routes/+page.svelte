@@ -68,7 +68,7 @@
         />
       </svg>
     </button>
-    <div class="flex-1 flex justify-end relative">
+    <div class="flex justify-end relative">
       <ThreadMenuButton />
       <ThreadMenuList />
     </div>
