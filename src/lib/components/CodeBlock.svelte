@@ -6,6 +6,7 @@
   import "prismjs/plugins/autoloader/prism-autoloader";
   import "prismjs/plugins/line-numbers/prism-line-numbers";
   import "prismjs/plugins/line-numbers/prism-line-numbers.css";
+  import "prism-svelte";
   import prismPath from "prismjs/components/?url";
 
   // Seems like there woudl be a more direct way to do this...

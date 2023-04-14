@@ -9,10 +9,13 @@
   import IconVerticalDots from "./IconVerticalDots.svelte";
   import CodeBlock from "./CodeBlock.svelte";
   import { inProgressMessageId } from "$lib/stores/stores";
+  import BlinkingCursor from "./BlinkingCursor.svelte";
   let _class: string = "";
   export { _class as class };
   export let item: ChatMessage;
   let viewRaw = false;
+
+  $: inProgress = $inProgressMessageId === item.id;
 
   /// For checking perf on these list items
   // onMount(() => {
@@ -41,6 +44,8 @@
   <div
     class={classNames("Content prose max-w-4xl prose-invert", {
       "opacity-60": item.role === "user",
+      "has-cursor": $inProgressMessageId === item.id,
+      // "has-cursor": true, // For debugging
     })}
   >
     {#if item.role === "user"}
@@ -54,10 +59,7 @@
       {#if viewRaw}
         <div class="whitespace-pre-wrap">{item.content}</div>
       {:else}
-        <SvelteMarkdown
-          source={item.content}
-          renderers={$inProgressMessageId === item.id ? {} : { code: CodeBlock }}
-        />
+        <SvelteMarkdown source={item.content} renderers={inProgress ? {} : { code: CodeBlock }} />
       {/if}
       {#if item.cancelled}
         <div class="text-zinc-400 text-xs -mt-2">Cancelled</div>
@@ -77,5 +79,38 @@
   }
   .Avatar {
     grid-area: profile;
+  }
+  .has-cursor {
+    @apply relative;
+  }
+  .has-cursor .blinking-cursor {
+    @apply scale-y-75;
+  }
+  /* @note Global is important, otherwise this does not work */
+  /* @note blockquote is an odd one, but it's because the blockquote has a p tag inside it */
+  :global .has-cursor > *:last-child:not(ul):not(ol):not(blockquote)::after,
+  :global .has-cursor > *:last-child > :last-child::after {
+    content: "";
+    display: inline-block;
+    background-color: #18d4f1;
+    width: 3px;
+    border-radius: 3px;
+    height: 1em;
+    transform: scaleY(1.2);
+    transition: opacity 0.3s;
+    /* box-shadow: 0 0 10px #18d4f1, 0 0 20px #18d4f1, 0 0 30px #18d4f1, 0 0 40px #18d4f1; */
+    box-shadow: 0 0 8px #18d4f1, 0 0 20px #18d4f1;
+    animation: blinking 1.1s infinite;
+  }
+  @keyframes blinking {
+    20% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
+    80% {
+      opacity: 1;
+    }
   }
 </style>
