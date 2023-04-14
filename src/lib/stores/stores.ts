@@ -266,6 +266,7 @@ export const inProgressMessageId = derived(pendingMessageStore, (x) => x?.id);
 export const currentChatThread = (() => {
   const invalidationToken = writable(Date.now());
   let lastThreadId: string | undefined = undefined;
+  let messageCache: any;
 
   const { subscribe } = derived<
     [typeof currentThread, typeof pendingMessageStore, typeof invalidationToken],
@@ -280,11 +281,19 @@ export const currentChatThread = (() => {
     if (t.id !== lastThreadId) {
       set({ status: "loading", messages: [] });
     }
-
     lastThreadId = t.id;
+
+    // @todo This caused issues with user message not showing up right away
+    // if messages are cached and there's a pending chat, then we're in the
+    // middle of completion. do not re-fetch messages yet.
+    // if (messageCache && pending) {
+    //   set({ messages: [...messageCache, pending], status: "loading" });
+    //   return;
+    // }
 
     ChatMessage.findMany({ threadId: t.id })
       .then((xs) => {
+        messageCache = xs;
         if (pending) {
           set({ messages: [...xs, pending], status: "loading" });
         } else {
