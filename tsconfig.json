@@ -8,6 +8,7 @@
     "strictNullChecks": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
+    "noImplicitAny": false,
     "sourceMap": true,
     "strict": true
   }

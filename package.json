@@ -20,6 +20,7 @@
     "@sveltejs/kit": "^1.5.0",
     "@tailwindcss/typography": "0.5.9",
     "@tauri-apps/cli": "1.2.3",
+    "@types/prismjs": "1.26.0",
     "autoprefixer": "~10.4.7",
     "postcss": "~8.4.14",
     "postcss-load-config": "~4.0.1",
@@ -40,6 +41,7 @@
     "classnames": "2.3.2",
     "nanoid": "4.0.2",
     "openai": "3.2.1",
+    "prismjs": "1.29.0",
     "svelte-markdown": "0.2.3"
   }
 }

@@ -96,6 +96,10 @@ export const openAiConfig = (() => {
     subscribe,
     set: persistentSet,
     update: persistentUpdate,
+    init: async () => {
+      const config = await Preferences.get("openai-config");
+      set(config);
+    },
   };
 })();
 
@@ -255,13 +259,13 @@ export const threadList = invalidatable<Thread[]>([], (set) => {
   Thread.findMany().then(set);
 });
 
-(window as any).threadList = threadList;
+const pendingMessageStore = writable<ChatMessage | null>(null);
+
+export const isAssistantWriting = derived(pendingMessageStore, (x) => !!x);
 
 export const currentChatThread = (() => {
   const invalidationToken = writable(Date.now());
   let lastThreadId: string | undefined = undefined;
-
-  const pendingMessageStore = writable<ChatMessage | null>(null);
 
   const { subscribe } = derived<
     [typeof currentThread, typeof pendingMessageStore, typeof invalidationToken],

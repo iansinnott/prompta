@@ -40,12 +40,11 @@ export const initDb = async () => {
     }
   }
 
-  await Promise.all([profilesStore.init()]);
-
-  const conf = await Preferences.get("openai-config");
-  if (conf) {
-    openAiConfig.set(conf);
-  }
+  // prettier-ignore
+  await Promise.all([
+    profilesStore.init(), 
+    openAiConfig.init(),
+  ]);
 
   if (dev) {
     for (const [k, v] of [

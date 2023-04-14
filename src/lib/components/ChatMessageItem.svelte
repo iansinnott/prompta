@@ -7,6 +7,8 @@
   import SvelteMarkdown from "svelte-markdown";
   import IconBrain from "./IconBrain.svelte";
   import IconVerticalDots from "./IconVerticalDots.svelte";
+  import CodeBlock from "./CodeBlock.svelte";
+  import { isAssistantWriting } from "$lib/stores/stores";
   let _class: string = "";
   export { _class as class };
   export let item: ChatMessage;
@@ -52,7 +54,10 @@
       {#if viewRaw}
         <div class="whitespace-pre-wrap">{item.content}</div>
       {:else}
-        <SvelteMarkdown source={item.content} />
+        <SvelteMarkdown
+          source={item.content}
+          renderers={$isAssistantWriting ? {} : { code: CodeBlock }}
+        />
       {/if}
       {#if item.cancelled}
         <div class="text-zinc-400 text-xs -mt-2">Cancelled</div>
