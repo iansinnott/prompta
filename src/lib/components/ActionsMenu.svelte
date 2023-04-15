@@ -112,6 +112,27 @@
   const additionalActions = [
     {
       keyboard: {
+        shortcut: "/",
+        when: () => {
+          if (
+            document.activeElement?.tagName === "INPUT" ||
+            document.activeElement?.tagName === "TEXTAREA"
+          ) {
+            return;
+          }
+
+          return true;
+        },
+      },
+      execute: () => {
+        const el = document.querySelector<HTMLTextAreaElement>("[data-chat-input]");
+        if (el) {
+          el.focus();
+        }
+      },
+    },
+    {
+      keyboard: {
         shortcut: "meta+k",
       },
       execute: toggleMenu,
@@ -174,9 +195,9 @@
   function globalKeyPress(e: KeyboardEvent) {
     const shortcut = getShortcutFromEvent(e);
     if (knownShortcuts.has(shortcut)) {
-      e.preventDefault();
       const handler = handlers.find((handler) => handler.predicate(e));
       if (handler) {
+        e.preventDefault();
         handler.execute();
       }
     }

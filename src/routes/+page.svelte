@@ -88,6 +88,7 @@
       class="flex items-end rounded-lg bg-zinc-800 border border-zinc-700"
     >
       <textarea
+        data-chat-input
         on:keydown={(e) => {
           // send on enter
           if (e.key === "Enter" && !e.shiftKey) {
