@@ -75,15 +75,17 @@
   on:keydown={(e) => {
     if (!$threadMenu.open) return;
 
+    // if input has focus
+    const hasFocus = document.activeElement === input;
+
     // @todo its somewhat messy having this here, considering most keyboard shortcuts are in the actions menu
 
     // use the arrow keys to move index up and down
-    if (e.key === "ArrowDown") {
+    if (hasFocus && e.key === "ArrowDown") {
       index = Math.min(index + 1, filteredThreads.length - 1);
-    } else if (e.key === "ArrowUp") {
+    } else if (hasFocus && e.key === "ArrowUp") {
       index = Math.max(index - 1, -1); // -1 is for the new chat button
-    } else if (e.key === "Enter") {
-      console.log("DAAF", $threadMenu.open);
+    } else if (hasFocus && e.key === "Enter") {
       // select the current index
       if (index === -1) {
         openNewThread();

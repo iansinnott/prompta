@@ -29,7 +29,7 @@
     filterText = "";
   }
 
-  const isMenuOpen = () => menuOpen;
+  const isMenuActive = () => menuOpen && input === document.activeElement;
 
   let actionItems = [
     {
@@ -119,7 +119,7 @@
     {
       keyboard: {
         shortcut: "enter",
-        when: isMenuOpen,
+        when: isMenuActive,
       },
       execute: executeCurrentAction,
     },
@@ -141,7 +141,7 @@
     {
       keyboard: {
         shortcut: "arrowup",
-        when: isMenuOpen,
+        when: isMenuActive,
       },
       execute: () => {
         index = Math.max(0, index - 1);
@@ -150,7 +150,7 @@
     {
       keyboard: {
         shortcut: "arrowdown",
-        when: isMenuOpen,
+        when: isMenuActive,
       },
       execute: () => {
         index = Math.min(actionItems.length - 1, index + 1);
