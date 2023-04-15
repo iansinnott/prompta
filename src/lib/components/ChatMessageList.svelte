@@ -10,7 +10,7 @@
   let _class: string = "";
   export { _class as class };
 
-  let listBottom: HTMLDivElement;
+  let scrollArea: HTMLDivElement;
   let isAtListBottom = true;
 
   $: messageList = $currentChatThread?.messages || [];
@@ -20,7 +20,7 @@
       console.log("Not scrolling to bottom because user is not at the bottom");
       return;
     }
-    listBottom.scrollIntoView();
+    scrollArea.scrollIntoView();
   };
 
   onMount(() => {
@@ -32,12 +32,18 @@
   });
 </script>
 
-<div class={classNames("relative flex flex-col space-y-4 pt-2", _class)}>
+<div
+  bind:this={scrollArea}
+  on:scroll={(e) => {
+    console.log("scrolling");
+    // const { scrollTop, scrollHeight, clientHeight } = e.target;
+    // isAtListBottom = scrollHeight - scrollTop === clientHeight;
+  }}
+  class={classNames("relative flex flex-col space-y-4 pt-2", _class)}
+>
   {#each messageList as x (x.id)}
     <ChatMessageItem item={x} />
   {/each}
-
-  <div bind:this={listBottom} />
 
   <!-- Give the user some examples to get them started -->
   {#if isNewThread($currentThread)}
