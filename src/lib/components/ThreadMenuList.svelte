@@ -86,6 +86,7 @@
     } else if (hasFocus && e.key === "ArrowUp") {
       index = Math.max(index - 1, -1); // -1 is for the new chat button
     } else if (hasFocus && e.key === "Enter") {
+      e.preventDefault();
       // select the current index
       if (index === -1) {
         openNewThread();
