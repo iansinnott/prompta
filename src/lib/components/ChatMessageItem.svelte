@@ -6,6 +6,7 @@
   import IconBrain from "./IconBrain.svelte";
   import IconVerticalDots from "./IconVerticalDots.svelte";
   import CodeBlock from "./CodeBlock.svelte";
+  import "./markdown.css";
   import { inProgressMessageId } from "$lib/stores/stores";
   let _class: string = "";
   export { _class as class };
