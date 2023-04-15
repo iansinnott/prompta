@@ -82,8 +82,10 @@
 
     // use the arrow keys to move index up and down
     if (hasFocus && e.key === "ArrowDown") {
+      e.preventDefault();
       index = Math.min(index + 1, filteredThreads.length - 1);
     } else if (hasFocus && e.key === "ArrowUp") {
+      e.preventDefault();
       index = Math.max(index - 1, -1); // -1 is for the new chat button
     } else if (hasFocus && e.key === "Enter") {
       e.preventDefault();
@@ -128,7 +130,7 @@
       data-index="-1"
       on:mouseenter={(e) => (index = -1)}
       on:click={openNewThread}
-      class={classNames("p-2 mb-1 rounded w-full text-left truncate flex", {
+      class={classNames("p-2 mb-1 rounded w-full text-left truncate flex cursor-default", {
         "bg-white/10": index === -1,
       })}
     >
@@ -143,7 +145,7 @@
     {#each threadGroups as [dateString, threads], i (dateString)}
       <div class="text-zinc-500 text- mb-1 ml-2 pt-2 font-bold">{dateString}</div>
       {#each threads as t, j (t.id)}
-        {@const serialIndex = i ? threadGroups.slice(0, i).flat().length + j : j}
+        {@const serialIndex = i ? threadGroups.slice(0, i).flatMap((x) => x[1]).length + j : j}
         <button
           data-index={serialIndex}
           on:click={openThread}
