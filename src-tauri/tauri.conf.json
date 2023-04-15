@@ -17,8 +17,8 @@
     "macOSPrivateApi": true,
     "bundle": {
       "active": true,
-      "category": "DeveloperTool",
-      "copyright": "",
+      "category": "Productivity",
+      "copyright": "2023 Ian Sinnott",
       "deb": {
         "depends": []
       },
@@ -31,7 +31,7 @@
         "icons/icon.ico"
       ],
       "identifier": "com.prompta.dev",
-      "longDescription": "",
+      "longDescription": "Yet another UI for using the ChatGPT API",
       "macOS": {
         "entitlements": null,
         "exceptionDomain": "",
