@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { fade } from "svelte/transition";
   import {
     gptProfileStore,
     openAiConfig,
@@ -23,12 +22,7 @@
 
 {#if $showSettings}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <div
-    class="backdrop"
-    in:fade={{ duration: 250 }}
-    out:fade={{ duration: 250 }}
-    on:click={() => ($showSettings = false)}
-  >
+  <div class="backdrop z-20" on:click={() => ($showSettings = false)}>
     <form
       on:submit={(e) => e.preventDefault()}
       on:click={(e) => {

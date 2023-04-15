@@ -145,6 +145,7 @@
     {#each threadGroups as [dateString, threads], i (dateString)}
       <div class="text-zinc-500 text- mb-1 ml-2 pt-2 font-bold">{dateString}</div>
       {#each threads as t, j (t.id)}
+        <!-- this is an ugly and inefficient way to get serial order, but svelte makes it hard. its not plain js -->
         {@const serialIndex = i ? threadGroups.slice(0, i).flatMap((x) => x[1]).length + j : j}
         <button
           data-index={serialIndex}
