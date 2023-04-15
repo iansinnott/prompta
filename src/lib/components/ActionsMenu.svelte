@@ -6,7 +6,7 @@
     showSettings,
     threadMenu,
   } from "$lib/stores/stores";
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import IconSparkle from "./IconSparkle.svelte";
   import IconGear from "./IconGear.svelte";
   import IconHistoryClock from "./IconHistoryClock.svelte";
@@ -95,7 +95,7 @@
   function toggleMenu() {
     menuOpen = !menuOpen;
     if (menuOpen) {
-      setTimeout(() => input.focus(), 100);
+      tick().then(() => input.focus());
     }
   }
 
