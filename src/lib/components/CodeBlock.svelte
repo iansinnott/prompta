@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { dirname } from "$lib/utils";
   import Prism from "prismjs";
-  import "prismjs/themes/prism-tomorrow.css"; // Choose a theme of your liking
+  import "prismjs/themes/prism-okaidia.css"; // Choose a theme of your liking
   import "prismjs/plugins/autoloader/prism-autoloader";
   import "prismjs/plugins/line-numbers/prism-line-numbers";
   import "prismjs/plugins/line-numbers/prism-line-numbers.css";

@@ -5,6 +5,7 @@
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
   import ChatMessageList from "$lib/components/ChatMessageList.svelte";
   import ActionsMenu from "$lib/components/ActionsMenu.svelte";
+  import { AppWindow } from "$lib/native/gui";
 
   let message = "";
   let textarea: HTMLTextAreaElement | null = null;
@@ -58,7 +59,7 @@
       <button
         class="text-zinc-200 p-1 rounded hover:bg-white/10 hover:text-white mr-4"
         on:click={(e) => {
-          console.log("CLose");
+          AppWindow.close().catch(console.error);
         }}
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="w-5 h-5 scale-75">
