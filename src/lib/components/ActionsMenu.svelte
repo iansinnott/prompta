@@ -24,6 +24,11 @@
   let menuOpen = false;
   let filterText = "";
 
+  // Clear filter text whenever the menu opens
+  $: if (menuOpen) {
+    filterText = "";
+  }
+
   const isMenuOpen = () => menuOpen;
 
   let actionItems = [
