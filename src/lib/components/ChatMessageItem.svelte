@@ -87,6 +87,7 @@
   /* @note blockquote is an odd one, but it's because the blockquote has a p tag inside it */
   :global .has-cursor > *:last-child:not(ul):not(ol):not(blockquote)::after,
   :global .has-cursor > *:not(p):last-child > :last-child::after {
+    @apply font-mono;
     content: "";
     display: inline-block;
     background-color: #18d4f1;
@@ -100,13 +101,13 @@
     animation: blinking 1.1s infinite;
   }
   @keyframes blinking {
-    20% {
+    40% {
       opacity: 1;
     }
     50% {
       opacity: 0;
     }
-    80% {
+    60% {
       opacity: 1;
     }
   }

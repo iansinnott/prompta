@@ -8,6 +8,7 @@
   import "prismjs/plugins/line-numbers/prism-line-numbers.css";
   import "prism-svelte";
   import prismPath from "prismjs/components/?url";
+  import CopyButton from "./CopyButton.svelte";
 
   // Seems like there woudl be a more direct way to do this...
   Prism.plugins.autoloader.languages_path = dirname(prismPath) + "/";
@@ -29,5 +30,11 @@
   });
 </script>
 
-<pre class="language-{lang}"><code bind:this={codeElement} class="language-{lang}">{text}</code
-  ></pre>
+<div class="content relative">
+  <pre class="language-{lang}"><code bind:this={codeElement} class="language-{lang} relative"
+      >{text}</code
+    ></pre>
+  <div class="absolute right-2 top-2 z-10">
+    <CopyButton />
+  </div>
+</div>

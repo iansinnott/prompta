@@ -3,9 +3,9 @@
   import { currentChatThread, currentThread, isNewThread } from "$lib/stores/stores";
   import classNames from "classnames";
   import ChatMessageItem from "./ChatMessageItem.svelte";
-  import IconBrain from "./IconBrain.svelte";
   import IconBrainAiHybrid from "./IconBrainAiHybrid.svelte";
-  import { onMount, afterUpdate } from "svelte";
+  import { onMount, afterUpdate, tick } from "svelte";
+  import { debounce, throttle } from "$lib/utils";
 
   let _class: string = "";
   export { _class as class };
@@ -20,26 +20,52 @@
       console.log("Not scrolling to bottom because user is not at the bottom");
       return;
     }
-    scrollArea.scrollIntoView();
+    const parent = scrollArea.parentElement;
+    if (parent) {
+      parent.scrollTo({
+        top: parent.scrollHeight,
+        behavior: "smooth",
+      });
+    }
   };
 
+  // reset bottom flag when list changes. i.e. when the thread changes or when a
+  // new message is inserted
+  let lastMessageListLength = 0;
+  $: if (messageList.length !== lastMessageListLength) {
+    isAtListBottom = true;
+    lastMessageListLength = messageList.length;
+  }
+
   onMount(() => {
-    scrollToBottom();
+    tick().then(scrollToBottom);
   });
 
   afterUpdate(() => {
-    scrollToBottom();
+    tick().then(scrollToBottom);
   });
+
+  const handleWheel = throttle(
+    (e: WheelEvent) => {
+      const parent = scrollArea.parentElement;
+      if (!parent) return;
+      const { scrollTop, scrollHeight, clientHeight } = parent;
+      const isAtBottom = scrollHeight - clientHeight - scrollTop < 1;
+      isAtListBottom = isAtBottom;
+      console.log("isAtListBottom", isAtListBottom);
+    },
+    100,
+    {
+      leading: true,
+      trailing: true,
+    }
+  );
 </script>
 
 <div
   bind:this={scrollArea}
-  on:scroll={(e) => {
-    console.log("scrolling");
-    // const { scrollTop, scrollHeight, clientHeight } = e.target;
-    // isAtListBottom = scrollHeight - scrollTop === clientHeight;
-  }}
-  class={classNames("relative flex flex-col space-y-4 pt-2", _class)}
+  on:wheel={handleWheel}
+  class={classNames("relative flex flex-col space-y-4 pt-2 pb-6", _class)}
 >
   {#each messageList as x (x.id)}
     <ChatMessageItem item={x} />

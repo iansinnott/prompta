@@ -66,6 +66,13 @@
     },
     {
       when: dev,
+      name: "Reload Window",
+      execute: () => {
+        window.location.reload();
+      },
+    },
+    {
+      when: dev,
       name: "Reset Current Thread",
       color: "red",
       execute: currentChatThread.deleteMessages,
