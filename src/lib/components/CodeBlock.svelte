@@ -31,10 +31,9 @@
 </script>
 
 <div class="content relative">
-  <pre class="language-{lang}"><code bind:this={codeElement} class="language-{lang} relative"
-      >{text}</code
+  <pre class="language-{lang}"><code bind:this={codeElement} class="language-{lang}">{text}</code
     ></pre>
   <div class="absolute right-2 top-2 z-10">
-    <CopyButton />
+    <CopyButton {text} />
   </div>
 </div>

@@ -52,7 +52,6 @@
       const { scrollTop, scrollHeight, clientHeight } = parent;
       const isAtBottom = scrollHeight - clientHeight - scrollTop < 1;
       isAtListBottom = isAtBottom;
-      console.log("isAtListBottom", isAtListBottom);
     },
     100,
     {

@@ -66,6 +66,9 @@
 </div>
 
 <style>
+  .Content {
+    overflow: hidden; /* @note This is to prevent markdown content from overlfowing */
+  }
   /* ChatMessage uses a grid layout, wtih the users avatar 32px squared on the left, and a 1fr content area on the right. only one row for now */
   .ChatMessage {
     @apply gap-6;

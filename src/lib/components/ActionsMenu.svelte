@@ -198,7 +198,7 @@
   <button on:click={toggleMenu} class:active={menuOpen} class="font-bold px-4 py-2">Actions</button>
   {#if menuOpen}
     <div
-      class="absolute bottom-[calc(100%+10px)] right-0 min-w-[425px] shadow-lg border border-zinc-700 bg-zinc-800 rounded-lg pt-2 px-2"
+      class="absolute bottom-[calc(100%+10px)] right-0 min-w-[425px] shadow-lg border border-zinc-700 bg-zinc-800 rounded-lg pt-2 px-2 z-20"
     >
       {#each filteredActions as action, i (action.name)}
         <button
