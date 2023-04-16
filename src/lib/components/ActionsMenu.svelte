@@ -96,6 +96,11 @@
     menuOpen = !menuOpen;
     if (menuOpen) {
       tick().then(() => input.focus());
+    } else {
+      // NOTE blur the input so that single-char shortcuts work
+      if (input && input === document.activeElement) {
+        input.blur();
+      }
     }
   }
 

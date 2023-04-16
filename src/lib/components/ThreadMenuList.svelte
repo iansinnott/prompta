@@ -53,6 +53,13 @@
     tick().then(() => {
       input.focus();
     });
+  } else {
+    // Make sure the input is unfocused when closed, if it currently has focus
+    // NOTE This is to allow single-key hotkeys (elsewhere in the app) that
+    // require no-input to be focused
+    if (input && document.activeElement === input) {
+      input.blur();
+    }
   }
 
   const openNewThread = () => {
