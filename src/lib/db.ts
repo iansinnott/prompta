@@ -28,23 +28,10 @@ export const initDb = async () => {
     await _db.exec(x);
   }
 
-  const threadId = await Preferences.get("current-thread-id");
-
-  if (threadId) {
-    const thread = await Thread.findUnique({ where: { id: threadId } });
-    if (thread) {
-      console.debug("hydrate thread", thread);
-      currentThread.set(thread);
-    } else {
-      console.warn("Could not find thread:", threadId);
-    }
+  // Initialize stores
+  for (const s of [currentThread, profilesStore, openAiConfig]) {
+    await s.init();
   }
-
-  // prettier-ignore
-  await Promise.all([
-    profilesStore.init(), 
-    openAiConfig.init(),
-  ]);
 
   if (dev) {
     for (const [k, v] of [

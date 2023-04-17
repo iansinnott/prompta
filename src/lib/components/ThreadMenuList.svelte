@@ -132,7 +132,7 @@
     type="text"
     class="FilterInput"
   />
-  <div class="Separator h-px bg-zinc-700 my-2" />
+  <div class="Separator h-px bg-zinc-700 my-2 -mx-2" />
 
   <!-- Scroll area -->
   <div bind:this={scrollContainer} class="overflow-auto max-h-[400px]">

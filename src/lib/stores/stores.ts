@@ -224,6 +224,18 @@ const createThreadStore = () => {
     set: persistentSet,
     update,
     reset: () => persistentSet(newThread),
+    init: async () => {
+      const threadId = await Preferences.get("current-thread-id");
+      if (threadId) {
+        const thread = await Thread.findUnique({ where: { id: threadId } });
+        if (thread) {
+          console.debug("hydrate thread", thread);
+          currentThread.set(thread);
+        } else {
+          console.warn("Could not find thread:", threadId);
+        }
+      }
+    },
   };
 };
 
