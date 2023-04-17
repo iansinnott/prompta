@@ -1,11 +1,13 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import { currentThread, currentChatThread } from "../lib/stores/stores";
+  import { currentThread, currentChatThread, gptProfileStore } from "../lib/stores/stores";
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
   import ChatMessageList from "$lib/components/ChatMessageList.svelte";
   import ActionsMenu from "$lib/components/ActionsMenu.svelte";
   import { AppWindow } from "$lib/native/gui";
+  import { dev } from "$app/environment";
+  import IconTerminalPrompt from "$lib/components/IconTerminalPrompt.svelte";
 
   let message = "";
   let textarea: HTMLTextAreaElement | null = null;
@@ -70,6 +72,17 @@
           />
         </svg>
       </button>
+      {#if dev}
+        <div class="text-xs flex items-center border rounded border-yellow-400">
+          <div class="bg-yellow-400 text-yellow-900 font-bold py-1 px-2 inline-flex items-center">
+            <IconTerminalPrompt class="w-5 h-5 mr-2" />
+            <span class="text-sm font-mono">DEV</span>
+          </div>
+          <div class="py-1 px-4 font-bold text-yellow-400 uppercase">
+            {$gptProfileStore.model}
+          </div>
+        </div>
+      {/if}
     </div>
     <div class="Right flex justify-end relative">
       <ThreadMenuButton />

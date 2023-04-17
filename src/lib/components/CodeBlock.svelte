@@ -33,7 +33,7 @@
 <div class="content relative">
   <pre class="language-{lang}"><code bind:this={codeElement} class="language-{lang}">{text}</code
     ></pre>
-  <div class="absolute right-2 top-2 z-10">
+  <div class="absolute right-2 top-2 z-10 bg-zinc-950">
     <CopyButton {text} />
   </div>
 </div>
