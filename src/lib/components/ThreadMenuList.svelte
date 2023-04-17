@@ -7,6 +7,7 @@
   let _class: string = "";
   export { _class as class };
   let input: HTMLInputElement;
+  let scrollContainer: HTMLDivElement | null;
   let searchText = "";
   let index = 0;
 
@@ -31,9 +32,11 @@
 
   $: threadGroups = Object.entries(groupBy(filteredThreads, (x) => humanizeDate(x.createdAt)));
 
-  $: if (index) {
+  $: {
+    index; // React to index changes
+
     // scroll the list to the current index
-    const el = document.querySelector(`[data-index="${index}"]`);
+    const el = scrollContainer?.querySelector(`[data-index="${index}"]`);
     if (el) {
       el.scrollIntoView({ block: "nearest", inline: "nearest" });
     }
@@ -132,7 +135,7 @@
   <div class="Separator h-px bg-zinc-700 my-2" />
 
   <!-- Scroll area -->
-  <div class="overflow-auto max-h-[400px]">
+  <div bind:this={scrollContainer} class="overflow-auto max-h-[400px]">
     <button
       data-index="-1"
       on:mouseenter={(e) => (index = -1)}

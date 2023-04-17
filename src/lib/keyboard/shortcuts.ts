@@ -2,12 +2,22 @@ export type KeyPredicate = (event: KeyboardEvent) => boolean;
 
 export function createShortcutPredicate(shortcut: string): KeyPredicate {
   const shortcutParts = shortcut.split("+");
+  const requestedCmd = shortcutParts.includes("cmd");
+  if (requestedCmd) {
+    console.warn("The 'cmd' shortcut modifier is deprecated. Please use 'meta' instead.");
+  }
+
+  const requestedOpt = shortcutParts.includes("option");
+  if (requestedOpt) {
+    console.warn("The 'option' shortcut modifier is deprecated. Please use 'alt' instead.");
+  }
+
   const requiredCtrl = shortcutParts.includes("ctrl");
   const requiredShift = shortcutParts.includes("shift");
-  const requiredMeta = shortcutParts.includes("meta");
-  const requiredAlt = shortcutParts.includes("alt");
+  const requiredMeta = shortcutParts.includes("meta") || requestedCmd;
+  const requiredAlt = shortcutParts.includes("alt") || requestedOpt;
   const requiredKey = shortcutParts.find(
-    (part) => !["ctrl", "shift", "meta", "alt"].includes(part)
+    (part) => !["ctrl", "shift", "meta", "alt", "cmd", "option"].includes(part)
   );
 
   return (event: KeyboardEvent): boolean => {

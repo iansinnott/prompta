@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api";
 import * as shell from "@tauri-apps/api/shell";
 import { appWindow } from "@tauri-apps/api/window";
 
@@ -15,3 +16,5 @@ export const AppWindow = {
   toggleMaximize: () => appWindow.toggleMaximize(),
   close: () => appWindow.close(),
 };
+
+export const toggleDevTools = () => invoke("toggle_devtools");

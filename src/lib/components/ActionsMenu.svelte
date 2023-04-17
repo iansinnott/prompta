@@ -20,14 +20,12 @@
     getShortcutFromEvent,
     mapKeysToMacSymbols,
   } from "$lib/keyboard/shortcuts";
+  import { toggleDevTools } from "$lib/native/gui";
+  import IconTerminalPrompt from "./IconTerminalPrompt.svelte";
   let input: HTMLInputElement;
   let menuOpen = false;
   let filterText = "";
-
-  // Clear filter text whenever the menu opens
-  $: if (menuOpen) {
-    filterText = "";
-  }
+  let index = 0;
 
   const isMenuActive = () => menuOpen && input === document.activeElement;
 
@@ -58,6 +56,7 @@
       keyboard: {
         shortcut: "meta+n", // @note Only works in the Tauri app. In a browser the browser takes precedence
       },
+      altFilterText: "thread",
       execute: () => {
         currentThread.reset();
       },
@@ -77,9 +76,18 @@
       },
     },
     {
+      keyboard: {
+        shortcut: "meta+alt+i",
+      },
       when: dev,
-      name: "Reset Current Thread",
+      name: "Devtools",
+      execute: toggleDevTools,
+    },
+    {
+      when: dev,
+      name: "Reset Current Chat",
       color: "red",
+      altFilterText: "clear thread",
       execute: currentChatThread.deleteMessages,
     },
     {
@@ -89,8 +97,6 @@
       execute: _clearDatabase,
     },
   ];
-
-  let index = 0;
 
   function toggleMenu() {
     menuOpen = !menuOpen;
@@ -192,6 +198,7 @@
       // @ts-ignore
       predicate: (e: KeyboardEvent) => shortcutPred(e) && (item.keyboard?.when ?? (() => true))(),
       execute: item.execute,
+      when: "when" in item ? item.when : true,
     };
   });
 
@@ -200,7 +207,7 @@
   function globalKeyPress(e: KeyboardEvent) {
     const shortcut = getShortcutFromEvent(e);
     if (knownShortcuts.has(shortcut)) {
-      const handler = handlers.find((handler) => handler.predicate(e));
+      const handler = handlers.find((x) => x.when && x.predicate(e));
       if (handler) {
         e.preventDefault();
         handler.execute();
@@ -208,17 +215,32 @@
     }
   }
 
-  onMount(() => {
-    document.addEventListener("keydown", globalKeyPress);
-    return () => {
-      document.removeEventListener("keydown", globalKeyPress);
-    };
-  });
+  let scrollContainer: HTMLDivElement | null;
+
+  $: {
+    index;
+    const el = scrollContainer?.querySelector(`[data-index="${index}"]`);
+    if (el) {
+      el.scrollIntoView({ block: "nearest" });
+    }
+  }
+
+  // Clear filter text whenever the menu opens
+  $: if (menuOpen) {
+    filterText = "";
+  }
 
   $: filteredActions = actionItems
     .filter((item) => item.when ?? true)
-    .filter((item) => item.name.toLowerCase().includes(filterText.toLowerCase()));
+    .filter((item) => {
+      return (
+        item.name.toLowerCase().includes(filterText.toLowerCase()) ||
+        item.altFilterText?.toLowerCase().includes(filterText.toLowerCase())
+      );
+    });
 </script>
+
+<svelte:window on:keydown={globalKeyPress} />
 
 {#if menuOpen}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -229,47 +251,52 @@
   <button on:click={toggleMenu} class:active={menuOpen} class="font-bold px-4 py-2">Actions</button>
   {#if menuOpen}
     <div
-      class="absolute bottom-[calc(100%+10px)] right-0 min-w-[425px] shadow-lg border border-zinc-700 bg-zinc-800 rounded-lg pt-2 px-2 z-20"
+      class="absolute bottom-[calc(100%+10px)] right-0 min-w-[425px] shadow-xl border border-zinc-700 bg-zinc-800 rounded-lg z-20 flex flex-col"
     >
-      {#each filteredActions as action, i (action.name)}
-        <button
-          on:mouseenter={() => (index = i)}
-          on:click={executeCurrentAction}
-          class="rounded px-2 py-2 flex w-full items-center"
-          class:active={i === index}
-          class:danger={action.color === "red"}
-        >
-          {#if action.icon}
-            <span class="w-6 h-6 mr-2 inline-flex items-center">
-              <svelte:component this={action.icon} />
+      <div bind:this={scrollContainer} class="flex-1 max-h-[272px] overflow-auto my-2 px-2">
+        {#each filteredActions as action, i (action.name)}
+          <button
+            data-index={i}
+            on:mouseenter={() => (index = i)}
+            on:click={executeCurrentAction}
+            class="rounded px-2 py-2 flex w-full items-center"
+            class:active={i === index}
+            class:danger={action.color === "red"}
+          >
+            {#if action.icon}
+              <span class="w-6 h-6 mr-2 inline-flex items-center">
+                <svelte:component this={action.icon} />
+              </span>
+            {/if}
+            <span class="flex-1 flex">
+              {action.name}
             </span>
-          {/if}
-          <span class="flex-1 flex">
-            {action.name}
-          </span>
-          {#if action.keyboard?.shortcut}
-            <span class="flex items-center space-x-1">
-              {#each mapKeysToMacSymbols(action.keyboard.shortcut) as key}
-                <kbd
-                  style="font-family:system-ui, -apple-system;"
-                  class="bg-white/20 inline-flex items-center justify-center rounded font-mono w-6 h-6 text-sm"
-                  >{key}</kbd
-                >
-              {/each}
-            </span>
-          {/if}
-        </button>
-      {:else}
-        <div class="text-zinc-500 text-sm px-2 py-2">No actions found</div>
-      {/each}
-      <input
-        class="FilterInput py-3 mt-2 border-t border-zinc-600 px-2"
-        bind:value={filterText}
-        on:input={() => (index = 0)}
-        bind:this={input}
-        type="text"
-        placeholder="Search for actions..."
-      />
+            {#if action.keyboard?.shortcut}
+              <span class="flex items-center space-x-1">
+                {#each mapKeysToMacSymbols(action.keyboard.shortcut) as key}
+                  <kbd
+                    style="font-family:system-ui, -apple-system;"
+                    class="bg-white/20 inline-flex items-center justify-center rounded font-mono w-6 h-6 text-sm"
+                    >{key}</kbd
+                  >
+                {/each}
+              </span>
+            {/if}
+          </button>
+        {:else}
+          <div class="text-zinc-500 text-sm px-2 py-2">No actions found</div>
+        {/each}
+      </div>
+      <div class="shrink-0">
+        <input
+          class="FilterInput py-3 px-4 border-t border-zinc-600"
+          bind:value={filterText}
+          on:input={() => (index = 0)}
+          bind:this={input}
+          type="text"
+          placeholder="Search for actions..."
+        />
+      </div>
     </div>
   {/if}
 </div>

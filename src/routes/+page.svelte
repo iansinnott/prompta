@@ -52,7 +52,7 @@
   }
 </script>
 
-<div class="app-container">
+<div class:dev-container={dev} class="app-container">
   <header
     data-tauri-drag-region
     class="app-header p-4 pr-3 flex items-center justify-between border-b border-zinc-700 w-full"
@@ -93,7 +93,7 @@
     <ChatMessageList />
   </div>
   <!-- No padding top in order to let chat messages appaer to scroll behind -->
-  <footer class="app-footer p-3 pt-0 border-b border-zinc-700 relative -top-px">
+  <footer class="app-footer p-3 pt-0 relative -top-px">
     <form
       on:submit={(e) => {
         e.preventDefault();
@@ -126,14 +126,20 @@
 </div>
 
 <style>
+  .dev-container {
+    @apply border-2 border-yellow-600;
+  }
   .app-container {
+    @apply rounded-lg;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas:
       "top"
       "middle"
       "bottom";
-    height: 100vh;
+
+    /* Not sure where the extra height is from, but the specific calc fixes the layout */
+    height: calc(100vh - 2px);
   }
   .app-header {
     grid-area: top;
