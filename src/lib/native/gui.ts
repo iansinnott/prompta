@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api";
+import * as tauri from "@tauri-apps/api";
 import * as shell from "@tauri-apps/api/shell";
 import { appWindow } from "@tauri-apps/api/window";
 
@@ -17,4 +17,12 @@ export const AppWindow = {
   close: () => appWindow.close(),
 };
 
-export const toggleDevTools = () => invoke("toggle_devtools");
+export const toggleDevTools = async () => {
+  await tauri.invoke("toggle_devtools");
+};
+
+export async function saveAs(filename: string, data: string) {
+  const savePath = await tauri.dialog.save({ title: "Save as", defaultPath: filename });
+  if (!savePath) return;
+  return tauri.fs.writeFile(savePath, data);
+}

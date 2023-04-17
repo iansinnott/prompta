@@ -5,10 +5,12 @@
     showSettings,
     profilesStore,
     DEFAULT_SYSTEM_MESSAGE,
+    db,
   } from "$lib/stores/stores";
   import { DB_NAME } from "$lib/constants";
   import AutosizeTextarea from "./AutosizeTextarea.svelte";
   import IconRefresh from "./IconRefresh.svelte";
+  import { getApi } from "$lib/native";
 </script>
 
 <!-- Hide on escape -->
@@ -127,6 +129,42 @@
           placeholder="Ex: http://localhost:8080"
           bind:value={$openAiConfig.replicationHost}
         />
+
+        <!-- separator -->
+        <div class="Separator h-px bg-zinc-700 my-4" />
+        <h3 class="text-xl mb-4 col-span-2">Database</h3>
+
+        <label for="c" class="label">Export:</label>
+        <div>
+          <button
+            on:click={async (e) => {
+              e.preventDefault();
+              if (!$db) {
+                console.error("No database");
+                throw new Error("No database");
+              }
+              const sys = getApi();
+              await sys.saveAs(
+                `${Date.now()}_message.json`,
+                JSON.stringify(await $db.execO(`SELECT * FROM message`))
+              );
+              await sys.saveAs(
+                `${Date.now()}_thread.json`,
+                JSON.stringify(await $db.execO(`SELECT * FROM thread`))
+              );
+              await sys.saveAs(
+                `${Date.now()}_preferences.json`,
+                JSON.stringify(await $db.execO(`SELECT * FROM preferences`))
+              );
+            }}
+            class="flex items-center bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Export All
+          </button>
+          <p>
+            <small>Will download multiple files.</small>
+          </p>
+        </div>
 
         <label for="c" class="label">Database:</label>
         <div>
