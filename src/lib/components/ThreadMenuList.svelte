@@ -27,7 +27,8 @@
     }
   };
 
-  $: showArchived = searchText.startsWith(" ") || $currentThread.archived;
+  $: hasArchived = $archivedThreadList.length > 0;
+  $: showArchived = hasArchived && (searchText.startsWith(" ") || $currentThread.archived);
   $: filteredArchive = showArchived
     ? $archivedThreadList.filter((x) =>
         x.title.toLowerCase().includes(searchText.trim().toLowerCase())
@@ -134,7 +135,7 @@
   <input
     bind:this={input}
     bind:value={searchText}
-    placeholder="Search... (type space to search archived)"
+    placeholder={hasArchived ? "Search... (tap SPACE to view archived)" : "Search Chats..."}
     type="text"
     class="FilterInput"
   />
