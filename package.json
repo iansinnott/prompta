@@ -6,7 +6,7 @@
     "dev": "tauri dev",
     "build": "tauri build",
     "ui:dev": "vite dev",
-    "ui:build": "vite build",
+    "ui:build": "NODE_ENV=production vite build",
     "release": "yarn version && ./scripts/release.sh",
     "preview": "vite preview",
     "test": "playwright test",
