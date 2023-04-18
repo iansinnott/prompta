@@ -1,7 +1,7 @@
 import * as Tauri from "./native";
 import * as Browser from "./browser";
 
-interface ISystemApi {
+interface SystemSpecificApi {
   openExternal: (url: string) => Promise<void>;
   AppWindow: {
     minimize: () => Promise<void>;
@@ -12,11 +12,24 @@ interface ISystemApi {
   saveAs: (filename: string, data: string) => Promise<void>;
 }
 
-export const getSystem = (): ISystemApi => {
+interface SystemApi extends SystemSpecificApi {
+  isTauri: boolean;
+  isBrowser: boolean;
+}
+
+export const getSystem = (): SystemApi => {
   // @ts-ignore
   if (window.__TAURI_IPC__) {
-    return Tauri;
+    return {
+      ...Tauri,
+      isTauri: true,
+      isBrowser: false,
+    };
   } else {
-    return Browser;
+    return {
+      ...Browser,
+      isTauri: false,
+      isBrowser: true,
+    };
   }
 };
