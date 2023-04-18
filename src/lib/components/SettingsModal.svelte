@@ -188,17 +188,6 @@
             <small> Database identifier used locally for persistent storage. </small>
           </p>
         </div>
-
-        <!-- <label for="c" class="label">Schema:</label>
-        <div>
-          {#each schema || [] as s}
-            <SvelteMarkdown source={"```\n" + s + "\n```"} renderers={{ code: CodeBlock }} />
-          {/each}
-          <p class="opacity-60">
-            <small> Database identifier used locally for persistent storage. </small>
-          </p>
-          <p>Migration Version: {migrationVersion}</p>
-        </div> -->
       </div>
     </form>
   </div>
