@@ -15,7 +15,7 @@ import {
   get,
 } from "svelte/store";
 import type { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
-import { ChatMessage, Preferences, Thread } from "$lib/db";
+import { ChatMessage, DatabaseMeta, Preferences, Thread } from "$lib/db";
 import { nanoid } from "nanoid";
 import { simulateLLMStreamResponse } from "$lib/llm/utils";
 import { initOpenAi } from "$lib/llm/openai";
@@ -73,11 +73,18 @@ const persistentStore = <T extends Record<string, any>>(prefix: string, defaultV
 };
 
 export const openAiConfig = (() => {
-  type OpenAiAppConfig = Partial<Configuration> & { replicationHost: string };
-  const { subscribe, set, update } = writable<OpenAiAppConfig>({
+  type OpenAiAppConfig = Partial<Configuration> & {
+    replicationHost: string;
+    siteId: string;
+  };
+
+  const defaultConfig: OpenAiAppConfig = {
     apiKey: "",
     replicationHost: "",
-  });
+    siteId: "",
+  };
+
+  const { subscribe, set, update } = writable<OpenAiAppConfig>(defaultConfig);
 
   const persistentSet = (x: OpenAiAppConfig) => {
     Preferences.set("openai-config", x);
@@ -98,7 +105,13 @@ export const openAiConfig = (() => {
     update: persistentUpdate,
     init: async () => {
       const config = await Preferences.get("openai-config");
-      set(config);
+      const siteId = await DatabaseMeta.getSiteId();
+      if (!config) {
+        console.debug("No config found. Likely first time running the app. Using default config.");
+      }
+
+      let c = config || defaultConfig;
+      set({ ...c, siteId });
     },
   };
 })();
@@ -230,7 +243,7 @@ const createThreadStore = () => {
         const thread = await Thread.findUnique({ where: { id: threadId } });
         if (thread) {
           console.debug("hydrate thread", thread);
-          currentThread.set(thread);
+          set(thread);
         } else {
           console.warn("Could not find thread:", threadId);
         }

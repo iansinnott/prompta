@@ -6,6 +6,7 @@ import { dev } from "$app/environment";
 import schema from "$lib/schema.sql?raw";
 import { nanoid } from "nanoid";
 import type { ChatCompletionResponseMessageRoleEnum } from "openai";
+import { stringify as uuidStringify } from "uuid";
 
 let _sqlite: SQLite3;
 let _db: DB;
@@ -37,6 +38,7 @@ export const initDb = async () => {
     for (const [k, v] of [
       ["Thread", Thread],
       ["ChatMessage", ChatMessage],
+      ["DatabaseMeta", DatabaseMeta],
       ["Preferences", Preferences],
       ["db", _db],
     ]) {
@@ -78,6 +80,15 @@ export interface Thread {
 
 const dateFromSqlite = (s: string) => {
   return new Date(s.replace(" ", "T") + "Z");
+};
+
+export const DatabaseMeta = {
+  async getSiteId() {
+    const r = await _db.execA("SELECT crsql_siteid()");
+    const raw = r[0][0];
+    const siteid = uuidStringify(raw);
+    return siteid as string;
+  },
 };
 
 export const ChatMessage = {

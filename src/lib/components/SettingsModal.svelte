@@ -168,7 +168,9 @@
 
         <label for="c" class="label">Database:</label>
         <div>
-          <pre class="py-1 px-2 rounded text-slate-300 border border-zinc-700 table">{DB_NAME}</pre>
+          <pre class="py-1 px-2 rounded text-slate-300 text-sm border border-zinc-700 table">
+           {DB_NAME}<span class="text-blue-300 opacity-50">/{$openAiConfig.siteId}</span> 
+          </pre>
           <p class="opacity-60">
             <small> Database identifier used locally for persistent storage. </small>
           </p>
