@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { currentThread, threadList, threadMenu } from "$lib/stores/stores";
+  import { archivedThreadList, currentThread, threadList, threadMenu } from "$lib/stores/stores";
   import classNames from "classnames";
   import { onMount, tick } from "svelte";
   import IconSparkle from "./IconSparkle.svelte";
   import { groupBy } from "$lib/utils";
+  import IconArchiveIn from "./IconArchiveIn.svelte";
   let _class: string = "";
   export { _class as class };
   let input: HTMLInputElement;
@@ -26,9 +27,16 @@
     }
   };
 
-  $: filteredThreads = $threadList.filter((x) =>
-    x.title.toLowerCase().includes(searchText.toLowerCase())
-  );
+  $: showArchived = searchText.startsWith(" ") || $currentThread.archived;
+  $: filteredArchive = showArchived
+    ? $archivedThreadList.filter((x) =>
+        x.title.toLowerCase().includes(searchText.trim().toLowerCase())
+      )
+    : [];
+
+  $: filteredThreads = $threadList
+    .filter((x) => x.title.toLowerCase().includes(searchText.trim().toLowerCase()))
+    .concat(filteredArchive);
 
   $: threadGroups = Object.entries(groupBy(filteredThreads, (x) => humanizeDate(x.createdAt)));
 
@@ -126,7 +134,7 @@
   <input
     bind:this={input}
     bind:value={searchText}
-    placeholder="Search Chats..."
+    placeholder="Search... (type space to search archived)"
     type="text"
     class="FilterInput"
   />
@@ -159,11 +167,14 @@
           data-index={serialIndex}
           on:click={openThread}
           on:mouseenter={(e) => (index = serialIndex)}
-          class={classNames("p-2 mb-1 rounded block w-full text-left truncate", {
-            "bg-white/10": index === serialIndex,
-          })}
+          class:archived={t.archived}
+          class:active={index === serialIndex}
+          class={classNames("p-2 mb-1 rounded flex items-center w-full text-left truncate", {})}
         >
-          {t.title}
+          {#if t.archived}
+            <IconArchiveIn class="mr-2" />
+          {/if}
+          <span>{t.title}</span>
         </button>
       {/each}
     {/each}
@@ -172,6 +183,12 @@
 
 <style>
   .active {
-    @apply hover:bg-white/10;
+    @apply bg-white/10;
+  }
+  .archived {
+    @apply text-zinc-500;
+  }
+  .archived.active span {
+    @apply text-white;
   }
 </style>

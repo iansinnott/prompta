@@ -70,13 +70,10 @@ export interface ChatMessage {
 export interface ThreadRow {
   id: string;
   title: string;
+  archived: boolean;
   created_at: string;
 }
-export interface Thread {
-  id: string;
-  title: string;
-  createdAt: Date;
-}
+export type Thread = Omit<ThreadRow, "created_at"> & { createdAt: Date };
 
 const dateFromSqlite = (s: string) => {
   return new Date(s.replace(" ", "T") + "Z");
@@ -189,8 +186,15 @@ export const Thread = {
     };
   },
 
-  async findMany(): Promise<Thread[]> {
-    const rows = await _db.execO<ThreadRow>(`select * from "thread" order by "created_at" desc`);
+  async findMany({ where: { archived = false } = {} } = {}): Promise<Thread[]> {
+    const rows = await _db.execO<ThreadRow>(
+      `
+      SELECT * FROM "thread" 
+      WHERE archived=?
+      ORDER BY "created_at" DESC
+    `,
+      [archived ? 1 : 0]
+    );
     return rows.map((row) => this.rowToModel(row));
   },
 
@@ -213,12 +217,16 @@ export const Thread = {
     return this.findUnique({ where: { id: cid } }) as Promise<Thread>;
   },
 
-  async update(x: { where: { id: string }; data: { title: string } }) {
+  async update(x: { where: { id: string }; data: Partial<Record<keyof Thread, any>> }) {
     if (!x.where.id) {
       throw new Error("Must provide id");
     }
 
-    await _db.exec(`update "thread" set title=? where id=?`, [x.data.title, x.where.id]);
+    const keysValues = Object.entries(x.data);
+    const updateExpressions = keysValues.map(([key]) => `${key}=?`).join(",");
+    const queryParams = keysValues.flatMap(([, value]) => value).concat(x.where.id);
+
+    await _db.exec(`update "thread" set ${updateExpressions} where id=?`, queryParams);
     return this.findUnique({ where: x.where }) as Promise<Thread>;
   },
 

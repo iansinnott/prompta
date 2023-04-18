@@ -3,6 +3,7 @@
     currentChatThread,
     currentThread,
     generateThreadTitle,
+    isNewThread,
     showSettings,
     threadMenu,
   } from "$lib/stores/stores";
@@ -22,6 +23,8 @@
   } from "$lib/keyboard/shortcuts";
   import { getSystem } from "$lib/gui";
   import IconTerminalPrompt from "./IconTerminalPrompt.svelte";
+  import IconArchiveIn from "./IconArchiveIn.svelte";
+  import IconArchiveOut from "./IconArchiveOut.svelte";
 
   const sys = getSystem();
   let input: HTMLInputElement;
@@ -64,6 +67,18 @@
       },
     },
     {
+      name: "Archive Chat",
+      icon: IconArchiveIn,
+      when: () => !$currentThread.archived && !isNewThread($currentThread),
+      execute: currentThread.archive,
+    },
+    {
+      name: "Unarchive Chat",
+      icon: IconArchiveOut,
+      when: () => $currentThread.archived,
+      execute: currentThread.unarchive,
+    },
+    {
       name: "Settings",
       icon: IconGear,
       execute: () => {
@@ -71,7 +86,7 @@
       },
     },
     {
-      when: dev,
+      when: () => dev,
       name: "Reload Window",
       execute: () => {
         window.location.reload();
@@ -81,19 +96,19 @@
       keyboard: {
         shortcut: "meta+alt+i",
       },
-      when: dev,
+      when: () => dev,
       name: "Devtools",
       execute: sys.toggleDevTools,
     },
     {
-      when: dev,
+      when: () => dev,
       name: "Reset Current Chat",
       color: "red",
       altFilterText: "clear thread",
       execute: currentChatThread.deleteMessages,
     },
     {
-      when: dev,
+      when: () => dev,
       name: "Reset Database",
       color: "red",
       execute: _clearDatabase,
@@ -200,7 +215,7 @@
       // @ts-ignore
       predicate: (e: KeyboardEvent) => shortcutPred(e) && (item.keyboard?.when ?? (() => true))(),
       execute: item.execute,
-      when: "when" in item ? item.when : true,
+      when: "when" in item ? item.when?.() : true,
     };
   });
 
@@ -237,8 +252,11 @@
     filterText = "";
   }
 
+  // @todo This does not get recomputed when threads change, only when filter
+  // text changes. This means the item.when() will not get rerun. I.e. this
+  // computation is not invalidated at certain times when it shouldu.
   $: filteredActions = actionItems
-    .filter((item) => item.when ?? true)
+    .filter((item) => item.when?.() ?? true)
     .filter((item) => {
       return (
         item.name.toLowerCase().includes(filterText.toLowerCase()) ||

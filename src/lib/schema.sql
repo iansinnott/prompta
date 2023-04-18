@@ -2,6 +2,7 @@ CREATE TABLE
   if NOT EXISTS "thread" (
     "id" VARCHAR(255) PRIMARY KEY, -- Key should be supplied by user. nanoid, uuid, etc
     "title" VARCHAR(255),
+    "archived" BOOLEAN DEFAULT FALSE,
     "created_at" TIMESTAMMP NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -27,7 +28,14 @@ CREATE TABLE
 
 -- SELECT
 --   crsql_as_crr ('preferences');
---
+CREATE TABLE
+  if NOT EXISTS "deleted_record" (
+    "id" VARCHAR(255) PRIMARY KEY,
+    "table_name" VARCHAR(255) NOT NULL,
+    "deleted_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "data" JSON NOT NULL DEFAULT '{}'
+  );
+
 -- BEGIN TRANSACTION;
 --   CREATE TEMPORARY TABLE temp_table AS SELECT * FROM "message";
 --   DROP TABLE "message";

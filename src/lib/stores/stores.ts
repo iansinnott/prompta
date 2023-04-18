@@ -217,6 +217,7 @@ export const db = writable<DB | null>(null);
 const newThread: Thread = {
   id: NEWTHREAD,
   title: "New Chat",
+  archived: false,
   createdAt: new Date(),
 };
 
@@ -225,18 +226,57 @@ export const isNewThread = (t: { id: Thread["id"] }) => {
 };
 
 const createThreadStore = () => {
-  const { subscribe, set, update } = writable<Thread>(newThread);
+  const innerStore = writable<Thread>(newThread);
+  const { subscribe, set, update } = innerStore;
 
   const persistentSet = (x: Thread) => {
     Preferences.set("current-thread-id", x.id);
     set(x);
   };
 
+  const reset = () => persistentSet(newThread);
+
   return {
     subscribe,
     set: persistentSet,
     update,
-    reset: () => persistentSet(newThread),
+    reset,
+
+    /**
+     * Mark the current thread as archived
+     */
+    archive: async () => {
+      const thread = get(innerStore);
+      if (isNewThread(thread)) {
+        return;
+      }
+
+      await Thread.update({
+        where: { id: thread.id },
+        data: { archived: true },
+      });
+
+      reset();
+      threadList.invalidate();
+    },
+
+    unarchive: async () => {
+      const thread = get(innerStore);
+      if (isNewThread(thread)) {
+        return;
+      }
+
+      await Thread.update({
+        where: { id: thread.id },
+        data: { archived: false },
+      });
+
+      update((x) => {
+        return { ...x, archived: false };
+      });
+      threadList.invalidate();
+    },
+
     init: async () => {
       const threadId = await Preferences.get("current-thread-id");
       if (threadId) {
@@ -258,11 +298,19 @@ export const threadMenu = writable({
   open: false,
 });
 
+type InvalidateOptions = {
+  onInvalidated?: () => void;
+};
+
 /**
  * Create a readable store that can be manually invalidated, forcing the setter
  * function to be called again. I would have thought this would be built-in, maybe I missed it.
  */
-const invalidatable = <T>(defaultValue: T, cb: (set: (x: T) => void) => void) => {
+const invalidatable = <T>(
+  defaultValue: T,
+  cb: (set: (x: T) => void) => void,
+  options: InvalidateOptions = {}
+) => {
   // Keep a reference to the setter function. This way, to invalidate we just
   // call the callback with the setter. I.e. 'invalidate' just calls the callback on demand
   let _set: Subscriber<T>;
@@ -276,13 +324,28 @@ const invalidatable = <T>(defaultValue: T, cb: (set: (x: T) => void) => void) =>
     subscribe: innerStore.subscribe,
     invalidate: () => {
       cb(_set);
+      options.onInvalidated?.();
     },
   };
 };
 
-export const threadList = invalidatable<Thread[]>([], (set) => {
-  Thread.findMany().then(set);
+export const archivedThreadList = invalidatable<Thread[]>([], (set) => {
+  Thread.findMany({
+    where: { archived: true },
+  }).then(set);
 });
+
+export const threadList = invalidatable<Thread[]>(
+  [],
+  (set) => {
+    Thread.findMany({
+      where: { archived: false },
+    }).then(set);
+  },
+  {
+    onInvalidated: archivedThreadList.invalidate,
+  }
+);
 
 const pendingMessageStore = writable<ChatMessage | null>(null);
 
