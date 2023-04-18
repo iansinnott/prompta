@@ -4,7 +4,9 @@
   import { onMount } from "svelte";
   import { initDb } from "$lib/db";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
-  import { openExternal } from "$lib/native/gui";
+  import { getSystem } from "$lib/gui";
+
+  const sys = getSystem();
 
   let appReady = false;
   onMount(async () => {
@@ -39,7 +41,7 @@
     const href = e.target.href;
     if (isATag && isExternalUrl(href)) {
       e.preventDefault();
-      openExternal(href);
+      sys.openExternal(href);
     }
   }
 </script>

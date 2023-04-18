@@ -1,4 +1,4 @@
-import * as Tauri from "./gui";
+import * as Tauri from "./native";
 import * as Browser from "./browser";
 
 interface ISystemApi {
@@ -12,7 +12,7 @@ interface ISystemApi {
   saveAs: (filename: string, data: string) => Promise<void>;
 }
 
-export const getApi = (): ISystemApi => {
+export const getSystem = (): ISystemApi => {
   // @ts-ignore
   if (window.__TAURI_IPC__) {
     return Tauri;

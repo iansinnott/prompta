@@ -10,7 +10,7 @@
   import { DB_NAME } from "$lib/constants";
   import AutosizeTextarea from "./AutosizeTextarea.svelte";
   import IconRefresh from "./IconRefresh.svelte";
-  import { getApi } from "$lib/native";
+  import { getSystem } from "$lib/gui";
 </script>
 
 <!-- Hide on escape -->
@@ -143,7 +143,7 @@
                 console.error("No database");
                 throw new Error("No database");
               }
-              const sys = getApi();
+              const sys = getSystem();
               await sys.saveAs(
                 `${Date.now()}_message.json`,
                 JSON.stringify(await $db.execO(`SELECT * FROM message`))

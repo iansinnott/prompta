@@ -20,8 +20,10 @@
     getShortcutFromEvent,
     mapKeysToMacSymbols,
   } from "$lib/keyboard/shortcuts";
-  import { toggleDevTools } from "$lib/native/gui";
+  import { getSystem } from "$lib/gui";
   import IconTerminalPrompt from "./IconTerminalPrompt.svelte";
+
+  const sys = getSystem();
   let input: HTMLInputElement;
   let menuOpen = false;
   let filterText = "";
@@ -81,7 +83,7 @@
       },
       when: dev,
       name: "Devtools",
-      execute: toggleDevTools,
+      execute: sys.toggleDevTools,
     },
     {
       when: dev,
