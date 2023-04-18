@@ -185,7 +185,7 @@
         when: isMenuActive,
       },
       execute: () => {
-        index = Math.min(actionItems.length - 1, index + 1);
+        index = Math.min(filteredActions.length - 1, index + 1);
       },
     },
   ];
@@ -218,7 +218,6 @@
   let scrollContainer: HTMLDivElement | null;
 
   $: {
-    index;
     const el = scrollContainer?.querySelector(`[data-index="${index}"]`);
     if (el) {
       el.scrollIntoView({ block: "nearest" });

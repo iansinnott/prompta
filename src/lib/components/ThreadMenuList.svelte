@@ -33,8 +33,6 @@
   $: threadGroups = Object.entries(groupBy(filteredThreads, (x) => humanizeDate(x.createdAt)));
 
   $: {
-    index; // React to index changes
-
     // scroll the list to the current index
     const el = scrollContainer?.querySelector(`[data-index="${index}"]`);
     if (el) {
