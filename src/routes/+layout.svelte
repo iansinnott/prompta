@@ -5,6 +5,7 @@
   import { initDb } from "$lib/db";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
   import { getSystem } from "$lib/gui";
+  import { window } from "@tauri-apps/api";
 
   const sys = getSystem();
 
@@ -16,7 +17,15 @@
     }, 15000);
 
     // @note The whole app assumes the db exists and is ready. Do not render before that
-    await initDb();
+    try {
+      await initDb();
+    } catch (err: any) {
+      await sys.alert(
+        `There was an error initializing the database. Please try again. If the problem persists, please report it on GitHub.` +
+          err.message
+      );
+      throw err;
+    }
 
     clearTimeout(_timeout);
 
@@ -31,6 +40,7 @@
 
   function isExternalUrl(href: string) {
     const url = new URL(href);
+    // @ts-ignore
     return url.origin !== window.location.origin;
   }
 

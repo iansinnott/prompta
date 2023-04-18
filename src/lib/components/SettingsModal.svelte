@@ -11,6 +11,18 @@
   import AutosizeTextarea from "./AutosizeTextarea.svelte";
   import IconRefresh from "./IconRefresh.svelte";
   import { getSystem } from "$lib/gui";
+  import { onMount } from "svelte";
+  import SvelteMarkdown from "svelte-markdown";
+  import CodeBlock from "./CodeBlock.svelte";
+
+  let schema;
+  let migrationVersion;
+  onMount(async () => {
+    schema = (await $db?.execO<{ sql: string }>(`SELECT sql FROM sqlite_master WHERE type='table'`))
+      ?.map((x) => x.sql)
+      ?.filter((x) => !x.includes("sqlite_") && !x.includes("crsql"));
+    migrationVersion = (await $db?.execA<number[]>(`PRAGMA user_version`))?.[0];
+  });
 </script>
 
 <!-- Hide on escape -->
@@ -167,14 +179,26 @@
         </div>
 
         <label for="c" class="label">Database:</label>
-        <div>
-          <pre class="py-1 px-2 rounded text-slate-300 text-sm border border-zinc-700 table">
+        <div class="overflow-auto max-w-full">
+          <pre
+            class="py-1 px-2 rounded text-slate-300 text-sm border border-zinc-700 table whitespace-pre-wrap overflow-auto w-full">
            {DB_NAME}<span class="text-blue-300 opacity-50">/{$openAiConfig.siteId}</span> 
           </pre>
           <p class="opacity-60">
             <small> Database identifier used locally for persistent storage. </small>
           </p>
         </div>
+
+        <!-- <label for="c" class="label">Schema:</label>
+        <div>
+          {#each schema || [] as s}
+            <SvelteMarkdown source={"```\n" + s + "\n```"} renderers={{ code: CodeBlock }} />
+          {/each}
+          <p class="opacity-60">
+            <small> Database identifier used locally for persistent storage. </small>
+          </p>
+          <p>Migration Version: {migrationVersion}</p>
+        </div> -->
       </div>
     </form>
   </div>

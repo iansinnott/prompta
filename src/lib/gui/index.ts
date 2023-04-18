@@ -2,6 +2,7 @@ import * as Tauri from "./native";
 import * as Browser from "./browser";
 
 interface SystemSpecificApi {
+  alert: (message: string) => Promise<void>;
   openExternal: (url: string) => Promise<void>;
   AppWindow: {
     minimize: () => Promise<void>;

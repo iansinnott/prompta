@@ -11,7 +11,7 @@ SELECT
 CREATE TABLE
   if NOT EXISTS "message" (
     "id" VARCHAR(255) PRIMARY KEY,
-    "role" VARCHAR(63) NOT NULL, -- system, user, assistant
+    "role" VARCHAR(63) NOT NULL DEFAULT '', -- system, user, assistant
     "model" VARCHAR(255), -- Only applicable for role=assistant
     "cancelled" BOOLEAN DEFAULT FALSE,
     "content" TEXT,

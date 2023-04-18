@@ -22,3 +22,7 @@ export async function saveAs(filename: string, data: string) {
   link.click();
   document.body.removeChild(link);
 }
+
+export async function alert(message: string) {
+  await window.alert(message);
+}

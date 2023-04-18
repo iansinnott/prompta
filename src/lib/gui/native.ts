@@ -26,3 +26,7 @@ export async function saveAs(filename: string, data: string) {
   if (!savePath) return;
   return tauri.fs.writeFile(savePath, data);
 }
+
+export async function alert(message: string) {
+  await tauri.dialog.message(message);
+}
