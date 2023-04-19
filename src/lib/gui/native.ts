@@ -1,3 +1,4 @@
+import { basename } from "$lib/utils";
 import * as tauri from "@tauri-apps/api";
 import * as shell from "@tauri-apps/api/shell";
 import { appWindow } from "@tauri-apps/api/window";
@@ -27,6 +28,33 @@ export async function saveAs(filename: string, data: string) {
   return tauri.fs.writeFile(savePath, data);
 }
 
+export async function chooseAndOpenTextFile() {
+  const file = await tauri.dialog.open({
+    multiple: false,
+    filters: [{ name: "JSON", extensions: ["json"] }],
+  });
+
+  if (!file) return;
+
+  let filePath: string;
+  if (Array.isArray(file)) {
+    filePath = file[0];
+  } else {
+    filePath = file;
+  }
+
+  const data = await tauri.fs.readTextFile(filePath);
+
+  return {
+    name: basename(filePath) as string,
+    data,
+  };
+}
+
 export async function alert(message: string) {
   await tauri.dialog.message(message);
+}
+
+export async function confirm(message: string) {
+  return tauri.dialog.confirm(message, { type: "warning" });
 }

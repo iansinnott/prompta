@@ -170,7 +170,10 @@ export const getOpenAi = () => {
 
 export const generateThreadTitle = async ({ threadId }: { threadId: string }) => {
   const openAi = getOpenAi();
-  const context = await ChatMessage.findMany({ threadId });
+  const context = await ChatMessage.findMany({
+    where: { threadId },
+    orderBy: { createdAt: "ASC" },
+  });
   const messageContext = context.map((x) => ({ content: x.content, role: x.role }));
 
   const prompt: CreateChatCompletionRequest = {
@@ -332,6 +335,7 @@ const invalidatable = <T>(
 export const archivedThreadList = invalidatable<Thread[]>([], (set) => {
   Thread.findMany({
     where: { archived: true },
+    orderBy: { createdAt: "DESC" },
   }).then(set);
 });
 
@@ -340,6 +344,7 @@ export const threadList = invalidatable<Thread[]>(
   (set) => {
     Thread.findMany({
       where: { archived: false },
+      orderBy: { createdAt: "DESC" },
     }).then(set);
   },
   {
@@ -379,7 +384,11 @@ export const currentChatThread = (() => {
     //   return;
     // }
 
-    ChatMessage.findMany({ threadId: t.id })
+    ChatMessage.findMany({
+      where: { threadId: t.id },
+
+      orderBy: { createdAt: "ASC" },
+    })
       .then((xs) => {
         messageCache = xs;
         if (pending) {
@@ -420,7 +429,10 @@ export const currentChatThread = (() => {
       threadId,
     });
 
-    const context = await ChatMessage.findMany({ threadId });
+    const context = await ChatMessage.findMany({
+      where: { threadId },
+      orderBy: { createdAt: "ASC" },
+    });
 
     let messageContext = context.map((x) => ({ content: x.content, role: x.role }));
 
@@ -555,7 +567,7 @@ export const currentChatThread = (() => {
     sendMessage: async (...args: Parameters<typeof ChatMessage.create>) => {
       const [msg] = args;
 
-      if (isNewThread({ id: msg.threadId })) {
+      if (isNewThread({ id: msg.threadId as string })) {
         const newThread = await Thread.create({ title: PENDING_THREAD_TITLE });
         msg.threadId = newThread.id;
         currentThread.set(newThread);
@@ -567,7 +579,7 @@ export const currentChatThread = (() => {
       // @todo remove? We shouldn't need this manual validation since pending message will invalidate for u
       // invalidate();
 
-      promptGpt({ threadId: msg.threadId }).catch((err) => {
+      promptGpt({ threadId: msg.threadId as string }).catch((err) => {
         console.error("[gpt]", err);
         invalidate();
       });

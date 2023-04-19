@@ -70,3 +70,17 @@ export function throttle<T extends (...args: any) => any>(
 export const dirname = (s: string) => s.split("/").slice(0, -1).join("/");
 
 export const basename = (s: string) => s.split("/").at(-1);
+
+export function toSnakeCase(str: string): string {
+  return str.replace(/\.?([A-Z]+)/g, (x, y) => "_" + y.toLowerCase()).replace(/^_/, "");
+}
+export function toCamelCase(str: string): string {
+  return str.replace(/_([a-z])/g, (match, letter) => letter.toUpperCase());
+}
+
+export function mapKeys<T extends Record<string, any>, K extends string>(
+  obj: T,
+  f: (k: keyof T) => K
+): Record<K, T[keyof T]> {
+  return Object.fromEntries(Object.entries(obj).map(([k, v]) => [f(k as keyof T), v])) as any;
+}

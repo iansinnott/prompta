@@ -14,6 +14,8 @@
   import { onMount } from "svelte";
   import SvelteMarkdown from "svelte-markdown";
   import CodeBlock from "./CodeBlock.svelte";
+  import { ChatMessage, Thread } from "$lib/db";
+  import { mapKeys, toCamelCase } from "$lib/utils";
 
   let schema;
   let migrationVersion;
@@ -146,7 +148,7 @@
         <div class="Separator h-px bg-zinc-700 my-4" />
         <h3 class="text-xl mb-4 col-span-2">Database</h3>
 
-        <label for="c" class="label">Export:</label>
+        <label for="export" class="label">Export:</label>
         <div>
           <button
             on:click={async (e) => {
@@ -175,6 +177,81 @@
           </button>
           <p>
             <small>Will download multiple files.</small>
+          </p>
+        </div>
+
+        <label for="import" class="label">Import:</label>
+        <div>
+          <button
+            on:click={async (e) => {
+              e.preventDefault();
+
+              console.debug("Prepare Import");
+
+              if (!$db) {
+                console.error("No database");
+                throw new Error("No database");
+              }
+
+              const sys = getSystem();
+              const file = await sys.chooseAndOpenTextFile();
+
+              if (!file) {
+                console.error("No file chosen");
+                return;
+              }
+
+              const json = JSON.parse(file.data);
+              console.log("JSON");
+
+              if (
+                !(await sys.confirm(
+                  `Are you sure you want to import ${file.name}? Although unlikely, this can cause data loss if you are importing two exports from the same database.`
+                ))
+              ) {
+                console.log("Canclled");
+                return;
+              }
+
+              // if file.name looks like $timestamp_$table.json
+              // then we can import it
+              if (file.name.match(/^\d+_(message|thread)\.json$/)) {
+                console.log("%c[import/v1] legacy table export", "color:salmon;");
+                const tableName = file.name.split("_")[1].split(".")[0];
+
+                for (const row of json) {
+                  const x = mapKeys(row, (x) => {
+                    return toCamelCase(String(x));
+                  });
+                  if (tableName === "message") await ChatMessage.upsert(x);
+                  else if (tableName === "thread") await Thread.upsert(x);
+                  else throw new Error("Unknown table");
+                }
+
+                console.log(
+                  "%c[import/v1] success",
+                  "color:salmon;",
+                  json.length,
+                  tableName,
+                  "records imported"
+                );
+
+                return;
+              }
+
+              console.error("Unknown file type", file.name);
+
+              sys.alert("Unknown file type. Could not import.");
+            }}
+            class="flex items-center bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Import
+          </button>
+          <p>
+            <small
+              >Run multiple times to import multiple prior exports. If records have the same ID, the
+              later one will overwrite.</small
+            >
           </p>
         </div>
 

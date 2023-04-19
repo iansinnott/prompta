@@ -6,7 +6,7 @@ import { dev } from "$app/environment";
 import { nanoid } from "nanoid";
 import type { ChatCompletionResponseMessageRoleEnum } from "openai";
 import { stringify as uuidStringify } from "uuid";
-import { basename } from "./utils";
+import { basename, toCamelCase, toSnakeCase } from "./utils";
 
 // ========================================================================================
 // Rudimentary Migration System
@@ -150,6 +150,10 @@ const dateFromSqlite = (s: string) => {
   return new Date(s.replace(" ", "T") + "Z");
 };
 
+const sqliteFromDate = (date: Date) => {
+  return date.toISOString().replace("T", " ").replace("Z", "");
+};
+
 export const DatabaseMeta = {
   async getSiteId() {
     const r = await _db.execA("SELECT crsql_siteid()");
@@ -157,6 +161,149 @@ export const DatabaseMeta = {
     const siteid = uuidStringify(raw);
     return siteid as string;
   },
+};
+
+interface CRUDConf {
+  tableName: string;
+  fromDbKey?: (x: string) => string;
+  toDbKey?: (x: any) => string;
+  fromDbValue?: (x: any) => any;
+  toDbValue?: (x: any) => any;
+}
+
+const crud = <T extends { id: string }>({
+  tableName,
+  fromDbKey = toCamelCase,
+  toDbKey = (x) => toSnakeCase(String(x)),
+  fromDbValue = (x) => {
+    // NOTE we don't assume anything here. judging whether a string is meant to be a string or a date could ge hairy
+    return x;
+  },
+  toDbValue = (x) => {
+    if (x instanceof Date) {
+      return sqliteFromDate(x);
+    }
+
+    return x;
+  },
+}: CRUDConf) => {
+  return {
+    async create(t: Partial<T>) {
+      const fields: any[] = [];
+      const values: any[] = [];
+      const placeholders: string[] = [];
+
+      Object.entries(t).forEach(([key, value]) => {
+        fields.push(`"${toDbKey(key)}"`);
+        values.push(toDbValue(value));
+        placeholders.push("?");
+      });
+
+      const cid = t.id || nanoid();
+      if (!fields.includes('"id"')) {
+        fields.push('"id"');
+        values.push(cid);
+        placeholders.push("?");
+      }
+
+      const query = `INSERT INTO "${tableName}" (${fields.join(", ")}) VALUES(${placeholders.join(
+        ", "
+      )})`;
+
+      console.debug(t, query, values);
+      await _db.exec(query, values);
+      return this.findUnique({ where: { id: cid } }) as Promise<T>;
+    },
+
+    async findUnique(x: { where: { id: string } }): Promise<T | undefined> {
+      const xs = await _db.execO<ThreadRow>(`select * from "${tableName}" where id=? limit 1`, [
+        x.where.id,
+      ]);
+      // @ts-expect-error Types don't know yet
+      return xs[0] ? this.rowToModel(xs[0]) : undefined;
+    },
+
+    async findMany({
+      where,
+      orderBy,
+    }: {
+      where?: Partial<T>;
+      orderBy?: Partial<Record<keyof T, "ASC" | "DESC">>;
+    } = {}): Promise<T[]> {
+      let query = `
+      SELECT * FROM "${tableName}"
+    `;
+      const queryParams: any[] = [];
+
+      if (where) {
+        const whereClauses = Object.entries(where)
+          .map(([key, value]) => {
+            queryParams.push(value);
+            return `${toDbKey(key)}=?`;
+          })
+          .join(" AND ");
+
+        if (whereClauses) {
+          query += `WHERE ${whereClauses}`;
+        }
+      }
+
+      if (orderBy) {
+        const [[orderByKey, direction]] = Object.entries(orderBy);
+        query += ` ORDER BY "${toDbKey(orderByKey)}" ${direction}`;
+      } else {
+        query += ' ORDER BY "created_at" DESC';
+      }
+
+      const rows = await _db.execO<T>(query, queryParams);
+
+      // @ts-expect-error Types don't know yet
+      return rows.map((row) => this.rowToModel(row));
+    },
+
+    async upsert(data: Partial<T>) {
+      console.debug("upsert", tableName, data);
+
+      // NOTE `create` cases are separated for reader clarity, but could be combined
+      if (!data.id) {
+        return this.create(data as T); // If no ID, then create it
+      } else if (!(await this.findUnique({ where: { id: data.id } }))) {
+        return this.create(data as T); // If there _is_ an ID but it's not in the database, then create it (used for importing)
+      } else {
+        return this.update({ where: { id: data.id }, data });
+      }
+    },
+
+    async update(x: { where: { id: string }; data: Partial<Record<keyof Thread, any>> }) {
+      if (!x.where.id) {
+        throw new Error("Must provide id");
+      }
+
+      const keysValues = Object.entries(x.data);
+      const updateExpressions = keysValues.map(([key]) => `${toDbKey(key)}=?`).join(",");
+      const queryParams = keysValues.flatMap(([, value]) => value).concat(x.where.id);
+
+      const sql = `update "${tableName}" set ${updateExpressions} where id=?`;
+      await _db.exec(sql, queryParams);
+      return this.findUnique({ where: x.where }) as Promise<T>;
+    },
+
+    async _removeAll() {
+      if (!dev) {
+        console.warn(
+          "_removeAll is meant for dev use. revisit the source code if you think this is a mistake."
+        );
+      }
+
+      if (!(await window.confirm("All records will be removed. Continue?"))) {
+        return;
+      }
+
+      await _db.exec(`delete from "${tableName}"`);
+
+      return true;
+    },
+  };
 };
 
 export const ChatMessage = {
@@ -168,55 +315,12 @@ export const ChatMessage = {
     };
   },
 
-  async findMany({ threadId }: { threadId: string }): Promise<ChatMessage[]> {
-    if (!threadId) {
-      throw new Error("Tried to query messages without thread id");
-    }
-
-    const rows = await _db.execO<ChatMessageRow>(
-      `
-      SELECT * FROM "message" 
-      WHERE thread_id=?
-      ORDER BY "created_at" ASC
-    `,
-      [threadId]
-    );
-
-    return rows.map((row) => this.rowToModel(row));
-  },
-
   async findFirst(x: { where: { threadId: string; content: string } }) {
     const xs = await _db.execO<ChatMessageRow>(
       `select * from message where thread_id=? and content=? order by created_at desc limit 1`,
       [x.where.threadId, x.where.content]
     );
     return this.rowToModel(xs[0]);
-  },
-
-  async findUnique(x: { where: { id: string } }): Promise<ChatMessage | undefined> {
-    const xs = await _db.execO<ChatMessageRow>(`select * from "message" where id=?`, [x.where.id]);
-    return xs.length ? this.rowToModel(xs[0]) : undefined;
-  },
-
-  /**
-   * Create a record in the db. Accepts an optional ID so that we can create a
-   * message elsewhere and then persist it
-   */
-  async create(x: {
-    content: string;
-    role: ChatMessage["role"];
-    threadId: string;
-    id?: string;
-    model?: string | null;
-    cancelled?: boolean | null;
-  }) {
-    const cid = x.id || nanoid();
-    await _db.exec(
-      `insert into "message" ("id", "content", "role", "model", "cancelled", "thread_id") values(?, ?, ?, ?, ?, ?)`,
-      [cid, x.content, x.role, x.model ?? "", x.cancelled ? 1 : 0, x.threadId]
-    );
-
-    return this.findUnique({ where: { id: cid } });
   },
 
   async delete(x: { where: { id?: string; threadId?: string } }) {
@@ -232,21 +336,7 @@ export const ChatMessage = {
     await _db.exec(`delete from "message" where ${where}`, args);
   },
 
-  async _removeAll() {
-    if (!dev) {
-      console.warn(
-        "_removeAll is meant for dev use. revisit the source code if you think this is a mistake."
-      );
-    }
-
-    if (!(await window.confirm("All messages will be removed. Continue?"))) {
-      return;
-    }
-
-    await _db.exec(`drop table "message"`);
-
-    return true;
-  },
+  ...crud<ChatMessage>({ tableName: "message" }),
 };
 
 export const Thread = {
@@ -257,18 +347,6 @@ export const Thread = {
     };
   },
 
-  async findMany({ where: { archived = false } = {} } = {}): Promise<Thread[]> {
-    const rows = await _db.execO<ThreadRow>(
-      `
-      SELECT * FROM "thread" 
-      WHERE archived=?
-      ORDER BY "created_at" DESC
-    `,
-      [archived ? 1 : 0]
-    );
-    return rows.map((row) => this.rowToModel(row));
-  },
-
   async findFirst(x: { where: { title: string } }) {
     const xs = await _db.execO<ThreadRow>(
       `select * from thread where title=? order by created_at desc limit 1`,
@@ -277,45 +355,7 @@ export const Thread = {
     return this.rowToModel(xs[0]);
   },
 
-  async findUnique(x: { where: { id: string } }): Promise<Thread | undefined> {
-    const xs = await _db.execO<ThreadRow>(`select * from thread where id=?`, [x.where.id]);
-    return xs[0] ? this.rowToModel(xs[0]) : undefined;
-  },
-
-  async create(t: { title: string }) {
-    const cid = nanoid();
-    await _db.exec(`insert into "thread" ("id", "title") values(?, ?)`, [cid, t.title]);
-    return this.findUnique({ where: { id: cid } }) as Promise<Thread>;
-  },
-
-  async update(x: { where: { id: string }; data: Partial<Record<keyof Thread, any>> }) {
-    if (!x.where.id) {
-      throw new Error("Must provide id");
-    }
-
-    const keysValues = Object.entries(x.data);
-    const updateExpressions = keysValues.map(([key]) => `${key}=?`).join(",");
-    const queryParams = keysValues.flatMap(([, value]) => value).concat(x.where.id);
-
-    await _db.exec(`update "thread" set ${updateExpressions} where id=?`, queryParams);
-    return this.findUnique({ where: x.where }) as Promise<Thread>;
-  },
-
-  async _removeAll() {
-    if (!dev) {
-      console.warn(
-        "_removeAll is meant for dev use. revisit the source code if you think this is a mistake."
-      );
-    }
-
-    if (!(await window.confirm("All records will be removed. Continue?"))) {
-      return;
-    }
-
-    await _db.exec(`drop table "thread"`);
-
-    return true;
-  },
+  ...crud<Thread>({ tableName: "thread" }),
 };
 
 export const Preferences = {
@@ -330,6 +370,7 @@ export const Preferences = {
       };
     });
   },
+
   get: async (k: string) => {
     const rows = await _db.execO<{ value: string | number | boolean | null | undefined }>(
       `select value from preferences where key=?`,
@@ -338,6 +379,7 @@ export const Preferences = {
     // @ts-ignore
     return rows[0]?.value ? JSON.parse(rows[0].value) : rows[0]?.value;
   },
+
   set: async (k: string, v: any) => {
     await _db.exec(`insert or replace into preferences(key, value) values(?, ?)`, [
       k,
@@ -345,6 +387,7 @@ export const Preferences = {
     ]);
     return v;
   },
+
   setEntries: async (entries: [string, any][]) => {
     const values = entries.map(([k, v]) => `(?, ?)`).join(", ");
     const args = entries.flatMap(([k, v]) => [k, JSON.stringify(v)]);
@@ -373,7 +416,7 @@ export const Preferences = {
       return;
     }
 
-    await _db.exec(`delete from "preferences" where 1=1`);
+    await _db.exec(`delete from "preferences"`);
 
     return true;
   },

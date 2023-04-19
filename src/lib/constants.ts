@@ -15,6 +15,8 @@ export const DB_NAMES = [
   "chat_db-v8.1",
   "chat_db-v8.2", // Testing out migration fixes
   "chat_db-v8.1", // Moving back to 8.1 now that migrations are fixed. No data changed, just migration code
+  "chat_db-v9.1", // Starting fresh in dev
+  "chat_db-v9.2", // QA importing
 ];
 
 export const DB_NAME = DB_NAMES.at(-1);
