@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "tauri dev",
     "build": "tauri build",
+    "//build:debug": "this can be done easily from the CLI, so this is more for documentation",
+    "build:debug": "tauri build --debug",
     "ui:dev": "vite dev",
     "ui:build": "NODE_ENV=production vite build",
     "release": "yarn version && ./scripts/release.sh",

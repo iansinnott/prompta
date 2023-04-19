@@ -15,7 +15,10 @@ import { basename } from "./utils";
 // The reason for ?url importing migrations is to use their filename as a
 // version number.
 import schema from "$lib/migrations/00_init.sql?raw"; // NOTE that this is ?raw imported, while migrations are URL imported
+
+// @note Migrations requrie no asset inlining. See vite.config.ts
 import migration_01 from "$lib/migrations/01_add_archived.sql?url";
+import { getSystem } from "./gui";
 
 // prettier-ignore
 const migrations = [
@@ -24,6 +27,63 @@ const migrations = [
 
 let _sqlite: SQLite3;
 let _db: DB;
+
+export const getDbVersion = async (db: DB) => {
+  const [[dbVersion]] = await _db.execA<number[]>("PRAGMA user_version");
+  return dbVersion;
+};
+
+const migrateDb = async (db: DB) => {
+  for (const x of schema.split(";")) {
+    await _db.exec(x);
+  }
+
+  for (const importUrl of migrations) {
+    const dbVersion = await getDbVersion(_db);
+    const migrationVersion = Number(basename(importUrl)?.split("_")[0]);
+
+    if (dbVersion >= migrationVersion) {
+      console.log("%cmigrate skip=true", "color:gray;", {
+        dbVersion,
+        migrationVersion,
+        path: basename(importUrl),
+      });
+      continue;
+    }
+
+    const raw = await fetch(importUrl).then((x) => x.text());
+    console.log("%cmigrate", "color:salmon;", "skip=false", {
+      dbVersion,
+      migrationVersion,
+      path: basename(importUrl),
+    });
+    console.debug(raw);
+    let error: null | Error = null;
+
+    for (const x of raw.split(";")) {
+      try {
+        await _db.exec(x);
+      } catch (err: any) {
+        error = new Error(err.message + " SQL: " + x);
+        break;
+      }
+    }
+
+    if (error) {
+      // NOTE This will generate two alert messages most likely, if the base
+      // level error handler also alerts. However the additional context is
+      // useful.
+      //
+      // There's an open question about what to do here. We could roll back the
+      // db, but the rest of the app will expect it to be migrated. May or may
+      // not cause brakage.
+      await getSystem().alert(
+        "Could not migrate database. Failed on " + importUrl + "." + (error?.message || "")
+      );
+      throw error;
+    }
+  }
+};
 
 export const initDb = async () => {
   if (_db) {
@@ -38,26 +98,7 @@ export const initDb = async () => {
   _db = await _sqlite.open(DB_NAME);
   db.set(_db);
 
-  for (const x of schema.split(";")) {
-    await _db.exec(x);
-  }
-
-  // prettier-ignore
-  for (const importUrl of migrations) {
-    const [[dbVersion]] = await _db.execA<number[]>("PRAGMA user_version");
-    const migrationVersion = Number(basename(importUrl)?.split("_")[0]);
-    if (dbVersion >= migrationVersion) {
-      console.log('%cmigrate skip=true', 'color:gray;', { dbVersion, migrationVersion, path: basename(importUrl) });
-      continue;
-    }
-
-    const raw = await fetch(importUrl).then((x) => x.text())
-    console.log('%cmigrate', 'color:salmon;', { dbVersion, migrationVersion, path: basename(importUrl) });
-    console.debug(raw);
-    for (const x of raw.split(";")) {
-      await _db.exec(x);
-    }
-  }
+  await migrateDb(_db);
 
   // Initialize stores
   for (const s of [currentThread, profilesStore, openAiConfig]) {
