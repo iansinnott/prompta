@@ -1,6 +1,6 @@
 {
   "name": "prompta",
-  "version": "0.8.3",
+  "version": "0.9.3",
   "private": true,
   "scripts": {
     "dev": "tauri dev",
