@@ -8,7 +8,7 @@
   },
   "package": {
     "productName": "Prompta",
-    "version": "0.9.4-alpha"
+    "version": "0.9.5-alpha"
   },
   "tauri": {
     "allowlist": {
