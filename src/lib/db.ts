@@ -1,12 +1,21 @@
 import initWasm, { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { DB_NAME } from "../lib/constants";
-import { db, sqlite, currentThread, openAiConfig, profilesStore } from "../lib/stores/stores";
+import {
+  db,
+  sqlite,
+  currentThread,
+  openAiConfig,
+  profilesStore,
+  rtcStore,
+} from "../lib/stores/stores";
 import { dev } from "$app/environment";
 import { nanoid } from "nanoid";
 import type { ChatCompletionResponseMessageRoleEnum } from "openai";
 import { stringify as uuidStringify } from "uuid";
 import { basename, toCamelCase, toSnakeCase } from "./utils";
+import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
+import { wdbRtc } from "@vlcn.io/sync-p2p";
 
 // ========================================================================================
 // Rudimentary Migration System
@@ -105,6 +114,33 @@ export const initDb = async () => {
     await s.init();
   }
 
+  const rx = tblrx(_db);
+  const rtc = await wdbRtc(_db);
+
+  const subs: (() => void)[] = [];
+
+  subs.push(Thread.initRx(rx));
+  subs.push(ChatMessage.initRx(rx));
+  subs.push(
+    rtc.onConnectionsChanged((pending, established) => {
+      console.log("rtc.onConnectionsChanged", { pending, established });
+      rtcStore.update((x) => ({ ...x, pending, established }));
+    })
+  );
+
+  rtcStore.update((x) => ({ ...x, rtc }));
+
+  window.onbeforeunload = () => {
+    if (_db) {
+      console.debug("Closing db connection");
+      _db.close();
+    }
+
+    for (const unsub of subs) {
+      unsub();
+    }
+  };
+
   if (dev) {
     for (const [k, v] of [
       ["Thread", Thread],
@@ -112,6 +148,7 @@ export const initDb = async () => {
       ["DatabaseMeta", DatabaseMeta],
       ["Preferences", Preferences],
       ["db", _db],
+      ["rtc", rtc],
     ]) {
       // @ts-expect-error Just for dev, and the error is not consequential
       (window as any)[k] = v;
@@ -189,7 +226,17 @@ const crud = <T extends { id: string }>({
   },
   rowToModel = (x) => x as T,
 }: CRUDConf<T>) => {
+  const listeners = new Set<() => void>();
   return {
+    _listeners: listeners,
+
+    onTableChange(cb: () => void) {
+      listeners.add(cb);
+      return () => {
+        listeners.delete(cb);
+      };
+    },
+
     async create(t: Partial<T>) {
       const fields: any[] = [];
       const values: any[] = [];
@@ -212,8 +259,8 @@ const crud = <T extends { id: string }>({
         ", "
       )})`;
 
-      console.debug(t, query, values);
       await _db.exec(query, values);
+
       return this.findUnique({ where: { id: cid } }) as Promise<T>;
     },
 
@@ -309,6 +356,12 @@ const crud = <T extends { id: string }>({
       const queryParams = keysValues.flatMap(([, value]) => value);
       const sql = `delete from "${tableName}" where ${deleteWhere}`;
       await _db.exec(sql, queryParams);
+    },
+
+    initRx(rx: TblRx) {
+      return rx.onRange([tableName], () => {
+        listeners.forEach((cb) => cb());
+      });
     },
 
     async _removeAll() {

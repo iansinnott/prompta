@@ -19,7 +19,10 @@ import { ChatMessage, DatabaseMeta, Preferences, Thread } from "$lib/db";
 import { nanoid } from "nanoid";
 import { simulateLLMStreamResponse } from "$lib/llm/utils";
 import { initOpenAi } from "$lib/llm/openai";
-import { fetchEventSource } from "@microsoft/fetch-event-source";
+import { fetchEventSource, type EventSourceMessage } from "@microsoft/fetch-event-source";
+import type { wdbRtc } from "@vlcn.io/sync-p2p";
+import { getSystem } from "$lib/gui";
+import { throttle } from "$lib/utils";
 
 export const showSettings = writable(false);
 
@@ -76,12 +79,14 @@ export const openAiConfig = (() => {
   type OpenAiAppConfig = Partial<Configuration> & {
     replicationHost: string;
     siteId: string;
+    lastSyncChain: string;
   };
 
   const defaultConfig: OpenAiAppConfig = {
     apiKey: "",
     replicationHost: "",
     siteId: "",
+    lastSyncChain: "",
   };
 
   const { subscribe, set, update } = writable<OpenAiAppConfig>(defaultConfig);
@@ -110,8 +115,11 @@ export const openAiConfig = (() => {
         console.debug("No config found. Likely first time running the app. Using default config.");
       }
 
+      // if query param is set, use that sync chain
       let c = config || defaultConfig;
-      set({ ...c, siteId });
+      const urlParams = new URLSearchParams(location.search);
+      const syncChain = urlParams.get("syncChain") || c.lastSyncChain;
+      set({ ...c, siteId, lastSyncChain: syncChain });
     },
   };
 })();
@@ -356,6 +364,39 @@ const pendingMessageStore = writable<ChatMessage | null>(null);
 
 export const inProgressMessageId = derived(pendingMessageStore, (x) => x?.id);
 
+/**
+ * Handle inbound server sent events, sent by OpenAI's API. This is how we get
+ * the live-typing feel from the bot.
+ */
+const handleSSE = (ev: EventSourceMessage) => {
+  const message = ev.data;
+
+  if (message === "[DONE]") {
+    return; // Stream finished
+  }
+
+  try {
+    const parsed: CreateChatCompletionResponse = JSON.parse(message);
+    // @ts-expect-error types are wrong for streamed responses
+    const content = parsed.choices[0].delta.content;
+    if (!content) {
+      console.log("Contentless message", parsed.id, parsed.object);
+      return;
+    }
+
+    pendingMessageStore.update((x) => {
+      if (!x) {
+        console.warn("should never happen", x);
+        return x;
+      }
+
+      return { ...x, content: x.content + content };
+    });
+  } catch (error) {
+    console.error("Could not JSON parse stream message", message, error);
+  }
+};
+
 export const currentChatThread = (() => {
   const invalidationToken = writable(Date.now());
   let lastThreadId: string | undefined = undefined;
@@ -376,17 +417,17 @@ export const currentChatThread = (() => {
     }
     lastThreadId = t.id;
 
-    // @todo This caused issues with user message not showing up right away
-    // if messages are cached and there's a pending chat, then we're in the
-    // middle of completion. do not re-fetch messages yet.
-    // if (messageCache && pending) {
-    //   set({ messages: [...messageCache, pending], status: "loading" });
-    //   return;
-    // }
+    // If messages are cached and there's a pending chat, then we're in the
+    // middle of completion. do not re-fetch messages yet. Refetching can cause
+    // duplicate key errors if fetched while there's a pending message, since
+    // they get put into the same array.
+    if (messageCache && pending) {
+      set({ messages: [...messageCache, pending], status: "loading" });
+      return;
+    }
 
     ChatMessage.findMany({
       where: { threadId: t.id },
-
       orderBy: { createdAt: "ASC" },
     })
       .then((xs) => {
@@ -394,6 +435,7 @@ export const currentChatThread = (() => {
         if (pending) {
           set({ messages: [...xs, pending], status: "loading" });
         } else {
+          messageCache = null;
           set({ messages: xs, status: "idle" });
         }
       })
@@ -469,48 +511,21 @@ export const currentChatThread = (() => {
         console.error("Error in stream", err);
         throw err;
       },
-      onmessage(ev) {
-        const message = ev.data;
-
-        if (message === "[DONE]") {
-          return; // Stream finished
-        }
-
-        try {
-          const parsed: CreateChatCompletionResponse = JSON.parse(message);
-          // @ts-expect-error types are wrong for streamed responses
-          const content = parsed.choices[0].delta.content;
-          if (!content) {
-            console.log("Contentless message", parsed);
-            return;
-          }
-
-          pendingMessageStore.update((x) => {
-            if (!x) {
-              console.warn("should never happen", x);
-              return x;
-            }
-
-            return { ...x, content: x.content + content };
-          });
-        } catch (error) {
-          console.error("Could not JSON parse stream message", message, error);
-        }
-      },
+      onmessage: handleSSE,
     });
 
     const botMessage = get(pendingMessageStore);
 
     if (!botMessage) throw new Error("No pending message found when one was expected.");
 
+    // Clear the pending message. Do this afterwards because it invalidates the chat message list
+    pendingMessageStore.set(null);
+
     // Store it fully in the db
     await ChatMessage.create({
       ...botMessage,
       cancelled: abortController.signal.aborted,
     });
-
-    // Clear the pending message. Do this afterwards because it invalidates the chat message list
-    pendingMessageStore.set(null);
 
     if (!hasThreadTitle(get(currentThread))) {
       console.log("Generating thread title...");
@@ -524,8 +539,9 @@ export const currentChatThread = (() => {
     subscribe,
     invalidate,
     deleteMessages: async () => {
-      // the await is for tuari
-      if (!(await window.confirm("Are you sure you want to delete all messages in this thread?"))) {
+      if (
+        !(await getSystem().confirm("Are you sure you want to delete all messages in this thread?"))
+      ) {
         return;
       }
 
@@ -554,8 +570,6 @@ export const currentChatThread = (() => {
         },
       });
 
-      invalidate();
-
       promptGpt({ threadId: lastMessage.threadId }).catch((err) => {
         console.error("[gpt]", err);
         invalidate();
@@ -581,8 +595,46 @@ export const currentChatThread = (() => {
 
       promptGpt({ threadId: msg.threadId as string }).catch((err) => {
         console.error("[gpt]", err);
-        invalidate();
+        // invalidate();
       });
     },
   };
 })();
+
+export const rtcStore = (() => {
+  const store = writable<{
+    pending: string[];
+    established: string[];
+    rtc: Awaited<ReturnType<typeof wdbRtc>> | null;
+  }>({
+    pending: [],
+    established: [],
+    rtc: null,
+  });
+
+  const { subscribe, update, set } = store;
+
+  return {
+    subscribe,
+    update,
+    set,
+    connectTo(s: string) {
+      const rtc = get(store).rtc;
+      if (rtc) {
+        rtc.connectTo(s);
+      } else {
+        console.warn("Tried to connect to rtc too early.");
+      }
+    },
+  };
+})();
+
+Thread.onTableChange(() => {
+  console.debug("%cthread table changed", "color:salmon;");
+  threadList.invalidate();
+});
+
+ChatMessage.onTableChange(() => {
+  console.debug("%cmessage table changed", "color:salmon;");
+  currentChatThread.invalidate();
+});

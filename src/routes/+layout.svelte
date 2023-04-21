@@ -1,8 +1,8 @@
 <script lang="ts">
   import "../app.postcss";
-  import { db, openAiConfig, showSettings } from "../lib/stores/stores";
+  import { db, openAiConfig, rtcStore, showSettings } from "../lib/stores/stores";
   import { onMount } from "svelte";
-  import { initDb } from "$lib/db";
+  import { DatabaseMeta, initDb } from "$lib/db";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
   import { getSystem } from "$lib/gui";
   import { window } from "@tauri-apps/api";
@@ -35,7 +35,19 @@
     }
 
     appReady = true;
-    console.debug(`App initialized.`);
+
+    const siteId = await DatabaseMeta.getSiteId();
+    console.debug(`App initialized. siteId=${siteId}`);
+
+    const lastSyncChain = $openAiConfig.lastSyncChain;
+    if (lastSyncChain) {
+      console.debug(`Connecting to sync chain: ${lastSyncChain}`);
+
+      // Not sure why, but this doesn't work if we do it immediately.
+      setTimeout(() => {
+        rtcStore.connectTo(lastSyncChain);
+      }, 1000);
+    }
   });
 
   function isExternalUrl(href: any) {
@@ -51,8 +63,6 @@
   }
 
   function handleExternalUrls(e: MouseEvent) {
-    e.preventDefault();
-    console.warn("Handle external url");
     // @ts-ignore
     const href = e.target.href;
     if (isExternalUrl(href)) {
@@ -62,15 +72,7 @@
   }
 </script>
 
-<svelte:window
-  on:click={handleExternalUrls}
-  on:beforeunload={() => {
-    if ($db) {
-      console.debug("Closing db connection");
-      $db.close();
-    }
-  }}
-/>
+<svelte:window on:click={handleExternalUrls} />
 
 <div class="min-h-screen overflow-hidden text-white rounded-lg bg-[#1B1B1B] border border-zinc-700">
   {#if appReady}
