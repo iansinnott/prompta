@@ -163,12 +163,13 @@ export const DatabaseMeta = {
   },
 };
 
-interface CRUDConf {
+interface CRUDConf<T> {
   tableName: string;
   fromDbKey?: (x: string) => string;
   toDbKey?: (x: any) => string;
   fromDbValue?: (x: any) => any;
   toDbValue?: (x: any) => any;
+  rowToModel?: (x: any) => T;
 }
 
 const crud = <T extends { id: string }>({
@@ -186,7 +187,8 @@ const crud = <T extends { id: string }>({
 
     return x;
   },
-}: CRUDConf) => {
+  rowToModel = (x) => x as T,
+}: CRUDConf<T>) => {
   return {
     async create(t: Partial<T>) {
       const fields: any[] = [];
@@ -219,16 +221,17 @@ const crud = <T extends { id: string }>({
       const xs = await _db.execO<ThreadRow>(`select * from "${tableName}" where id=? limit 1`, [
         x.where.id,
       ]);
-      // @ts-expect-error Types don't know yet
-      return xs[0] ? this.rowToModel(xs[0]) : undefined;
+      return xs[0] ? rowToModel(xs[0]) : undefined;
     },
 
     async findMany({
       where,
       orderBy,
+      limit,
     }: {
       where?: Partial<T>;
       orderBy?: Partial<Record<keyof T, "ASC" | "DESC">>;
+      limit?: number;
     } = {}): Promise<T[]> {
       let query = `
       SELECT * FROM "${tableName}"
@@ -255,10 +258,13 @@ const crud = <T extends { id: string }>({
         query += ' ORDER BY "created_at" DESC';
       }
 
+      if (limit) {
+        query += ` LIMIT ${limit}`;
+      }
+
       const rows = await _db.execO<T>(query, queryParams);
 
-      // @ts-expect-error Types don't know yet
-      return rows.map((row) => this.rowToModel(row));
+      return rows.map((row) => rowToModel(row));
     },
 
     async upsert(data: Partial<T>) {
@@ -274,7 +280,7 @@ const crud = <T extends { id: string }>({
       }
     },
 
-    async update(x: { where: { id: string }; data: Partial<Record<keyof Thread, any>> }) {
+    async update(x: { where: { id: string }; data: Partial<Record<keyof T, any>> }) {
       if (!x.where.id) {
         throw new Error("Must provide id");
       }
@@ -286,6 +292,23 @@ const crud = <T extends { id: string }>({
       const sql = `update "${tableName}" set ${updateExpressions} where id=?`;
       await _db.exec(sql, queryParams);
       return this.findUnique({ where: x.where }) as Promise<T>;
+    },
+
+    async findFirst(x: Omit<Parameters<typeof this.findMany>[0], "limit">): Promise<T | null> {
+      const xs = await this.findMany(x);
+      return xs[0] ?? null;
+    },
+
+    async delete(x: { where: Partial<Record<keyof T, any>> }) {
+      if (!x.where.id) {
+        console.warn("Mass deletion", x);
+      }
+
+      const keysValues = Object.entries(x.where);
+      const deleteWhere = keysValues.map(([key]) => `${toDbKey(key)}=?`).join(" AND ");
+      const queryParams = keysValues.flatMap(([, value]) => value);
+      const sql = `delete from "${tableName}" where ${deleteWhere}`;
+      await _db.exec(sql, queryParams);
     },
 
     async _removeAll() {
@@ -306,7 +329,8 @@ const crud = <T extends { id: string }>({
   };
 };
 
-export const ChatMessage = {
+export const ChatMessage = crud<ChatMessage>({
+  tableName: "message",
   rowToModel: ({ created_at, thread_id, ...x }: ChatMessageRow): ChatMessage => {
     return {
       ...x,
@@ -314,49 +338,17 @@ export const ChatMessage = {
       threadId: thread_id,
     };
   },
+});
 
-  async findFirst(x: { where: { threadId: string; content: string } }) {
-    const xs = await _db.execO<ChatMessageRow>(
-      `select * from message where thread_id=? and content=? order by created_at desc limit 1`,
-      [x.where.threadId, x.where.content]
-    );
-    return this.rowToModel(xs[0]);
-  },
-
-  async delete(x: { where: { id?: string; threadId?: string } }) {
-    const { id, threadId } = x.where;
-    if (!id && !threadId) {
-      throw new Error("Must provide either id or threadId");
-    }
-
-    const where = id ? `id=?` : `thread_id=?`;
-    const args = id ? [id] : [threadId];
-
-    // @ts-ignore
-    await _db.exec(`delete from "message" where ${where}`, args);
-  },
-
-  ...crud<ChatMessage>({ tableName: "message" }),
-};
-
-export const Thread = {
+export const Thread = crud<Thread>({
+  tableName: "thread",
   rowToModel: ({ created_at, ...x }: ThreadRow): Thread => {
     return {
       ...x,
       createdAt: dateFromSqlite(created_at),
     };
   },
-
-  async findFirst(x: { where: { title: string } }) {
-    const xs = await _db.execO<ThreadRow>(
-      `select * from thread where title=? order by created_at desc limit 1`,
-      [x.where.title]
-    );
-    return this.rowToModel(xs[0]);
-  },
-
-  ...crud<Thread>({ tableName: "thread" }),
-};
+});
 
 export const Preferences = {
   async findMany() {
