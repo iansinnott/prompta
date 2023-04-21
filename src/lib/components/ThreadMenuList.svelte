@@ -170,12 +170,12 @@
           on:mouseenter={(e) => (index = serialIndex)}
           class:archived={t.archived}
           class:active={index === serialIndex}
-          class={classNames("p-2 mb-1 rounded flex items-center w-full text-left truncate", {})}
+          class={classNames("p-2 mb-1 rounded flex items-center w-full text-left", {})}
         >
           {#if t.archived}
             <IconArchiveIn class="mr-2" />
           {/if}
-          <span>{t.title}</span>
+          <span class="truncate">{t.title}</span>
         </button>
       {/each}
     {/each}
