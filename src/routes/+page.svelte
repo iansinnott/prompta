@@ -1,6 +1,12 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import { currentThread, currentChatThread, gptProfileStore } from "../lib/stores/stores";
+  import {
+    currentThread,
+    currentChatThread,
+    gptProfileStore,
+    openAiConfig,
+    showSettings,
+  } from "../lib/stores/stores";
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
   import ChatMessageList from "$lib/components/ChatMessageList.svelte";
@@ -24,7 +30,14 @@
 
   async function handleSubmit(s: string) {
     if (sending) {
+      console.debug("Cancelling");
       currentChatThread.cancel();
+      return;
+    }
+
+    if (!$openAiConfig.apiKey) {
+      await sys.alert(`No API key found. Please enter one in the settings.`);
+      $showSettings = true;
       return;
     }
 

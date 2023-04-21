@@ -52,6 +52,7 @@
   }
 
   function handleExternalUrls(e: MouseEvent) {
+    console.warn("Handle external url");
     // @ts-ignore
     const href = e.target.href;
     if (isExternalUrl(href)) {
