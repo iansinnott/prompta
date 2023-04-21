@@ -18,6 +18,11 @@ main() {
   git tag -d "v$version" > /dev/null || true 
   git tag -a "v$version" -m "v$version" > /dev/null
   
+  # Generate changelog
+  node ./scripts/changelog.js
+  git add CHANGELOG.md > /dev/null
+  git commit -m "chore: update changelog" > /dev/null
+  
   echo "    Tag: v$version"
   echo "    Commit: $(git rev-parse HEAD)"
   echo
