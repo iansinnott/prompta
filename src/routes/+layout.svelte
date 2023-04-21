@@ -38,18 +38,23 @@
     console.debug(`App initialized.`);
   });
 
-  function isExternalUrl(href: string) {
-    const url = new URL(href);
-    // @ts-ignore
-    return url.origin !== window.location.origin;
+  function isExternalUrl(href: any) {
+    if (typeof href !== "string") return false;
+
+    try {
+      const url = new URL(href);
+      // @ts-ignore
+      return url.origin !== window.location.origin;
+    } catch (err) {
+      console.debug("Could not parse url", err);
+      return false;
+    }
   }
 
   function handleExternalUrls(e: MouseEvent) {
     // @ts-ignore
-    const isATag = e.target && e.target.tagName === "A";
-    // @ts-ignore
     const href = e.target.href;
-    if (isATag && isExternalUrl(href)) {
+    if (isExternalUrl(href)) {
       e.preventDefault();
       sys.openExternal(href);
     }
