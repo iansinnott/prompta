@@ -123,7 +123,7 @@ interface GPTProfile {
 }
 
 export const DEFAULT_SYSTEM_MESSAGE = `
-You are a helpful assistant. Respond to user messages as accurately as possible. 
+You are a helpful assistant. Respond to user messages as accurately as possible. Do not repeat the prompt.
 Be concise, unless the user asks for more detail.
 Assume the user has a technical background and understands software programming, although they may ask about any topic.
 When producing code, insert the language identifier after opening fences.
