@@ -43,8 +43,7 @@
 
     try {
       const url = new URL(href);
-      // @ts-ignore
-      return url.origin !== window.location.origin;
+      return url.origin !== location.origin; // @note window.location will break. Not sure why. Something to do with Tauri?
     } catch (err) {
       console.debug("Could not parse url", err);
       return false;
@@ -52,6 +51,7 @@
   }
 
   function handleExternalUrls(e: MouseEvent) {
+    e.preventDefault();
     console.warn("Handle external url");
     // @ts-ignore
     const href = e.target.href;
