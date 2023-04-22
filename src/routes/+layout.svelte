@@ -1,11 +1,10 @@
 <script lang="ts">
   import "../app.postcss";
-  import { db, openAiConfig, rtcStore, showSettings } from "../lib/stores/stores";
+  import { db, openAiConfig, syncStore, showSettings } from "../lib/stores/stores";
   import { onMount } from "svelte";
   import { DatabaseMeta, initDb } from "$lib/db";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
   import { getSystem } from "$lib/gui";
-  import { window } from "@tauri-apps/api";
 
   const sys = getSystem();
 
@@ -45,7 +44,7 @@
 
       // Not sure why, but this doesn't work if we do it immediately.
       setTimeout(() => {
-        rtcStore.connectTo(lastSyncChain);
+        syncStore.connectTo(lastSyncChain);
       }, 1000);
     }
   });
@@ -55,7 +54,7 @@
 
     try {
       const url = new URL(href);
-      return url.origin !== location.origin; // @note window.location will break. Not sure why. Something to do with Tauri?
+      return url.origin !== location.origin;
     } catch (err) {
       console.debug("Could not parse url", err);
       return false;

@@ -601,7 +601,7 @@ export const currentChatThread = (() => {
   };
 })();
 
-export const rtcStore = (() => {
+export const syncStore = (() => {
   const store = writable<{
     pending: string[];
     established: string[];

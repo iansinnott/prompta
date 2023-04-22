@@ -7,7 +7,7 @@ import {
   currentThread,
   openAiConfig,
   profilesStore,
-  rtcStore,
+  syncStore,
 } from "../lib/stores/stores";
 import { dev } from "$app/environment";
 import { nanoid } from "nanoid";
@@ -124,11 +124,11 @@ export const initDb = async () => {
   subs.push(
     rtc.onConnectionsChanged((pending, established) => {
       console.log("rtc.onConnectionsChanged", { pending, established });
-      rtcStore.update((x) => ({ ...x, pending, established }));
+      syncStore.update((x) => ({ ...x, pending, established }));
     })
   );
 
-  rtcStore.update((x) => ({ ...x, rtc }));
+  syncStore.update((x) => ({ ...x, rtc }));
 
   window.onbeforeunload = () => {
     if (_db) {
