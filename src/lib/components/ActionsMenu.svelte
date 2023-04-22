@@ -276,7 +276,7 @@
   <button on:click={toggleMenu} class:active={menuOpen} class="font-bold px-4 py-2">Actions</button>
   {#if menuOpen}
     <div
-      class="absolute bottom-[calc(100%+10px)] right-0 min-w-[425px] shadow-xl border border-zinc-700 bg-zinc-800 rounded-lg z-20 flex flex-col"
+      class="absolute bottom-[calc(100%+10px)] right-0 min-w-[calc(100vw_-_30px)] sm:min-w-[425px] shadow-xl border border-zinc-700 bg-zinc-800 rounded-lg z-20 flex flex-col"
     >
       <div bind:this={scrollContainer} class="flex-1 max-h-[272px] overflow-auto py-2 px-2">
         {#each filteredActions as action, i (action.name)}

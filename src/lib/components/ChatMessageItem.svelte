@@ -22,12 +22,12 @@
 </script>
 
 <div class={classNames("ChatMessage pr-2 group", _class)} data-message-id={item.id}>
-  <div class="Avatar text-zinc-400 pl-2 flex flex-col items-center space-y-4">
+  <div class="Avatar text-zinc-400 pl-2 flex flex-col items-center space-y-4 relative top-1">
     {#if item.role === "user"}
-      <IconUserAvatar class="opacity-60" />
+      <IconUserAvatar class="w-5 h-5 sm:w-6 sm:h-6 opacity-60" />
     {:else}
-      <IconBrain class="w-6 h-6 text-[#30CEC0] scale-[1.2]" />
-      <div class="group-hover:block hidden">
+      <IconBrain class="w-5 h-5 sm:w-6 sm:h-6 text-[#30CEC0] scale-[1.2]" />
+      <div class="sm:group-hover:block hidden">
         <button
           on:click={(e) => {
             viewRaw = !viewRaw;
@@ -72,7 +72,7 @@
   }
   /* ChatMessage uses a grid layout, wtih the users avatar 32px squared on the left, and a 1fr content area on the right. only one row for now */
   .ChatMessage {
-    @apply gap-6;
+    @apply gap-2 sm:gap-6;
     display: grid;
     grid-template-columns: auto 1fr;
     grid-template-areas: "profile content";

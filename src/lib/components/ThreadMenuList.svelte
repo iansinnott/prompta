@@ -127,7 +127,7 @@
 <div
   class={classNames(
     "z-20",
-    "absolute top-[calc(100%+10px)] w-dropdown rounded bg-zinc-800 border border-zinc-700 p-2",
+    "absolute top-[calc(100%+10px)] right-0 w-[calc(100vw_-_30px)] sm:w-dropdown rounded bg-zinc-800 border border-zinc-700 p-2",
     _class
   )}
   class:hidden={!$threadMenu.open}

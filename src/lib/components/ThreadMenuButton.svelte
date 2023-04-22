@@ -9,7 +9,7 @@
 
 <button
   class={classNames(
-    "border border-zinc-700 rounded-lg py-2 pl-4 pr-3 flex items-center w-dropdown",
+    "border border-zinc-700 rounded-lg py-2 pl-4 pr-3 flex items-center w-full sm:w-dropdown",
     _class
   )}
   on:click={() => {

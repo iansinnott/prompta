@@ -67,10 +67,7 @@
 </script>
 
 <div class:dev-container={dev} class="app-container">
-  <header
-    data-tauri-drag-region
-    class="app-header p-4 pr-3 flex items-center justify-between border-b border-zinc-700 w-full"
-  >
+  <header data-tauri-drag-region class="app-header p-4 pr-3 border-b border-zinc-700 w-full">
     <div class="Left flex items-center">
       {#if sys.isTauri}
         <button
@@ -90,22 +87,24 @@
       {/if}
       {#if dev}
         <div class="text-xs flex items-center border rounded border-yellow-400">
-          <div class="bg-yellow-400 text-yellow-900 font-bold py-1 px-2 inline-flex items-center">
-            <IconTerminalPrompt class="w-5 h-5 mr-2" />
-            <span class="text-sm font-mono">DEV</span>
+          <div
+            class="bg-yellow-400 text-yellow-900 font-bold py-1 px-1 sm:px-2 inline-flex items-center"
+          >
+            <IconTerminalPrompt class="w-5 h-5 sm:mr-2" />
+            <span class="text-sm hidden sm:inline-block font-mono">DEV</span>
           </div>
-          <div class="py-1 px-4 font-bold text-yellow-400 uppercase">
+          <div class="py-1 px-4 font-bold text-yellow-400 uppercase hidden sm:block">
             {$gptProfileStore.model}
           </div>
         </div>
       {/if}
     </div>
-    <div class="Right flex justify-end relative">
+    <div class="Right flex items-center relative">
       <ThreadMenuButton />
       <ThreadMenuList />
     </div>
   </header>
-  <div class="app-body p-2">
+  <div class="app-body sm:p-2">
     <ChatMessageList />
   </div>
   <!-- No padding top in order to let chat messages appaer to scroll behind -->
@@ -131,7 +130,7 @@
         on:input={(e) => {
           resizeChatInput();
         }}
-        placeholder={sending ? "Enter to cancel" : "Ask GPT something..."}
+        placeholder={sending ? "Enter to cancel" : "Ask GPT..."}
         rows="1"
         class="appearance-none flex-1 w-full px-4 py-2 bg-transparent outline-none resize-none"
       />
@@ -159,6 +158,9 @@
   }
   .app-header {
     grid-area: top;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    @apply gap-4 items-center sm:justify-items-end;
   }
   .app-body {
     grid-area: middle;
