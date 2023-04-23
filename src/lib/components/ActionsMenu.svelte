@@ -93,6 +93,13 @@
       },
     },
     {
+      when: () => dev,
+      name: "View Source Code",
+      execute: () => {
+        sys.openExternal("https://github.com/iansinnott/prompta");
+      },
+    },
+    {
       keyboard: {
         shortcut: "meta+alt+i",
       },
