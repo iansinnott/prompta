@@ -17,7 +17,7 @@ jobs:
       matrix:
         platform:
           # - macos-latest # macOS is too expensive on github actions. experiment with locally uploading
-          - ubuntu-20.04,
+          - ubuntu-20.04
           - windows-latest
     runs-on: ${{ matrix.platform }}
 
