@@ -14,6 +14,7 @@ specifiers:
   '@vlcn.io/sync-p2p': 0.7.3
   autoprefixer: ~10.4.7
   classnames: 2.3.2
+  cross-env: 7.0.3
   nanoid: 4.0.2
   openai: 3.2.1
   postcss: ~8.4.14
@@ -53,6 +54,7 @@ devDependencies:
   '@tauri-apps/cli': 1.2.3
   '@types/prismjs': 1.26.0
   autoprefixer: 10.4.7_postcss@8.4.21
+  cross-env: 7.0.3
   postcss: 8.4.21
   postcss-load-config: 4.0.1_postcss@8.4.21
   svelte: 3.58.0
@@ -768,6 +770,23 @@ packages:
     engines: {node: '>= 0.6'}
     dev: true
 
+  /cross-env/7.0.3:
+    resolution: {integrity: sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==}
+    engines: {node: '>=10.14', npm: '>=6', yarn: '>=1'}
+    hasBin: true
+    dependencies:
+      cross-spawn: 7.0.3
+    dev: true
+
+  /cross-spawn/7.0.3:
+    resolution: {integrity: sha512-iRDPJKUPVEND7dHPO8rkbOnPpyDygcDFtWjpeWNCgy8WP2rXcxXL8TskReQl6OrB2G7+UJrags1q15Fudc7G6w==}
+    engines: {node: '>= 8'}
+    dependencies:
+      path-key: 3.1.1
+      shebang-command: 2.0.0
+      which: 2.0.2
+    dev: true
+
   /cssesc/3.0.0:
     resolution: {integrity: sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==}
     engines: {node: '>=4'}
@@ -1046,6 +1065,10 @@ packages:
     engines: {node: '>=0.12.0'}
     dev: true
 
+  /isexe/2.0.0:
+    resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
+    dev: true
+
   /jiti/1.18.2:
     resolution: {integrity: sha512-QAdOptna2NYiSSpv0O/BwoHBSmz4YhpzJHyi+fnMRTXFjp7B8i/YG5Z8IfusxB1ufjcD2Sre1F3R+nX3fvy7gg==}
     hasBin: true
@@ -1250,6 +1273,11 @@ packages:
   /path-is-absolute/1.0.1:
     resolution: {integrity: sha512-AVbw3UJ2e9bq64vSaS9Am0fje1Pa8pbGqTTsmXfaIiMpnr5DlDhfJOuLj9Sf95ZPVDAUerDfEk88MPmPe7UCQg==}
     engines: {node: '>=0.10.0'}
+    dev: true
+
+  /path-key/3.1.1:
+    resolution: {integrity: sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==}
+    engines: {node: '>=8'}
     dev: true
 
   /path-parse/1.0.7:
@@ -1504,6 +1532,18 @@ packages:
 
   /set-cookie-parser/2.6.0:
     resolution: {integrity: sha512-RVnVQxTXuerk653XfuliOxBP81Sf0+qfQE73LIYKcyMYHG94AuH0kgrQpRDuTZnSmjpysHmzxJXKNfa6PjFhyQ==}
+    dev: true
+
+  /shebang-command/2.0.0:
+    resolution: {integrity: sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA==}
+    engines: {node: '>=8'}
+    dependencies:
+      shebang-regex: 3.0.0
+    dev: true
+
+  /shebang-regex/3.0.0:
+    resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
+    engines: {node: '>=8'}
     dev: true
 
   /sirv/2.0.2:
@@ -2005,6 +2045,14 @@ packages:
       rtcpeerconnection-shim: 1.2.15
       sdp: 2.12.0
     dev: false
+
+  /which/2.0.2:
+    resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
+    engines: {node: '>= 8'}
+    hasBin: true
+    dependencies:
+      isexe: 2.0.0
+    dev: true
 
   /wrappy/1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
