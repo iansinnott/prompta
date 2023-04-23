@@ -1,28 +1,16 @@
 import type {
-  ChatCompletionRequestMessage,
-  ChatCompletionResponseMessage,
   Configuration,
   CreateChatCompletionRequest,
   CreateChatCompletionResponse,
 } from "openai";
-import {
-  derived,
-  readable,
-  writable,
-  type Readable,
-  type Writable,
-  type Subscriber,
-  get,
-} from "svelte/store";
+import { derived, readable, writable, type Subscriber, get } from "svelte/store";
 import type { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import { ChatMessage, DatabaseMeta, Preferences, Thread } from "$lib/db";
 import { nanoid } from "nanoid";
-import { simulateLLMStreamResponse } from "$lib/llm/utils";
 import { initOpenAi } from "$lib/llm/openai";
 import { fetchEventSource, type EventSourceMessage } from "@microsoft/fetch-event-source";
-import type { wdbRtc } from "@vlcn.io/sync-p2p";
+import { wdbRtc } from "@vlcn.io/sync-p2p";
 import { getSystem } from "$lib/gui";
-import { throttle } from "$lib/utils";
 
 export const showSettings = writable(false);
 
@@ -344,7 +332,9 @@ export const archivedThreadList = invalidatable<Thread[]>([], (set) => {
   Thread.findMany({
     where: { archived: true },
     orderBy: { createdAt: "DESC" },
-  }).then(set);
+  }).then((xs) => {
+    set(xs);
+  });
 });
 
 export const threadList = invalidatable<Thread[]>(
@@ -353,7 +343,9 @@ export const threadList = invalidatable<Thread[]>(
     Thread.findMany({
       where: { archived: false },
       orderBy: { createdAt: "DESC" },
-    }).then(set);
+    }).then((xs) => {
+      set(xs);
+    });
   },
   {
     onInvalidated: archivedThreadList.invalidate,
@@ -601,29 +593,72 @@ export const currentChatThread = (() => {
   };
 })();
 
+type RTC = Awaited<ReturnType<typeof wdbRtc>>;
+
 export const syncStore = (() => {
   const store = writable<{
     pending: string[];
     established: string[];
-    rtc: Awaited<ReturnType<typeof wdbRtc>> | null;
+    showSyncModal: boolean;
+    connection: string;
   }>({
     pending: [],
     established: [],
-    rtc: null,
+    showSyncModal: false,
+    connection: "",
   });
 
   const { subscribe, update, set } = store;
+
+  let rtc: RTC | null = null;
+
+  const disconnect = () => {
+    console.log("disconnect");
+    openAiConfig.update((x) => ({ ...x, lastSyncChain: "" }));
+    update((x) => ({ ...x, connection: "" }));
+  };
+
+  const onConnectionChanged = (pending, established) => {
+    console.log("rtc.onConnectionsChanged", { pending, established });
+    syncStore.update((x) => ({ ...x, pending, established }));
+  };
 
   return {
     subscribe,
     update,
     set,
-    connectTo(s: string) {
-      const rtc = get(store).rtc;
+    disconnect,
+
+    /**
+     * Disconnect from the current chain and dispose of the rtc instance. Should
+     * only be called if there is no intent to use RTC anymore this session, i.g.
+     * when the browser is about to close
+     */
+    dispose: () => {
+      rtc?.offConnectionsChanged(onConnectionChanged);
+      rtc?.dispose();
+      rtc = null;
+      console.log("RTC disconnect");
+    },
+
+    init: async () => {
+      const _db = get(db);
+      if (!_db) {
+        throw new Error("No db found");
+      }
+
+      rtc = await wdbRtc(_db);
+      rtc.onConnectionsChanged(onConnectionChanged);
+    },
+
+    async connectTo(s: string, remainingRetries = 3) {
       if (rtc) {
         rtc.connectTo(s);
+        openAiConfig.update((x) => ({ ...x, lastSyncChain: s }));
+        update((x) => ({ ...x, connection: s }));
       } else {
-        console.warn("Tried to connect to rtc too early.");
+        console.warn(`Tried to connect to rtc too early. Trying again...`);
+        return this.init().then(() => this.connectTo(s, remainingRetries - 1));
       }
     },
   };

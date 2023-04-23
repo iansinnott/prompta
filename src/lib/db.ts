@@ -110,31 +110,24 @@ export const initDb = async () => {
   await migrateDb(_db);
 
   // Initialize stores
-  for (const s of [currentThread, profilesStore, openAiConfig]) {
+  for (const s of [currentThread, profilesStore, openAiConfig, syncStore]) {
     await s.init();
   }
 
+  // table-wise reactivity
   const rx = tblrx(_db);
-  const rtc = await wdbRtc(_db);
 
   const subs: (() => void)[] = [];
-
   subs.push(Thread.initRx(rx));
   subs.push(ChatMessage.initRx(rx));
-  subs.push(
-    rtc.onConnectionsChanged((pending, established) => {
-      console.log("rtc.onConnectionsChanged", { pending, established });
-      syncStore.update((x) => ({ ...x, pending, established }));
-    })
-  );
-
-  syncStore.update((x) => ({ ...x, rtc }));
 
   window.onbeforeunload = () => {
     if (_db) {
       console.debug("Closing db connection");
       _db.close();
     }
+
+    syncStore.dispose();
 
     for (const unsub of subs) {
       unsub();
@@ -148,7 +141,6 @@ export const initDb = async () => {
       ["DatabaseMeta", DatabaseMeta],
       ["Preferences", Preferences],
       ["db", _db],
-      ["rtc", rtc],
     ]) {
       // @ts-expect-error Just for dev, and the error is not consequential
       (window as any)[k] = v;

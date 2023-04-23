@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { tick } from "svelte";
+  import { onMount, tick } from "svelte";
   import {
     currentThread,
     currentChatThread,
     gptProfileStore,
     openAiConfig,
     showSettings,
+    syncStore,
   } from "../lib/stores/stores";
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
@@ -15,6 +16,10 @@
   import { dev } from "$app/environment";
   import IconTerminalPrompt from "$lib/components/IconTerminalPrompt.svelte";
   import classNames from "classnames";
+  import IconSync from "$lib/components/IconSync.svelte";
+  import CopyButton from "$lib/components/CopyButton.svelte";
+  import qr from "@vkontakte/vk-qr";
+  import { slide } from "svelte/transition";
 
   const sys = getSystem();
   let message = "";
@@ -60,16 +65,25 @@
     resizeChatInput();
   }
 
+  let syncString = "";
+
   $: if ($currentThread) {
     tick().then(() => {
       textarea?.focus();
     });
   }
+
+  $: isConnectionActive = $syncStore.connection !== "";
+
+  $: joinSyncUrl = `https://chat.prompta.dev?${new URLSearchParams().set(
+    "syncChain",
+    $openAiConfig.siteId
+  )}`;
 </script>
 
 <div class:dev-container={dev} class={classNames("app-container", {})}>
   <header data-tauri-drag-region class="app-header p-4 pr-3 border-b border-zinc-700 w-full">
-    <div class="Left flex items-center">
+    <div class="Left flex items-center space-x-4">
       {#if sys.isTauri}
         <button
           class="text-zinc-200 p-1 rounded hover:bg-white/10 hover:text-white mr-4"
@@ -99,7 +113,113 @@
           </div>
         </div>
       {/if}
+      <button
+        style="animation-direction: reverse;"
+        class={classNames("text-white/70 hover:text-white", {
+          "animate-spin": false,
+        })}
+        on:click={() => {
+          $syncStore.showSyncModal = !$syncStore.showSyncModal;
+        }}
+      >
+        <IconSync
+          class=""
+          innerClass={classNames({
+            "text-white": !isConnectionActive,
+            "text-teal-400": isConnectionActive,
+          })}
+        />
+      </button>
     </div>
+    {#if $syncStore.showSyncModal}
+      <div
+        class="fixed top-16 left-0 right-0 sm:right-auto sm:w-[420px] sm:left-12 bg-zinc-600 rounded-lg p-3 shadow-lg z-10 space-y-4 overflow-auto max-h-[80vh]"
+      >
+        <button
+          on:click={() => {
+            if ($syncStore.connection) {
+              syncStore.disconnect();
+            } else {
+              console.log("Connecting to", $syncStore.connection || $openAiConfig.siteId);
+              syncStore.connectTo($syncStore.connection || $openAiConfig.siteId);
+            }
+          }}
+          class="p-4 rounded-lg border border-zinc-300 w-full"
+        >
+          {$syncStore.connection ? "Disconnect" : "Enable"}
+        </button>
+
+        <hr class="my-4 border-white/20" />
+
+        <h2 class="text-sm uppercase font-semibold">
+          Connection: <span
+            class={classNames({
+              "text-zinc-300": !isConnectionActive,
+              "text-teal-300": isConnectionActive,
+            })}>{isConnectionActive ? "Active" : "Inactive"}</span
+          >
+        </h2>
+
+        <hr class="my-4 border-white/20" />
+
+        {#if !isConnectionActive}
+          <div class="flex flex-col space-y-4" transition:slide|local={{ duration: 150 }}>
+            <small>
+              Enabling sync allows you to access your chats from multiple devices. This is done via
+              peer-to-peer connection, so your chats are only sent directly to devices with your
+              sync code.
+            </small>
+          </div>
+        {:else}
+          <div class="flex flex-col space-y-4" transition:slide|local={{ duration: 150 }}>
+            <p>Copy the sync code below to share with your other devices.</p>
+            <!-- <div class="rounded-lg bg-white p-4 flex justify-center">
+            {@html qr.createQR(joinSyncUrl, { isShowLogo: false })}
+          </div> -->
+            <div
+              class="font-mono text-sm p-4 bg-zinc-700 rounded-lg flex justify-between items-center border-2 border-teal-500"
+            >
+              <span>
+                {$syncStore.connection || "Not connected"}
+              </span>
+              <CopyButton text={$openAiConfig.siteId} />
+            </div>
+          </div>
+
+          <hr class="my-4 border-white/20" />
+
+          <div class="flex flex-col space-y-4" transition:slide|local={{ duration: 150 }}>
+            <h2 class="mb-4 text-sm uppercase font-semibold">Connect to new sync chain</h2>
+            <p>Enter a sync code you copied from another device below to start syncing.</p>
+
+            <form
+              class=""
+              on:submit={(e) => {
+                e.preventDefault();
+                if (!syncString) {
+                  console.warn("No sync string");
+                  return;
+                }
+                syncStore.connectTo(syncString);
+              }}
+            >
+              <div
+                class="flex justify-between items-center font-mono text-sm p-4 bg-zinc-700 rounded-lg space-x-2"
+              >
+                <div class="flex-1">
+                  <input
+                    bind:value={syncString}
+                    placeholder="Sync code..."
+                    class="bg-transparent w-full outline-none appearance-none truncate py-2"
+                  />
+                </div>
+                <button class="px-4 py-2 border-2 border-white/20 rounded-lg"> Connect </button>
+              </div>
+            </form>
+          </div>
+        {/if}
+      </div>
+    {/if}
     <div class="Right flex items-center relative">
       <ThreadMenuButton />
       <ThreadMenuList />

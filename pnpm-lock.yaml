@@ -9,6 +9,7 @@ specifiers:
   '@tauri-apps/api': 1.2.0
   '@tauri-apps/cli': 1.2.3
   '@types/prismjs': 1.26.0
+  '@vkontakte/vk-qr': 2.0.13
   '@vlcn.io/crsqlite-wasm': 0.9.1
   '@vlcn.io/rx-tbl': 0.8.3
   '@vlcn.io/sync-p2p': 0.7.3
@@ -35,6 +36,7 @@ specifiers:
 dependencies:
   '@microsoft/fetch-event-source': 2.0.1
   '@tauri-apps/api': 1.2.0
+  '@vkontakte/vk-qr': 2.0.13
   '@vlcn.io/crsqlite-wasm': 0.9.1
   '@vlcn.io/rx-tbl': 0.8.3
   '@vlcn.io/sync-p2p': 0.7.3
@@ -540,6 +542,10 @@ packages:
 
   /@types/uuid/9.0.1:
     resolution: {integrity: sha512-rFT3ak0/2trgvp4yYZo5iKFEPsET7vKydKF+VRCxlQ9bpheehyAJH89dAkaLEq/j/RZXJIqcgsmPJKUP1Z28HA==}
+    dev: false
+
+  /@vkontakte/vk-qr/2.0.13:
+    resolution: {integrity: sha512-yskZf4k0TgJV2atS4WgxjqICeGg1Z+hj8tjvsH2Clf17EJXAczDvn4x1zyqC0CRHDjiOkcbne/FhCKq/nykYiQ==}
     dev: false
 
   /@vlcn.io/crsqlite-wasm/0.9.1:
