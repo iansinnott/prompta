@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, tick } from "svelte";
+  import { tick } from "svelte";
   import {
     currentThread,
     currentChatThread,
@@ -18,7 +18,6 @@
   import classNames from "classnames";
   import IconSync from "$lib/components/IconSync.svelte";
   import CopyButton from "$lib/components/CopyButton.svelte";
-  import qr from "@vkontakte/vk-qr";
   import { slide } from "svelte/transition";
 
   const sys = getSystem();
@@ -130,6 +129,15 @@
           })}
         />
       </button>
+      <!-- a "click outside" div -->
+      {#if $syncStore.showSyncModal}
+        <div
+          class="fixed inset-0 z-10"
+          on:click={() => {
+            $syncStore.showSyncModal = false;
+          }}
+        />
+      {/if}
     </div>
     {#if $syncStore.showSyncModal}
       <div
@@ -146,7 +154,7 @@
           }}
           class="p-4 rounded-lg border border-zinc-300 w-full"
         >
-          {$syncStore.connection ? "Disconnect" : "Enable"}
+          {$syncStore.connection ? "Disconnect" : "Enable Sync"}
         </button>
 
         <hr class="my-4 border-white/20" />
@@ -165,17 +173,14 @@
         {#if !isConnectionActive}
           <div class="flex flex-col space-y-4" transition:slide|local={{ duration: 150 }}>
             <small>
-              Enabling sync allows you to access your chats from multiple devices. This is done via
-              peer-to-peer connection, so your chats are only sent directly to devices with your
-              sync code.
+              Enabling sync allows you to access your chats from multiple devices, and is totally
+              optional. Sync happens via peer-to-peer connection, so your chats are only sent
+              directly to devices with your sync code.
             </small>
           </div>
         {:else}
           <div class="flex flex-col space-y-4" transition:slide|local={{ duration: 150 }}>
             <p>Copy the sync code below to share with your other devices.</p>
-            <!-- <div class="rounded-lg bg-white p-4 flex justify-center">
-            {@html qr.createQR(joinSyncUrl, { isShowLogo: false })}
-          </div> -->
             <div
               class="font-mono text-sm p-4 bg-zinc-700 rounded-lg flex justify-between items-center border-2 border-teal-500"
             >
