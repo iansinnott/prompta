@@ -1,11 +1,10 @@
 <script lang="ts">
   import "../app.postcss";
-  import { db, openAiConfig, syncStore, showSettings } from "../lib/stores/stores";
+  import { openAiConfig, syncStore, showSettings } from "../lib/stores/stores";
   import { onMount } from "svelte";
   import { DatabaseMeta, initDb } from "$lib/db";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
   import { getSystem } from "$lib/gui";
-  import { devices } from "@playwright/test";
   import classNames from "classnames";
 
   const sys = getSystem();
