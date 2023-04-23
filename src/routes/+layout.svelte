@@ -5,6 +5,8 @@
   import { DatabaseMeta, initDb } from "$lib/db";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
   import { getSystem } from "$lib/gui";
+  import { devices } from "@playwright/test";
+  import classNames from "classnames";
 
   const sys = getSystem();
 
@@ -73,7 +75,20 @@
 
 <svelte:window on:click={handleExternalUrls} />
 
-<div class="min-h-screen overflow-hidden text-white rounded-lg bg-[#1B1B1B] border border-zinc-700">
+<svelte:head>
+  <title>Prompta Chat - Chat with ChatGPT and GPT-4. Sync your chats across devices.</title>
+  <link rel="icon" type="image/png" sizes="16x16" href="/icon_16x16.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/icon_16x16@2x.png" />
+</svelte:head>
+
+<div
+  class={classNames(
+    "min-h-screen overflow-hidden text-white rounded-lg bg-[#1B1B1B] border border-zinc-700",
+    {
+      "rounded-lg": sys.isTauri,
+    }
+  )}
+>
   {#if appReady}
     <slot />
     <SettingsModal />

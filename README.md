@@ -15,7 +15,7 @@ Yet another interface for chatting with ChatGPT (or GPT-4).
 
 <div align="center">
 
-![](assets/CleanShot%202023-04-23%20at%2015.02.37.jpg)
+![](static/CleanShot%202023-04-23%20at%2015.02.37.jpg)
 
 </div>
 
@@ -56,3 +56,9 @@ npm run release
 ```
 
 You will be prompted to enter a new version number. New versions that don't contain a suffix such as `-beta` or `-alpha` will be published to GitHub.
+
+## Built With
+
+- [SQLite](https://www.sqlite.org/index.html) via [vlcn/cr-sqlite](https://vlcn.io/) - SQLite compiled to WASM running in the browser using CRDTs for conflict-free replication.
+- [Tauri](https://tauri.studio) - A Rust-based alternative to Electron
+- [Svelte](https://svelte.dev) - Reactive UI framework

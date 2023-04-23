@@ -14,6 +14,7 @@
   import { getSystem } from "$lib/gui";
   import { dev } from "$app/environment";
   import IconTerminalPrompt from "$lib/components/IconTerminalPrompt.svelte";
+  import classNames from "classnames";
 
   const sys = getSystem();
   let message = "";
@@ -66,7 +67,7 @@
   }
 </script>
 
-<div class:dev-container={dev} class="app-container">
+<div class:dev-container={dev} class={classNames("app-container", {})}>
   <header data-tauri-drag-region class="app-header p-4 pr-3 border-b border-zinc-700 w-full">
     <div class="Left flex items-center">
       {#if sys.isTauri}
@@ -145,7 +146,6 @@
     @apply border-2 border-yellow-600;
   }
   .app-container {
-    @apply rounded-lg;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas:
