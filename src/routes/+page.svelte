@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tick } from "svelte";
+  import { onDestroy, onMount, tick } from "svelte";
   import {
     currentThread,
     currentChatThread,
@@ -21,10 +21,38 @@
   import { slide } from "svelte/transition";
   import IconClose from "$lib/components/IconClose.svelte";
   import CloseButton from "$lib/components/CloseButton.svelte";
+  import { isMobile } from "$lib/utils";
 
   const sys = getSystem();
   let message = "";
   let textarea: HTMLTextAreaElement | null = null;
+
+  let windowHeight = window.innerHeight;
+  function updateWindowHeight() {
+    const element = document.querySelector(".your-element");
+    const innerHeight = window.innerHeight; // Get viewport height in pixels
+    const targetPct = 100;
+    windowHeight = innerHeight * (targetPct / 100);
+    console.log({ windowHeight });
+  }
+
+  onMount(() => {
+    if (!isMobile()) {
+      return;
+    } else {
+      console.warn("Mobile browser. Manually managing window height.");
+    }
+    window.addEventListener("DOMContentLoaded", updateWindowHeight, false);
+    window.addEventListener("resize", updateWindowHeight, false);
+    window.addEventListener("orientationchange", updateWindowHeight, false);
+  });
+
+  onDestroy(() => {
+    if (!isMobile()) return;
+    window.removeEventListener("DOMContentLoaded", updateWindowHeight, false);
+    window.removeEventListener("resize", updateWindowHeight, false);
+    window.removeEventListener("orientationchange", updateWindowHeight, false);
+  });
 
   const resizeChatInput = () => {
     if (!textarea) return;
@@ -82,7 +110,13 @@
   )}`;
 </script>
 
-<div class:dev-container={dev} class={classNames("app-container", {})}>
+<div
+  class:dev-container={dev}
+  class={classNames("app-container", {
+    "rounded-lg": sys.isTauri,
+  })}
+  style={isMobile() ? `height: ${windowHeight}px;` : ""}
+>
   <header data-tauri-drag-region class="app-header p-4 pr-3 border-b border-zinc-700 w-full">
     <div class="Left flex items-center space-x-4">
       {#if sys.isTauri}
@@ -259,6 +293,7 @@
       "bottom";
 
     /* Not sure where the extra height is from, but the specific calc fixes the layout */
+    /* NOTE This will be overwritten on mobile. See the manual height code above */
     height: calc(100vh - 2px);
   }
   .app-header {

@@ -88,7 +88,7 @@
 </svelte:head>
 
 <div
-  class={classNames("min-h-screen overflow-hidden text-white bg-[#1B1B1B] border border-zinc-700", {
+  class={classNames("overflow-hidden text-white bg-[#1B1B1B] border border-zinc-700", {
     "rounded-lg": sys.isTauri,
   })}
 >
@@ -96,7 +96,8 @@
     <slot />
     <SettingsModal />
   {:else}
-    <div class="flex items-center justify-center h-screen">
+    <!-- adding both heights for fallback. not every browser likes svh -->
+    <div class="flex items-center justify-center h-screen" style="height: 100svh;">
       <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-zinc-700" />
     </div>
   {/if}

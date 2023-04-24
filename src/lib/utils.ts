@@ -84,3 +84,8 @@ export function mapKeys<T extends Record<string, any>, K extends string>(
 ): Record<K, T[keyof T]> {
   return Object.fromEntries(Object.entries(obj).map(([k, v]) => [f(k as keyof T), v])) as any;
 }
+
+export const isMobile = () => {
+  // detect ios, android, etc
+  return /Mobi|Android/i.test(navigator.userAgent);
+};
