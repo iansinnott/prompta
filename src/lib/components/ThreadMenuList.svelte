@@ -3,7 +3,7 @@
   import classNames from "classnames";
   import { onMount, tick } from "svelte";
   import IconSparkle from "./IconSparkle.svelte";
-  import { groupBy } from "$lib/utils";
+  import { groupBy, isMobile } from "$lib/utils";
   import IconArchiveIn from "./IconArchiveIn.svelte";
   let _class: string = "";
   export { _class as class };
@@ -59,9 +59,9 @@
       index = i;
     }
 
-    // Automatically focus the input when opened
+    // Automatically focus the input when opened (except on mobile)
     tick().then(() => {
-      input.focus();
+      !isMobile() && input.focus();
     });
   } else {
     // Make sure the input is unfocused when closed, if it currently has focus

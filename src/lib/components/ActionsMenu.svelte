@@ -127,10 +127,10 @@
   function toggleMenu() {
     menuOpen = !menuOpen;
     if (menuOpen) {
-      if (!isMobile()) {
-        // On mobile focusing the input opens the keyboard which is not good UX
-        tick().then(() => input.focus());
-      }
+      // On mobile focusing the input opens the keyboard which is not good UX
+      tick().then(() => {
+        !isMobile() && input.focus();
+      });
     } else {
       // NOTE blur the input so that single-char shortcuts work
       if (input && input === document.activeElement) {

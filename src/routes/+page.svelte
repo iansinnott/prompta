@@ -96,9 +96,10 @@
 
   let syncString = "";
 
+  // Generally we don't auto-focus on mobile
   $: if ($currentThread) {
     tick().then(() => {
-      textarea?.focus();
+      !isMobile() && textarea?.focus();
     });
   }
 
