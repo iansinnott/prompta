@@ -81,12 +81,9 @@
 </svelte:head>
 
 <div
-  class={classNames(
-    "min-h-screen overflow-hidden text-white rounded-lg bg-[#1B1B1B] border border-zinc-700",
-    {
-      "rounded-lg": sys.isTauri,
-    }
-  )}
+  class={classNames("min-h-screen overflow-hidden text-white bg-[#1B1B1B] border border-zinc-700", {
+    "rounded-lg": sys.isTauri,
+  })}
 >
   {#if appReady}
     <slot />

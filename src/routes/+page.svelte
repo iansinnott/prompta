@@ -99,19 +99,6 @@
           </svg>
         </button>
       {/if}
-      {#if dev}
-        <div class="text-xs flex items-center border rounded border-yellow-400">
-          <div
-            class="bg-yellow-400 text-yellow-900 font-bold py-1 px-1 sm:px-2 inline-flex items-center"
-          >
-            <IconTerminalPrompt class="w-5 h-5 sm:mr-2" />
-            <span class="text-sm hidden sm:inline-block font-mono">DEV</span>
-          </div>
-          <div class="py-1 px-4 font-bold text-yellow-400 uppercase hidden sm:block">
-            {$gptProfileStore.model}
-          </div>
-        </div>
-      {/if}
       <button
         style="animation-direction: reverse;"
         class={classNames("text-white/70 hover:text-white", {
