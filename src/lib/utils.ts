@@ -86,6 +86,6 @@ export function mapKeys<T extends Record<string, any>, K extends string>(
 }
 
 export const isMobile = () => {
-  // detect ios, android, etc
-  return /Mobi|Android/i.test(navigator.userAgent);
+  const x = /Mobi|iOS|Android/i.test(navigator.userAgent);
+  return x;
 };

@@ -25,6 +25,8 @@
   import IconTerminalPrompt from "./IconTerminalPrompt.svelte";
   import IconArchiveIn from "./IconArchiveIn.svelte";
   import IconArchiveOut from "./IconArchiveOut.svelte";
+  import { isMobile } from "$lib/utils";
+  import classNames from "classnames";
 
   const sys = getSystem();
   let input: HTMLInputElement;
@@ -125,7 +127,10 @@
   function toggleMenu() {
     menuOpen = !menuOpen;
     if (menuOpen) {
-      tick().then(() => input.focus());
+      if (!isMobile()) {
+        // On mobile focusing the input opens the keyboard which is not good UX
+        tick().then(() => input.focus());
+      }
     } else {
       // NOTE blur the input so that single-char shortcuts work
       if (input && input === document.activeElement) {
@@ -285,7 +290,12 @@
     <div
       class="absolute bottom-[calc(100%+10px)] right-0 min-w-[calc(100vw_-_30px)] sm:min-w-[425px] shadow-xl border border-zinc-700 bg-zinc-800 rounded-lg z-20 flex flex-col"
     >
-      <div bind:this={scrollContainer} class="flex-1 max-h-[272px] overflow-auto py-2 px-2">
+      <div
+        bind:this={scrollContainer}
+        class={classNames("flex-1 max-h-[31svh] sm:max-h-[300px] overflow-auto py-2 px-2", {
+          "scroll-visible": isMobile(), // to make it clear there are more options
+        })}
+      >
         {#each filteredActions as action, i (action.name)}
           <button
             data-index={i}
@@ -334,6 +344,16 @@
 </div>
 
 <style>
+  .scroll-visible::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 7px;
+    background-color: rgba(0, 0, 0, 0);
+  }
+  .scroll-visible::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.8);
+    -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
+  }
   .active {
     @apply bg-white/10;
   }
