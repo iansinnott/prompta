@@ -612,34 +612,38 @@ export const syncStore = (() => {
 
   let rtc: RTC | null = null;
 
-  const disconnect = () => {
-    console.log("disconnect");
-    openAiConfig.update((x) => ({ ...x, lastSyncChain: "" }));
-    update((x) => ({ ...x, connection: "" }));
-  };
-
   const onConnectionChanged = (pending, established) => {
     console.log("rtc.onConnectionsChanged", { pending, established });
     syncStore.update((x) => ({ ...x, pending, established }));
+  };
+
+  const dispose = () => {
+    // lastSyncChain is used for reconnecting. We only want to clear it if the
+    // user disconnected. However, i think this function is called during
+    // cleanup regardless of whether or not the user stored a sync code.
+    if (!rtc) {
+      openAiConfig.update((x) => ({ ...x, lastSyncChain: "" }));
+    }
+
+    console.log("RTC disconnect");
+    update((x) => ({ ...x, connection: "" }));
+    rtc?.offConnectionsChanged(onConnectionChanged);
+    rtc?.dispose();
+    rtc = null;
   };
 
   return {
     subscribe,
     update,
     set,
-    disconnect,
+    disconnect: dispose, // An alias...
 
     /**
      * Disconnect from the current chain and dispose of the rtc instance. Should
      * only be called if there is no intent to use RTC anymore this session, i.g.
      * when the browser is about to close
      */
-    dispose: () => {
-      rtc?.offConnectionsChanged(onConnectionChanged);
-      rtc?.dispose();
-      rtc = null;
-      console.log("RTC disconnect");
-    },
+    dispose,
 
     init: async () => {
       const _db = get(db);
@@ -657,7 +661,7 @@ export const syncStore = (() => {
         openAiConfig.update((x) => ({ ...x, lastSyncChain: s }));
         update((x) => ({ ...x, connection: s }));
       } else {
-        console.warn(`Tried to connect to rtc too early. Trying again...`);
+        console.warn(`RTC not initialized. Initializing and trying again...`);
         return this.init().then(() => this.connectTo(s, remainingRetries - 1));
       }
     },

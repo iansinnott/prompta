@@ -15,7 +15,6 @@ import type { ChatCompletionResponseMessageRoleEnum } from "openai";
 import { stringify as uuidStringify } from "uuid";
 import { basename, toCamelCase, toSnakeCase } from "./utils";
 import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
-import { wdbRtc } from "@vlcn.io/sync-p2p";
 
 // ========================================================================================
 // Rudimentary Migration System
@@ -110,7 +109,7 @@ export const initDb = async () => {
   await migrateDb(_db);
 
   // Initialize stores
-  for (const s of [currentThread, profilesStore, openAiConfig, syncStore]) {
+  for (const s of [currentThread, profilesStore, openAiConfig]) {
     await s.init();
   }
 
