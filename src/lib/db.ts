@@ -349,6 +349,27 @@ const crud = <T extends { id: string }>({
       await _db.exec(sql, queryParams);
     },
 
+    async softDelete(x: { where: Partial<Record<keyof T, any>> }) {
+      if (!x.where.id) {
+        console.warn(tableName, "Soft deletion", x);
+      }
+
+      const records = await this.findMany(x);
+
+      if (!records.length) {
+        console.warn(tableName, "No records to delete", x);
+      }
+
+      for (const record of records) {
+        await _db.exec(`insert into "deleted_record" (id, table_name, data) values (?, ?, ?)`, [
+          record.id,
+          tableName,
+          JSON.stringify(record),
+        ]);
+        await _db.exec(`delete from "${tableName}" where id=?`, [record.id]);
+      }
+    },
+
     initRx(rx: TblRx) {
       return rx.onRange([tableName], () => {
         listeners.forEach((cb) => cb());

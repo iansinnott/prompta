@@ -27,6 +27,7 @@
   import IconArchiveOut from "./IconArchiveOut.svelte";
   import { isMobile } from "$lib/utils";
   import classNames from "classnames";
+  import IconTrash from "./IconTrash.svelte";
 
   const sys = getSystem();
   let input: HTMLInputElement;
@@ -85,6 +86,19 @@
       icon: IconGear,
       execute: () => {
         $showSettings = true;
+      },
+    },
+    {
+      when: () => {
+        return !isNewThread($currentThread);
+      },
+      name: "Trash Current Chat",
+      color: "red",
+      altFilterText: "delete remove thread",
+      icon: IconTrash,
+      execute: async () => {
+        await currentChatThread.softDeleteThread();
+        currentThread.reset();
       },
     },
     {

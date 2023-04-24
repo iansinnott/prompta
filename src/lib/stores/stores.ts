@@ -530,6 +530,29 @@ export const currentChatThread = (() => {
   return {
     subscribe,
     invalidate,
+
+    softDeleteThread: async () => {
+      if (
+        !(await getSystem().confirm(
+          "This thread and all messages will be moved to the trash. This is reversible. Continue?"
+        ))
+      ) {
+        return;
+      }
+
+      const threadId = get(currentThread).id;
+      await ChatMessage.softDelete({
+        where: {
+          threadId,
+        },
+      });
+      await Thread.softDelete({
+        where: {
+          id: threadId,
+        },
+      });
+    },
+
     deleteMessages: async () => {
       if (
         !(await getSystem().confirm("Are you sure you want to delete all messages in this thread?"))
@@ -542,8 +565,6 @@ export const currentChatThread = (() => {
           threadId: get(currentThread).id,
         },
       });
-
-      invalidate();
     },
     regenerateResponse: async () => {
       const lastMessage = get(currentChatThread).messages.at(-1);
