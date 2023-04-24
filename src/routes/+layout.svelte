@@ -78,6 +78,13 @@
   <title>Prompta Chat - Chat with ChatGPT and GPT-4. Sync your chats across devices.</title>
   <link rel="icon" type="image/png" sizes="16x16" href="/icon_16x16.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/icon_16x16@2x.png" />
+
+  <!-- NOTE: user-scalable=no is unfortunate, but safari sometimes zooms in automatically when focusing an input which breaks the layout -->
+  <!-- NOTE: viewport-fit=cover may need to be revisited. the current layout doesn't account for notches at all -->
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
+  />
 </svelte:head>
 
 <div

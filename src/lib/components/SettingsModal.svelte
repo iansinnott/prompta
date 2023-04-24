@@ -3,19 +3,16 @@
     gptProfileStore,
     openAiConfig,
     showSettings,
-    profilesStore,
     DEFAULT_SYSTEM_MESSAGE,
     db,
   } from "$lib/stores/stores";
   import { DB_NAME } from "$lib/constants";
   import AutosizeTextarea from "./AutosizeTextarea.svelte";
-  import IconRefresh from "./IconRefresh.svelte";
   import { getSystem } from "$lib/gui";
   import { onMount } from "svelte";
-  import SvelteMarkdown from "svelte-markdown";
-  import CodeBlock from "./CodeBlock.svelte";
   import { ChatMessage, Thread } from "$lib/db";
   import { mapKeys, toCamelCase } from "$lib/utils";
+  import CloseButton from "./CloseButton.svelte";
 
   let schema;
   let migrationVersion;
@@ -25,6 +22,7 @@
       ?.filter((x) => !x.includes("sqlite_") && !x.includes("crsql"));
     migrationVersion = (await $db?.execA<number[]>(`PRAGMA user_version`))?.[0];
   });
+  let showAdvanced = false;
 </script>
 
 <!-- Hide on escape -->
@@ -39,16 +37,27 @@
 {#if $showSettings}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div class="backdrop z-20" on:click={() => ($showSettings = false)}>
+    <!-- NOTE the use of svh units. SVH units in safari do not work with calc, it seems -->
     <form
+      class="bg-zinc-800 border border-zinc-700 overflow-auto flex flex-col rounded-lg absolute top-2 left-2 right-2 max-h-[96svh]"
       on:submit={(e) => e.preventDefault()}
       on:click={(e) => {
         e.stopPropagation();
       }}
-      class="bg-zinc-800 w-[calc(100%-80px)] max-h-[90vh] border border-zinc-700 overflow-auto flex flex-col rounded-lg"
     >
-      <h1 class="text-3xl mb-4 px-4 pt-4 border-b border-zinc-600 pb-4 flex-shrink-0">Settings</h1>
+      <h1
+        class="text-3xl mb-4 px-4 pt-4 border-b border-zinc-600 pb-4 flex-shrink-0 flex items-center justify-between"
+      >
+        <span> Settings </span>
+        <CloseButton
+          class=""
+          onClick={() => {
+            $showSettings = false;
+          }}
+        />
+      </h1>
       <div class="content flex-1">
-        <h3 class="text-xl mb-4 col-span-2">OpenAI</h3>
+        <h3 class="text-xl mb-4 sm:col-span-2">OpenAI</h3>
 
         <label class="label" for="b"> API Key: </label>
         <div class:warning={!$openAiConfig.apiKey}>
@@ -125,146 +134,152 @@
           </p>
         </div>
 
-        <!-- separator -->
         <div class="Separator h-px bg-zinc-700 my-4" />
-        <h3 class="text-xl mb-4 col-span-2">Chat History Sync</h3>
-        <p class="col-span-2 -mt-6 opacity-80">
-          <small
-            >(todo) Syncing, replication and backup of your stored chats is not yet supported.</small
-          >
-        </p>
 
-        <label for="c" class="label">Replication Service Host:</label>
-        <input
-          disabled={true}
-          id="c"
-          class="input opacity-60"
-          type="text"
-          placeholder="Ex: http://localhost:8080"
-          bind:value={$openAiConfig.replicationHost}
-        />
+        <button
+          class="button mb-2 border rounded border-white/30 px-2 py-1 text-xs"
+          on:click={() => {
+            showAdvanced = !showAdvanced;
+            if (showAdvanced) {
+              setTimeout(() => {
+                const el = document.querySelector(".ScrollBottom");
+                if (el) {
+                  el.scrollIntoView({ behavior: "smooth" });
+                }
+              }, 100);
+            }
+          }}
+        >
+          {#if showAdvanced}
+            Hide Advanced
+          {:else}
+            Show Advanced
+          {/if}
+        </button>
+        {#if showAdvanced}
+          <!-- separator -->
+          <h3 class="text-xl mb-4 sm:col-span-2">Database</h3>
 
-        <!-- separator -->
-        <div class="Separator h-px bg-zinc-700 my-4" />
-        <h3 class="text-xl mb-4 col-span-2">Database</h3>
+          <label for="export" class="label">Export:</label>
+          <div>
+            <button
+              on:click={async (e) => {
+                e.preventDefault();
+                if (!$db) {
+                  console.error("No database");
+                  throw new Error("No database");
+                }
+                const sys = getSystem();
+                await sys.saveAs(
+                  `${Date.now()}_message.json`,
+                  JSON.stringify(await $db.execO(`SELECT * FROM message`))
+                );
+                await sys.saveAs(
+                  `${Date.now()}_thread.json`,
+                  JSON.stringify(await $db.execO(`SELECT * FROM thread`))
+                );
+                await sys.saveAs(
+                  `${Date.now()}_preferences.json`,
+                  JSON.stringify(await $db.execO(`SELECT * FROM preferences`))
+                );
+              }}
+              class="flex items-center bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Export All
+            </button>
+            <p>
+              <small>Will download multiple files.</small>
+            </p>
+          </div>
 
-        <label for="export" class="label">Export:</label>
-        <div>
-          <button
-            on:click={async (e) => {
-              e.preventDefault();
-              if (!$db) {
-                console.error("No database");
-                throw new Error("No database");
-              }
-              const sys = getSystem();
-              await sys.saveAs(
-                `${Date.now()}_message.json`,
-                JSON.stringify(await $db.execO(`SELECT * FROM message`))
-              );
-              await sys.saveAs(
-                `${Date.now()}_thread.json`,
-                JSON.stringify(await $db.execO(`SELECT * FROM thread`))
-              );
-              await sys.saveAs(
-                `${Date.now()}_preferences.json`,
-                JSON.stringify(await $db.execO(`SELECT * FROM preferences`))
-              );
-            }}
-            class="flex items-center bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Export All
-          </button>
-          <p>
-            <small>Will download multiple files.</small>
-          </p>
-        </div>
+          <label for="import" class="label">Import:</label>
+          <div>
+            <button
+              on:click={async (e) => {
+                e.preventDefault();
 
-        <label for="import" class="label">Import:</label>
-        <div>
-          <button
-            on:click={async (e) => {
-              e.preventDefault();
+                console.debug("Prepare Import");
 
-              console.debug("Prepare Import");
-
-              if (!$db) {
-                console.error("No database");
-                throw new Error("No database");
-              }
-
-              const sys = getSystem();
-              const file = await sys.chooseAndOpenTextFile();
-
-              if (!file) {
-                console.error("No file chosen");
-                return;
-              }
-
-              const json = JSON.parse(file.data);
-              console.log("JSON");
-
-              if (
-                !(await sys.confirm(
-                  `Are you sure you want to import ${file.name}? Although unlikely, this can cause data loss if you are importing two exports from the same database.`
-                ))
-              ) {
-                console.log("Canclled");
-                return;
-              }
-
-              // if file.name looks like $timestamp_$table.json
-              // then we can import it
-              if (file.name.match(/^\d+_(message|thread)\.json$/)) {
-                console.log("%c[import/v1] legacy table export", "color:salmon;");
-                const tableName = file.name.split("_")[1].split(".")[0];
-
-                for (const row of json) {
-                  const x = mapKeys(row, (x) => {
-                    return toCamelCase(String(x));
-                  });
-                  if (tableName === "message") await ChatMessage.upsert(x);
-                  else if (tableName === "thread") await Thread.upsert(x);
-                  else throw new Error("Unknown table");
+                if (!$db) {
+                  console.error("No database");
+                  throw new Error("No database");
                 }
 
-                console.log(
-                  "%c[import/v1] success",
-                  "color:salmon;",
-                  json.length,
-                  tableName,
-                  "records imported"
-                );
+                const sys = getSystem();
+                const file = await sys.chooseAndOpenTextFile();
 
-                return;
-              }
+                if (!file) {
+                  console.error("No file chosen");
+                  return;
+                }
 
-              console.error("Unknown file type", file.name);
+                const json = JSON.parse(file.data);
+                console.log("JSON");
 
-              sys.alert("Unknown file type. Could not import.");
-            }}
-            class="flex items-center bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Import
-          </button>
-          <p>
-            <small
-              >Run multiple times to import multiple prior exports. If records have the same ID, the
-              later one will overwrite.</small
+                if (
+                  !(await sys.confirm(
+                    `Are you sure you want to import ${file.name}? Although unlikely, this can cause data loss if you are importing two exports from the same database.`
+                  ))
+                ) {
+                  console.log("Canclled");
+                  return;
+                }
+
+                // if file.name looks like $timestamp_$table.json
+                // then we can import it
+                if (file.name.match(/^\d+_(message|thread)\.json$/)) {
+                  console.log("%c[import/v1] legacy table export", "color:salmon;");
+                  const tableName = file.name.split("_")[1].split(".")[0];
+
+                  for (const row of json) {
+                    const x = mapKeys(row, (x) => {
+                      return toCamelCase(String(x));
+                    });
+                    if (tableName === "message") await ChatMessage.upsert(x);
+                    else if (tableName === "thread") await Thread.upsert(x);
+                    else throw new Error("Unknown table");
+                  }
+
+                  console.log(
+                    "%c[import/v1] success",
+                    "color:salmon;",
+                    json.length,
+                    tableName,
+                    "records imported"
+                  );
+
+                  return;
+                }
+
+                console.error("Unknown file type", file.name);
+
+                sys.alert("Unknown file type. Could not import.");
+              }}
+              class="flex items-center bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
             >
-          </p>
-        </div>
+              Import
+            </button>
+            <p>
+              <small
+                >Run multiple times to import multiple prior exports. If records have the same ID,
+                the later one will overwrite.</small
+              >
+            </p>
+          </div>
 
-        <label for="c" class="label">Database:</label>
-        <div class="overflow-auto max-w-full">
-          <pre
-            class="py-1 px-2 rounded text-slate-300 text-sm border border-zinc-700 table whitespace-pre-wrap overflow-auto w-full">
+          <label for="c" class="label">Database:</label>
+          <div class="overflow-auto max-w-full">
+            <pre
+              class="py-1 px-2 rounded text-slate-300 text-sm border border-zinc-700 table whitespace-pre-wrap overflow-auto w-full">
            {DB_NAME}<span class="text-blue-300 opacity-50">/{$openAiConfig.siteId}</span> 
           </pre>
-          <p class="opacity-60">
-            <small> Database identifier used locally for persistent storage. </small>
-          </p>
-        </div>
+            <p class="opacity-60">
+              <small> Database identifier used locally for persistent storage. </small>
+            </p>
+          </div>
+
+          <span class="ScrollBottom" />
+        {/if}
       </div>
     </form>
   </div>
@@ -272,7 +287,7 @@
 
 <style>
   .Separator {
-    @apply col-span-2;
+    @apply sm:col-span-2;
   }
   .backdrop {
     @apply fixed inset-0 flex items-center justify-center;
@@ -282,11 +297,9 @@
     justify-content: center;
   }
   .content {
-    @apply rounded-2xl p-4 gap-x-4 gap-y-4;
+    @apply rounded-2xl p-4 gap-x-4 gap-y-4 grid-cols-1 sm:grid-cols-[auto_1fr];
     display: grid;
     /* content will have two columns, and as many rows as needed for the content */
-    grid-template-columns: auto 1fr;
-    grid-template-rows: minmax(0, 1fr);
     align-items: start;
   }
   select {

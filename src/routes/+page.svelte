@@ -19,6 +19,8 @@
   import IconSync from "$lib/components/IconSync.svelte";
   import CopyButton from "$lib/components/CopyButton.svelte";
   import { slide } from "svelte/transition";
+  import IconClose from "$lib/components/IconClose.svelte";
+  import CloseButton from "$lib/components/CloseButton.svelte";
 
   const sys = getSystem();
   let message = "";
@@ -84,20 +86,11 @@
   <header data-tauri-drag-region class="app-header p-4 pr-3 border-b border-zinc-700 w-full">
     <div class="Left flex items-center space-x-4">
       {#if sys.isTauri}
-        <button
-          class="text-zinc-200 p-1 rounded hover:bg-white/10 hover:text-white mr-4"
-          on:click={(e) => {
+        <CloseButton
+          onClick={(e) => {
             sys.AppWindow.close().catch(console.error);
           }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="w-5 h-5 scale-75">
-            <path
-              stroke="currentcolor"
-              fill="currentcolor"
-              d="M 7.21875 5.78125 L 5.78125 7.21875 L 14.5625 16 L 5.78125 24.78125 L 7.21875 26.21875 L 16 17.4375 L 24.78125 26.21875 L 26.21875 24.78125 L 17.4375 16 L 26.21875 7.21875 L 24.78125 5.78125 L 16 14.5625 Z"
-            />
-          </svg>
-        </button>
+        />
       {/if}
       <button
         style="animation-direction: reverse;"
