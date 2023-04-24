@@ -10,6 +10,7 @@
     "ui:dev": "vite dev",
     "ui:build": "cross-env NODE_ENV=production vite build",
     "release": "yarn version && ./scripts/release.sh",
+    "gh:publish": "./scripts/publish.sh",
     "preview": "vite preview",
     "test": "playwright test",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
