@@ -566,6 +566,7 @@ export const currentChatThread = (() => {
         },
       });
     },
+
     regenerateResponse: async () => {
       const lastMessage = get(currentChatThread).messages.at(-1);
 
@@ -588,9 +589,11 @@ export const currentChatThread = (() => {
         invalidate();
       });
     },
+
     cancel: async () => {
       abortController.abort();
     },
+
     sendMessage: async (...args: Parameters<typeof ChatMessage.create>) => {
       const [msg] = args;
 
@@ -603,12 +606,8 @@ export const currentChatThread = (() => {
 
       await ChatMessage.create(msg);
 
-      // @todo remove? We shouldn't need this manual validation since pending message will invalidate for u
-      // invalidate();
-
       promptGpt({ threadId: msg.threadId as string }).catch((err) => {
         console.error("[gpt]", err);
-        // invalidate();
       });
     },
   };

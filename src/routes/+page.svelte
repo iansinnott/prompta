@@ -27,13 +27,15 @@
   let message = "";
   let textarea: HTMLTextAreaElement | null = null;
 
+  // NOTE: This is exclusively for mobile. It seems there is no good way to
+  // manage window height with CSS. perhaps more research would yeild a better
+  // solution, but for now this works well enough in my limited testing on ios.
   let windowHeight = window.innerHeight;
   function updateWindowHeight() {
     const element = document.querySelector(".your-element");
     const innerHeight = window.innerHeight; // Get viewport height in pixels
     const targetPct = 100;
     windowHeight = innerHeight * (targetPct / 100);
-    console.log({ windowHeight });
   }
 
   onMount(() => {
@@ -42,6 +44,7 @@
     } else {
       console.warn("Mobile browser. Manually managing window height.");
     }
+
     window.addEventListener("DOMContentLoaded", updateWindowHeight, false);
     window.addEventListener("resize", updateWindowHeight, false);
     window.addEventListener("orientationchange", updateWindowHeight, false);
@@ -273,7 +276,7 @@
         }}
         placeholder={sending ? "Enter to cancel" : "Ask GPT..."}
         rows="1"
-        class="appearance-none flex-1 w-full px-4 py-2 bg-transparent outline-none resize-none"
+        class="appearance-none flex-1 w-full px-4 py-2 bg-transparent outline-none resize-none max-h-[50svh]"
       />
       <button class="font-bold px-4 py-2" type="submit">{sending ? "Cancel" : "Send"}</button>
       <ActionsMenu />

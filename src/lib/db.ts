@@ -200,6 +200,10 @@ interface CRUDConf<T> {
   rowToModel?: (x: any) => T;
 }
 
+type Comparator<T> = {
+  [K in keyof T]?: T[K] | { contains?: T[K] };
+};
+
 const crud = <T extends { id: string }>({
   tableName,
   fromDbKey = toCamelCase,
@@ -267,7 +271,7 @@ const crud = <T extends { id: string }>({
       orderBy,
       limit,
     }: {
-      where?: Partial<T>;
+      where?: { [P in keyof T]?: T[P] | Comparator<T> | undefined };
       orderBy?: Partial<Record<keyof T, "ASC" | "DESC">>;
       limit?: number;
     } = {}): Promise<T[]> {
