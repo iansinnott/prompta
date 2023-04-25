@@ -7,7 +7,7 @@
 </script>
 
 <button
-  class={classNames("text-zinc-200 p-1 rounded hover:bg-white/10 hover:text-white mr-4", _class)}
+  class={classNames("text-zinc-200 p-1 rounded hover:bg-white/10 hover:text-white", _class)}
   on:click={onClick}
 >
   <IconClose />
