@@ -510,14 +510,14 @@ export const currentChatThread = (() => {
 
     if (!botMessage) throw new Error("No pending message found when one was expected.");
 
-    // Clear the pending message. Do this afterwards because it invalidates the chat message list
-    pendingMessageStore.set(null);
-
     // Store it fully in the db
     await ChatMessage.create({
       ...botMessage,
       cancelled: abortController.signal.aborted,
     });
+
+    // Clear the pending message. Do this afterwards because it invalidates the chat message list
+    pendingMessageStore.set(null);
 
     if (!hasThreadTitle(get(currentThread))) {
       console.log("Generating thread title...");
