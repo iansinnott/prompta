@@ -225,6 +225,8 @@ const crud = <T extends { id: string }>({
   return {
     _listeners: listeners,
 
+    rowToModel,
+
     onTableChange(cb: () => void) {
       listeners.add(cb);
       return () => {
@@ -409,15 +411,31 @@ export const ChatMessage = crud<ChatMessage>({
   },
 });
 
-export const Thread = crud<Thread>({
-  tableName: "thread",
-  rowToModel: ({ created_at, ...x }: ThreadRow): Thread => {
-    return {
-      ...x,
-      createdAt: dateFromSqlite(created_at),
-    };
+export const Thread = {
+  ...crud<Thread>({
+    tableName: "thread",
+    rowToModel: ({ created_at, ...x }: ThreadRow): Thread => {
+      return {
+        ...x,
+        createdAt: dateFromSqlite(created_at),
+      };
+    },
+  }),
+  async fullTextSearch(content: string) {
+    const rows = await _db.execO<ThreadRow>(
+      `
+      select * from thread
+      where id in (
+        select thread_id from message
+        where content like ?
+      )
+    `,
+      [`%${content}%`]
+    );
+
+    return rows.map((row) => Thread.rowToModel(row));
   },
-});
+};
 
 export const Preferences = {
   async findMany() {
