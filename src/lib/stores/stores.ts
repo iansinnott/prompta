@@ -504,6 +504,16 @@ export const currentChatThread = (() => {
         throw err;
       },
       onmessage: handleSSE,
+
+      // Very important. If the stream closes and reopens when the window is
+      // hidden (default behavior), then the chat completion with ChatGPT will
+      // get _RESTARTED_. So not only do you need to wait for a new completion,
+      // from the beginning, you're also getting overcharged since part of the
+      // explanation is likely to be the same. Also, on our end, it leads to
+      // mangled markdown since the message completion doesn't know that
+      // anything is amiss, even though the event stream starts firing off from
+      // the beginning.
+      openWhenHidden: true,
     });
 
     const botMessage = get(pendingMessageStore);
