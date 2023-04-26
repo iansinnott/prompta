@@ -2,6 +2,7 @@
   import {
     currentChatThread,
     currentThread,
+    devStore,
     generateThreadTitle,
     isNewThread,
     showSettings,
@@ -101,6 +102,24 @@
         currentThread.reset();
       },
     },
+
+    {
+      when: () => $devStore.showDebug,
+      name: "Debug - Off",
+      icon: IconTerminalPrompt,
+      execute: () => {
+        $devStore.showDebug = false;
+      },
+    },
+    {
+      when: () => !$devStore.showDebug,
+      name: "Debug - On",
+      icon: IconTerminalPrompt,
+      execute: () => {
+        $devStore.showDebug = true;
+      },
+    },
+
     {
       when: () => dev,
       name: "Reload Window",
@@ -278,17 +297,18 @@
     filterText = "";
   }
 
-  // @todo This does not get recomputed when threads change, only when filter
-  // text changes. This means the item.when() will not get rerun. I.e. this
-  // computation is not invalidated at certain times when it shouldu.
-  $: filteredActions = actionItems
-    .filter((item) => item.when?.() ?? true)
-    .filter((item) => {
-      return (
-        item.name.toLowerCase().includes(filterText.toLowerCase()) ||
-        item.altFilterText?.toLowerCase().includes(filterText.toLowerCase())
-      );
-    });
+  // NOTE utilizing menuOpen here triggers a recompute when the menu is open
+  // The UX here assumes that the menu closes after an action is executed
+  $: filteredActions = menuOpen
+    ? actionItems
+        .filter((item) => item.when?.() ?? true)
+        .filter((item) => {
+          return (
+            item.name.toLowerCase().includes(filterText.toLowerCase()) ||
+            item.altFilterText?.toLowerCase().includes(filterText.toLowerCase())
+          );
+        })
+    : [];
 </script>
 
 <svelte:window on:keydown={globalKeyPress} />
