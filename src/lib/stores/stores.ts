@@ -11,6 +11,7 @@ import { initOpenAi } from "$lib/llm/openai";
 import { fetchEventSource, type EventSourceMessage } from "@microsoft/fetch-event-source";
 import { wdbRtc } from "@vlcn.io/sync-p2p";
 import { getSystem } from "$lib/gui";
+import { dev } from "$app/environment";
 
 export const showSettings = writable(false);
 
@@ -134,6 +135,13 @@ export const profilesStore = persistentStore<{ [key: string]: GPTProfile }>("pro
   },
 });
 
+/**
+ * A store for _RUNTIME_ dev stuff. For build-time, use the `dev` variable.
+ */
+export const devStore = persistentStore<{ showDebug: boolean }>("dev", {
+  showDebug: dev,
+});
+
 // @todo Persist
 export const gptProfileStore = (() => {
   const activeProfileStore = derived([profilesStore, activeProfileName], ([profiles, name]) => {
@@ -193,6 +201,11 @@ Do not provide a word count or add quotation marks.
   const res = await openAi.createChatCompletion(prompt);
 
   let newTitle = res.data.choices[0].message?.content || "Untitled";
+
+  // trim surrounding quotes, if found
+  if (newTitle.startsWith('"') && newTitle.endsWith('"')) {
+    newTitle = newTitle.slice(1, -1);
+  }
 
   // Trim trailing period, if found
   if (newTitle.endsWith(".")) {

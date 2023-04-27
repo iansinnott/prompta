@@ -7,6 +7,7 @@
     openAiConfig,
     showSettings,
     syncStore,
+    devStore,
   } from "../lib/stores/stores";
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
@@ -115,7 +116,7 @@
 </script>
 
 <div
-  class:dev-container={dev}
+  class:dev-container={dev && $devStore.showDebug}
   class={classNames("app-container", {
     "rounded-lg": sys.isTauri,
   })}
@@ -149,6 +150,7 @@
       </button>
       <!-- a "click outside" div -->
       {#if $syncStore.showSyncModal}
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
         <div
           class="fixed inset-0 z-10"
           on:click={() => {
