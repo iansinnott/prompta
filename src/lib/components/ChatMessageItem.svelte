@@ -57,7 +57,7 @@
       {#if viewRaw}
         <div class="whitespace-pre-wrap">{item.content}</div>
       {:else}
-        <SvelteMarkdown source={item.content} renderers={inProgress ? {} : { code: CodeBlock }} />
+        <SvelteMarkdown source={item.content} renderers={{ code: CodeBlock }} />
       {/if}
       {#if item.cancelled}
         <div class="text-zinc-400 text-xs -mt-2">Cancelled</div>
