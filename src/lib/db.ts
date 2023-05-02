@@ -150,7 +150,7 @@ export const initDb = async () => {
 export interface ChatMessageRow {
   id: string;
   content: string;
-  role: ChatCompletionResponseMessageRoleEnum;
+  role: ChatCompletionResponseMessageRoleEnum | string;
   model?: string | null;
   cancelled?: boolean | null;
   thread_id: string;
@@ -159,7 +159,7 @@ export interface ChatMessageRow {
 export interface ChatMessage {
   id: string;
   content: string;
-  role: ChatCompletionResponseMessageRoleEnum;
+  role: ChatCompletionResponseMessageRoleEnum | string;
   model?: string | null;
   cancelled?: boolean | null;
   createdAt: Date;
@@ -201,7 +201,7 @@ interface CRUDConf<T> {
 }
 
 type Comparator<T> = {
-  [K in keyof T]?: T[K] | { contains?: T[K] };
+  [K in keyof T]?: T[K] | { contains?: T[K] } | { in?: T[K][] };
 };
 
 const crud = <T extends { id: string }>({
@@ -273,7 +273,7 @@ const crud = <T extends { id: string }>({
       orderBy,
       limit,
     }: {
-      where?: { [P in keyof T]?: T[P] | Comparator<T> | undefined };
+      where?: { [P in keyof T]?: T[P] | Comparator<T>[P] | undefined };
       orderBy?: Partial<Record<keyof T, "ASC" | "DESC">>;
       limit?: number;
     } = {}): Promise<T[]> {
@@ -285,8 +285,21 @@ const crud = <T extends { id: string }>({
       if (where) {
         const whereClauses = Object.entries(where)
           .map(([key, value]) => {
-            queryParams.push(value);
-            return `${toDbKey(key)}=?`;
+            if (typeof value === "object" && value !== null) {
+              if ("contains" in value) {
+                queryParams.push(`%${value.contains}%`);
+                return `${toDbKey(key)} LIKE ?`;
+              } else if ("in" in value) {
+                const placeholders = value.in.map(() => "?").join(", ");
+                queryParams.push(...value.in);
+                return `${toDbKey(key)} IN (${placeholders})`;
+              } else {
+                throw new Error(`Unknown comparator ${JSON.stringify(value)}`);
+              }
+            } else {
+              queryParams.push(value);
+              return `${toDbKey(key)}=?`;
+            }
           })
           .join(" AND ");
 
@@ -400,16 +413,41 @@ const crud = <T extends { id: string }>({
   };
 };
 
-export const ChatMessage = crud<ChatMessage>({
-  tableName: "message",
-  rowToModel: ({ created_at, thread_id, ...x }: ChatMessageRow): ChatMessage => {
-    return {
-      ...x,
-      createdAt: dateFromSqlite(created_at),
-      threadId: thread_id,
-    };
+export const ChatMessage = {
+  ...crud<ChatMessage>({
+    tableName: "message",
+    rowToModel: ({ created_at, thread_id, ...x }: ChatMessageRow): ChatMessage => {
+      return {
+        ...x,
+        createdAt: dateFromSqlite(created_at),
+        threadId: thread_id,
+      };
+    },
+  }),
+
+  /**
+   * Find all the context for sending to openai. Initially abstracted becuase we
+   * support other 'roles' besides those that openai supports
+   */
+  async findThreadContext({
+    threadId,
+  }: {
+    threadId: string;
+  }): Promise<Array<Omit<ChatMessage, "role"> & { role: ChatCompletionResponseMessageRoleEnum }>> {
+    const context = await ChatMessage.findMany({
+      where: {
+        threadId,
+        role: {
+          in: ["user", "system", "assistant"] as ChatCompletionResponseMessageRoleEnum[],
+        },
+      },
+      orderBy: { createdAt: "ASC" },
+    });
+    return context as Array<
+      Omit<ChatMessage, "role"> & { role: ChatCompletionResponseMessageRoleEnum }
+    >;
   },
-});
+};
 
 export const Thread = {
   ...crud<Thread>({

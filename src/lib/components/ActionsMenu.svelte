@@ -318,7 +318,7 @@
   <div class="fixed inset-0 bg-transparent" on:click={toggleMenu} />
 {/if}
 
-<div class="relative">
+<div class="relative text-white">
   <button on:click={toggleMenu} class:active={menuOpen} class="font-bold px-4 py-2">Actions</button>
   {#if menuOpen}
     <div

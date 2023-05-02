@@ -67,6 +67,35 @@
 
   $: sending = $currentChatThread.status === "loading";
 
+  function parseCommand(s: string) {
+    if (!s.startsWith("/")) {
+      return {
+        command: null,
+        args: [s],
+        valid: true,
+      };
+    }
+
+    let [command, ...args] = s.slice(1).split(" ");
+    let valid = true;
+
+    switch (command) {
+      // `/` and `//` both function as commentss
+      case "":
+      case "/":
+        command = "comment";
+        break;
+      default:
+        valid = false;
+    }
+
+    return {
+      command,
+      args,
+      valid,
+    };
+  }
+
   async function handleSubmit(s: string) {
     if (sending) {
       console.debug("Cancelling");
@@ -87,11 +116,26 @@
       return;
     }
 
-    await currentChatThread.sendMessage({
-      threadId: $currentThread.id,
-      role: "user",
-      content: s,
-    });
+    const { command, args, valid } = parseCommand(s);
+
+    if (!valid) {
+      await sys.alert(`Invalid command: ${command}`);
+      return;
+    }
+
+    if (command) {
+      await currentChatThread.sendCommand({
+        threadId: $currentThread.id,
+        command,
+        args,
+      });
+    } else {
+      await currentChatThread.sendMessage({
+        threadId: $currentThread.id,
+        role: "user",
+        content: args.join(" "),
+      });
+    }
 
     message = "";
     await tick();
@@ -106,6 +150,8 @@
       !isMobile() && textarea?.focus();
     });
   }
+
+  $: isCommand = message.startsWith("/");
 
   $: isConnectionActive = $syncStore.connection !== "";
 
@@ -260,7 +306,10 @@
         e.preventDefault();
         handleSubmit(message);
       }}
-      class="flex items-end rounded-lg bg-zinc-800 border border-zinc-700"
+      class={classNames("flex items-end rounded-lg border border-zinc-700", {
+        "shadow-[0_0_0_2px_#5baba4] bg-teal-800/20 text-teal-200": isCommand,
+        "bg-zinc-800": !isCommand,
+      })}
     >
       <textarea
         data-chat-input
@@ -278,7 +327,9 @@
         }}
         placeholder={sending ? "Enter to cancel" : "Ask GPT..."}
         rows="1"
-        class="appearance-none flex-1 w-full px-4 py-2 bg-transparent outline-none resize-none max-h-[50svh]"
+        class={classNames(
+          "appearance-none flex-1 w-full px-4 py-2 bg-transparent outline-none resize-none max-h-[50svh]"
+        )}
       />
       <button class="font-bold px-4 py-2" type="submit">{sending ? "Cancel" : "Send"}</button>
       <ActionsMenu />

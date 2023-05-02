@@ -21,13 +21,17 @@
   // });
 </script>
 
-<div class={classNames("ChatMessage pr-2 group", _class)} data-message-id={item.id}>
+<div
+  class={classNames("ChatMessage pr-2 group", _class)}
+  data-message-id={item.id}
+  data-role={item.role}
+>
   <div class="Avatar text-zinc-400 pl-2 flex flex-col items-center space-y-4 relative top-1">
     {#if item.role === "user"}
       <IconUserAvatar class="w-5 h-5 sm:w-6 sm:h-6 opacity-60" />
-    {:else}
+    {:else if item.role === "assistant"}
       <IconBrain class="w-5 h-5 sm:w-6 sm:h-6 text-[#30CEC0] scale-[1.2]" />
-      <div class="sm:group-hover:block hidden">
+      <div class="sm:group-hover:block hidden absolute -top-[16px]">
         <button
           on:click={(e) => {
             viewRaw = !viewRaw;
@@ -36,6 +40,12 @@
         >
           <IconVerticalDots class="scale-75" />
         </button>
+      </div>
+    {:else}
+      <div class="w-5 h-5 flex items-center justify-center">
+        <code class="text-xl inline-block">
+          {"#"}
+        </code>
       </div>
     {/if}
   </div>
@@ -77,6 +87,15 @@
     grid-template-columns: auto 1fr;
     grid-template-areas: "profile content";
     grid-template-rows: 1fr;
+  }
+  .ChatMessage[data-role="comment"] {
+    @apply bg-teal-800/20 border-y border-teal-300/50 -mx-2 px-2 py-2;
+  }
+  .ChatMessage[data-role="comment"] .Avatar {
+    @apply text-teal-300/30;
+  }
+  .ChatMessage[data-role="comment"] :global(p) {
+    @apply text-teal-100;
   }
   .Avatar {
     grid-area: profile;

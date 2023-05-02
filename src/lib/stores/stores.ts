@@ -174,10 +174,7 @@ export const getOpenAi = () => {
 
 export const generateThreadTitle = async ({ threadId }: { threadId: string }) => {
   const openAi = getOpenAi();
-  const context = await ChatMessage.findMany({
-    where: { threadId },
-    orderBy: { createdAt: "ASC" },
-  });
+  const context = await ChatMessage.findThreadContext({ threadId });
   const messageContext = context.map((x) => ({ content: x.content, role: x.role }));
 
   const prompt: CreateChatCompletionRequest = {
@@ -476,10 +473,7 @@ export const currentChatThread = (() => {
       threadId,
     });
 
-    const context = await ChatMessage.findMany({
-      where: { threadId },
-      orderBy: { createdAt: "ASC" },
-    });
+    const context = await ChatMessage.findThreadContext({ threadId });
 
     let messageContext = context.map((x) => ({ content: x.content, role: x.role }));
 
@@ -615,6 +609,18 @@ export const currentChatThread = (() => {
 
     cancel: async () => {
       abortController.abort();
+    },
+
+    sendCommand: async (cmd: { command: string; args: string[]; threadId: string }) => {
+      if (isNewThread({ id: cmd.threadId as string })) {
+        getSystem().alert("Cannot send command without a thread");
+      }
+
+      await ChatMessage.create({
+        threadId: cmd.threadId,
+        role: cmd.command,
+        content: cmd.args.join(" "),
+      });
     },
 
     sendMessage: async (...args: Parameters<typeof ChatMessage.create>) => {
