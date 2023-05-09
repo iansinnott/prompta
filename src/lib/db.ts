@@ -26,11 +26,13 @@ import schema from "$lib/migrations/00_init.sql?raw"; // NOTE that this is ?raw 
 
 // @note Migrations requrie no asset inlining. See vite.config.ts
 import migration_01 from "$lib/migrations/01_add_archived.sql?url";
+import migration_02 from "$lib/migrations/02_add_fts.sql?url";
 import { getSystem } from "./gui";
 
 // prettier-ignore
 const migrations = [
   migration_01,
+  migration_02,
 ];
 
 let _sqlite: SQLite3;
@@ -68,14 +70,14 @@ const migrateDb = async (db: DB) => {
     console.debug(raw);
     let error: null | Error = null;
 
-    for (const x of raw.split(";")) {
-      try {
-        await _db.exec(x);
-      } catch (err: any) {
-        error = new Error(err.message + " SQL: " + x);
-        break;
-      }
+    // for (const x of raw.split(";")) {
+    try {
+      await _db.exec(raw);
+    } catch (err: any) {
+      error = new Error(err.message + " SQL: " + raw);
+      break;
     }
+    // }
 
     if (error) {
       // NOTE This will generate two alert messages most likely, if the base
@@ -86,6 +88,7 @@ const migrateDb = async (db: DB) => {
       // db, but the rest of the app will expect it to be migrated. May or may
       // not cause brakage.
       await getSystem().alert(
+        // @ts-expect-error thinks error is never?
         "Could not migrate database. Failed on " + importUrl + "." + (error?.message || "")
       );
       throw error;
