@@ -42,7 +42,7 @@
     "@microsoft/fetch-event-source": "2.0.1",
     "@tauri-apps/api": "1.2.0",
     "@vkontakte/vk-qr": "2.0.13",
-    "@vlcn.io/crsqlite-wasm": "0.9.1",
+    "@vlcn.io/crsqlite-wasm": "0.10.1-next.0",
     "@vlcn.io/rx-tbl": "0.8.3",
     "@vlcn.io/sync-p2p": "0.7.3",
     "classnames": "2.3.2",
