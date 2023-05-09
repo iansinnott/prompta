@@ -26,6 +26,7 @@ Yet another interface for chatting with ChatGPT (or GPT-4).
 - [x] Search previous chat threads
 - [x] Chat with ChatGPT or GPT-4
 - [x] Keyboard focused
+- [x] Leave notes on GPT's responses, such as "working code!" or "not working"
 
 ## Developing
 
