@@ -89,3 +89,12 @@ export const isMobile = () => {
   const x = /Mobi|iOS|Android/i.test(navigator.userAgent);
   return x;
 };
+
+export const sha1sum = async (s: string) => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(s);
+  const hashBuffer = await crypto.subtle.digest("SHA-1", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  return hashHex;
+};

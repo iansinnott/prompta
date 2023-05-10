@@ -223,7 +223,7 @@ Do not provide a word count or add quotation marks.
 const NEWTHREAD = "newthread";
 export const sqlite = writable<SQLite3 | null>(null);
 export const db = writable<DB | null>(null);
-const newThread: Thread = {
+export const newThread: Thread = {
   id: NEWTHREAD,
   title: "New Chat",
   archived: false,

@@ -19,6 +19,7 @@ export const DB_NAMES = [
   "chat_db-v9.2", // QA importing
   "chat_db-v10", // Corrupted db
   "chat_db-v10.1", // Testing syncing
+  "chat_db-v11", // fts
 ];
 
 export const DB_NAME = DB_NAMES.at(-1);

@@ -1,6 +1,6 @@
 CREATE TABLE
   if NOT EXISTS "fragment" (
-    "id" VARCHAR(255) PRIMARY KEY,
+    "id" INTEGER PRIMARY KEY, -- auto increment doesn't work well for synced tables. also, must be int for use in fts rowid
     "entity_id" VARCHAR(255), -- references some other thing in the db. for now, either a thread or a message
     "entity_type" VARCHAR(255), -- what table this belongs to. not quite using sql the way it was intended here
     "attribute" VARCHAR(255), -- the name of the attribute that this fragment is for

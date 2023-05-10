@@ -1,5 +1,6 @@
 import initWasm, { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
+import { marked } from "marked";
 import { DB_NAME } from "../lib/constants";
 import {
   db,
@@ -8,12 +9,15 @@ import {
   openAiConfig,
   profilesStore,
   syncStore,
+  isNewThread,
+  newThread,
 } from "../lib/stores/stores";
 import { dev } from "$app/environment";
 import { nanoid } from "nanoid";
 import type { ChatCompletionResponseMessageRoleEnum } from "openai";
 import { stringify as uuidStringify } from "uuid";
-import { basename, toCamelCase, toSnakeCase } from "./utils";
+import { basename, sha1sum, toCamelCase, toSnakeCase } from "./utils";
+import { extractFragments } from "./markdown";
 import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
 
 // ========================================================================================
@@ -142,6 +146,7 @@ export const initDb = async () => {
       ["ChatMessage", ChatMessage],
       ["DatabaseMeta", DatabaseMeta],
       ["Preferences", Preferences],
+      ["Fragment", Fragment],
       ["db", _db],
     ]) {
       // @ts-expect-error Just for dev, and the error is not consequential
@@ -177,6 +182,16 @@ export interface ThreadRow {
 }
 export type Thread = Omit<ThreadRow, "created_at"> & { createdAt: Date };
 
+export interface FragmentRow {
+  id: string;
+  entity_id: string;
+  entity_type: string;
+  attribute: string;
+  value: string;
+  created_at: string;
+}
+export type Fragment = Omit<FragmentRow, "created_at"> & { createdAt: Date };
+
 const dateFromSqlite = (s: string) => {
   return new Date(s.replace(" ", "T") + "Z");
 };
@@ -201,6 +216,7 @@ interface CRUDConf<T> {
   fromDbValue?: (x: any) => any;
   toDbValue?: (x: any) => any;
   rowToModel?: (x: any) => T;
+  generateId?: (x: Partial<T>) => Promise<any> | any;
 }
 
 type Comparator<T> = {
@@ -223,6 +239,7 @@ const crud = <T extends { id: string }>({
     return x;
   },
   rowToModel = (x) => x as T,
+  generateId = () => nanoid(),
 }: CRUDConf<T>) => {
   const listeners = new Set<() => void>();
   return {
@@ -248,7 +265,7 @@ const crud = <T extends { id: string }>({
         placeholders.push("?");
       });
 
-      const cid = t.id || nanoid();
+      const cid = t.id || (await generateId(t));
       if (!fields.includes('"id"')) {
         fields.push('"id"');
         values.push(cid);
@@ -413,6 +430,8 @@ const crud = <T extends { id: string }>({
 
       return true;
     },
+
+    generateId,
   };
 };
 
@@ -477,6 +496,109 @@ export const Thread = {
     return rows.map((row) => Thread.rowToModel(row));
   },
 };
+
+const Fragment = {
+  ...crud<Fragment>({
+    generateId: async (x) => {
+      const sha = await sha1sum(x.entity_id + (x.entity_type as string) + x.attribute + x.value);
+      return parseInt(sha.slice(0, 12), 16); // Note we must use ints here for sqlite rowid
+    },
+    tableName: "fragment",
+    rowToModel: ({ created_at, ...x }: FragmentRow): Fragment => {
+      return {
+        ...x,
+        createdAt: dateFromSqlite(created_at),
+      };
+    },
+  }),
+  async fullTextSearch(content: string): Promise<(Fragment & { rank: number; snippet: string })[]> {
+    const rows = await _db.execO<FragmentRow & { rank: number; snippet: string }>(
+      `
+      SELECT
+        m.thread_id,
+        fts.*,
+        fts.rank,
+        snippet (fragment_fts, -1, '<mark>', '</mark>', '…', 32) AS snippet
+      FROM
+        fragment_fts fts
+        LEFT OUTER JOIN message m ON m.id = fts.entity_id
+      WHERE
+        fragment_fts MATCH ?
+        AND fts.entity_type = 'message'
+      ORDER BY
+        CREATED_AT DESC
+      ;
+    `,
+      [content]
+    );
+
+    // @ts-expect-error getting thrown off by the addition of rank and snippet
+    return rows.map((row) => Fragment.rowToModel(row));
+  },
+};
+
+Thread.onTableChange(async () => {
+  const newThreads = await _db.execO<{ id: string; title: string }>(
+    `
+    SELECT id, title
+    FROM
+      "thread"
+    WHERE
+      thread.id NOT IN (SELECT entity_id FROM fragment WHERE entity_type = 'thread')
+      AND title != ?
+    ;
+  `,
+    [newThread.title]
+  );
+
+  for (const x of newThreads) {
+    await Fragment.create({
+      entity_id: x.id,
+      entity_type: "thread",
+      attribute: "title",
+      value: x.title,
+    });
+  }
+
+  // Threads once trashed are no longer searchable
+  await _db.execO<{ id: string }>(
+    `
+    DELETE FROM "fragment"
+    WHERE fragment.entity_type = 'thread'
+      AND fragment.entity_id NOT IN ( SELECT id FROM "thread")
+      ;
+  `
+  );
+});
+
+ChatMessage.onTableChange(async () => {
+  const xs = await _db.execO<{ id: string; content: string }>(`
+  select id, content from "message" 
+    where message.id not in (select entity_id from fragment where entity_type='message')
+  `);
+
+  for (const x of xs) {
+    const fragments = await extractFragments(x.content);
+    console.debug("[search fragments]", fragments);
+    for (const fragment of fragments) {
+      await Fragment.create({
+        entity_id: x.id,
+        entity_type: "message",
+        attribute: "content",
+        value: fragment,
+      });
+    }
+  }
+
+  // Threads once trashed are no longer searchable
+  await _db.execO<{ id: string }>(
+    `
+  delete from "fragment" 
+    where fragment.entity_type='message' 
+      and fragment.entity_id not in (select id from "message")
+  `
+  );
+});
 
 export const Preferences = {
   async findMany() {

@@ -2,7 +2,7 @@ CREATE TABLE
   if NOT EXISTS "thread" (
     "id" VARCHAR(255) PRIMARY KEY, -- Key should be supplied by user. nanoid, uuid, etc
     "title" VARCHAR(255),
-    "created_at" TIMESTAMMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
 SELECT
@@ -16,7 +16,7 @@ CREATE TABLE
     "cancelled" BOOLEAN DEFAULT FALSE,
     "content" TEXT,
     "thread_id" VARCHAR(255),
-    "created_at" TIMESTAMMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
 SELECT
