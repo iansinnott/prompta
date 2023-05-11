@@ -16,7 +16,7 @@ import { dev } from "$app/environment";
 import { nanoid } from "nanoid";
 import type { ChatCompletionResponseMessageRoleEnum } from "openai";
 import { stringify as uuidStringify } from "uuid";
-import { basename, sha1sum, toCamelCase, toSnakeCase } from "./utils";
+import { basename, debounce, groupBy, sha1sum, toCamelCase, toSnakeCase } from "./utils";
 import { extractFragments } from "./markdown";
 import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
 
@@ -281,6 +281,48 @@ const crud = <T extends { id: string }>({
       return this.findUnique({ where: { id: cid } }) as Promise<T>;
     },
 
+    async createBulk(ts: Partial<T>[]) {
+      const allFields: string[] = [];
+      const allValues: any[] = [];
+      const allPlaceholders: string[] = [];
+
+      for (const [i, t] of ts.entries()) {
+        const fields: any[] = [];
+        const values: any[] = [];
+        const placeholders: string[] = [];
+
+        Object.entries(t).forEach(([key, value]) => {
+          fields.push(`"${toDbKey(key)}"`);
+          values.push(toDbValue(value));
+          placeholders.push("?");
+        });
+
+        const cid = t.id || (await generateId(t));
+        if (!fields.includes('"id"')) {
+          fields.push('"id"');
+          values.push(cid);
+          placeholders.push("?");
+        }
+
+        if (i === 0) {
+          allFields.push(...fields);
+        }
+
+        allValues.push(...values);
+        allPlaceholders.push(`(${placeholders.join(", ")})`);
+      }
+
+      const query = `INSERT INTO "${tableName}" (${allFields.join(
+        ", "
+      )}) VALUES ${allPlaceholders.join(", ")}`;
+
+      await _db.exec(query, allValues);
+
+      const createdRecords = (await this.findMany({ where: { id: { in: allValues } } })) as T[];
+
+      return createdRecords;
+    },
+
     async findUnique(x: { where: { id: string } }): Promise<T | undefined> {
       const xs = await _db.execO<ThreadRow>(`select * from "${tableName}" where id=? limit 1`, [
         x.where.id,
@@ -497,7 +539,9 @@ export const Thread = {
   },
 };
 
-const Fragment = {
+export type FragmentSearchResult = Fragment & { rank: number; snippet: string; thread_id: string };
+
+export const Fragment = {
   ...crud<Fragment>({
     generateId: async (x) => {
       const sha = await sha1sum(x.entity_id + (x.entity_type as string) + x.attribute + x.value);
@@ -511,14 +555,21 @@ const Fragment = {
       };
     },
   }),
-  async fullTextSearch(content: string): Promise<(Fragment & { rank: number; snippet: string })[]> {
-    const rows = await _db.execO<FragmentRow & { rank: number; snippet: string }>(
+  async fullTextSearch(
+    content: string,
+    { archived }: { archived?: boolean } = {
+      archived: false,
+    }
+  ) {
+    const rows = await _db.execO<
+      FragmentRow & { rank: number; snippet: string; thread_id: string }
+    >(
       `
       SELECT
         m.thread_id,
         fts.*,
         fts.rank,
-        snippet (fragment_fts, -1, '<mark>', '</mark>', '…', 32) AS snippet
+        snippet (fragment_fts, -1, '<mark>', '</mark>', '…', 18) AS snippet
       FROM
         fragment_fts fts
         LEFT OUTER JOIN message m ON m.id = fts.entity_id
@@ -527,19 +578,55 @@ const Fragment = {
         AND fts.entity_type = 'message'
       ORDER BY
         CREATED_AT DESC
+      LIMIT 500
       ;
     `,
       [content]
     );
 
+    const threads = await Thread.findMany({
+      where: { archived, id: { in: rows.map((x) => x.thread_id) } },
+    });
+    const fragments = rows.map((row) => Fragment.rowToModel(row));
+
     // @ts-expect-error getting thrown off by the addition of rank and snippet
-    return rows.map((row) => Fragment.rowToModel(row));
+    const groups = groupBy(fragments, (x) => x.thread_id);
+
+    return threads.map((thread) => {
+      return {
+        ...thread,
+        fragments: groups[thread.id],
+      };
+    });
   },
 };
 
-Thread.onTableChange(async () => {
-  const newThreads = await _db.execO<{ id: string; title: string }>(
-    `
+const pendingOps: any[] = [];
+
+const attemptCommit = debounce(async () => {
+  if (!pendingOps.length) {
+    console.log("%cops complete", "color:lime;");
+    return;
+  }
+
+  let op;
+
+  while ((op = pendingOps.shift())) {
+    try {
+      await op();
+      console.log("%cops complete", "color:lime;");
+    } catch (e) {
+      console.error(e);
+      pendingOps.unshift(op); // put it back in the queue
+      break;
+    }
+  }
+}, 1000);
+
+const syncThraedFragments = debounce(() => {
+  (async () => {
+    const newThreads = await _db.execO<{ id: string; title: string }>(
+      `
     SELECT id, title
     FROM
       "thread"
@@ -548,56 +635,75 @@ Thread.onTableChange(async () => {
       AND title != ?
     ;
   `,
-    [newThread.title]
-  );
+      [newThread.title]
+    );
 
-  for (const x of newThreads) {
-    await Fragment.create({
-      entity_id: x.id,
-      entity_type: "thread",
-      attribute: "title",
-      value: x.title,
+    console.debug("inserting new threads", newThreads.length);
+
+    await _db.tx(async (tx) => {
+      for (const [i, x] of newThreads.entries()) {
+        console.debug("creating fragment for thread", `index=${i}`, `id=${x.id}`, x);
+        await tx.exec(
+          `INSERT INTO fragment (entity_id, entity_type, attribute, value)
+                         VALUES (?, ?, ?, ?)`,
+          [x.id, "thread", "title", x.title]
+        );
+        // await Fragment.create({
+        //   entity_id: x.id,
+        //   entity_type: "thread",
+        //   attribute: "title",
+        //   value: x.title,
+        // });
+      }
     });
-  }
 
-  // Threads once trashed are no longer searchable
-  await _db.execO<{ id: string }>(
-    `
-    DELETE FROM "fragment"
-    WHERE fragment.entity_type = 'thread'
-      AND fragment.entity_id NOT IN ( SELECT id FROM "thread")
-      ;
-  `
-  );
-});
+    // Threads once trashed are no longer searchable
+    //   await _db.execO<{ id: string }>(
+    //     `
+    //   DELETE FROM "fragment"
+    //   WHERE fragment.entity_type = 'thread'
+    //     AND fragment.entity_id NOT IN ( SELECT id FROM "thread")
+    //     ;
+    // `
+    //   );
+  })();
+}, 1000);
 
-ChatMessage.onTableChange(async () => {
-  const xs = await _db.execO<{ id: string; content: string }>(`
+(window as any).syncThraedFragments = syncThraedFragments;
+
+Thread.onTableChange(syncThraedFragments);
+
+ChatMessage.onTableChange(() => {
+  pendingOps.push(async () => {
+    const xs = await _db.execO<{ id: string; content: string }>(`
   select id, content from "message" 
     where message.id not in (select entity_id from fragment where entity_type='message')
   `);
 
-  for (const x of xs) {
-    const fragments = await extractFragments(x.content);
-    console.debug("[search fragments]", fragments);
-    for (const fragment of fragments) {
-      await Fragment.create({
-        entity_id: x.id,
-        entity_type: "message",
-        attribute: "content",
-        value: fragment,
-      });
+    for (const x of xs) {
+      const fragments = await extractFragments(x.content);
+      console.debug("[search fragments]", fragments);
+      for (const fragment of fragments) {
+        await Fragment.create({
+          entity_id: x.id,
+          entity_type: "message",
+          attribute: "content",
+          value: fragment,
+        });
+      }
     }
-  }
 
-  // Threads once trashed are no longer searchable
-  await _db.execO<{ id: string }>(
-    `
+    // Threads once trashed are no longer searchable
+    await _db.execO<{ id: string }>(
+      `
   delete from "fragment" 
     where fragment.entity_type='message' 
       and fragment.entity_id not in (select id from "message")
   `
-  );
+    );
+  });
+
+  attemptCommit();
 });
 
 export const Preferences = {
