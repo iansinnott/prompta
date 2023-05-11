@@ -16,7 +16,7 @@ CREATE VIRTUAL TABLE if NOT EXISTS "fragment_fts" USING fts5 (
   "created_at" UNINDEXED,
   content = "fragment",
   content_rowid = "id",
-  tokenize = "porter unicode61 remove_diacritics 1"
+  tokenize = "trigram"
 );
 
 CREATE TRIGGER if NOT EXISTS "fragment_ai" AFTER INSERT ON "fragment" BEGIN
