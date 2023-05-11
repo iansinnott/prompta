@@ -291,7 +291,7 @@
         {/if}
       </div>
     {/if}
-    <div class="Right flex items-center relative">
+    <div class="Middle flex items-center justify-center relative w-full">
       <ThreadMenuButton />
       <ThreadMenuList />
     </div>

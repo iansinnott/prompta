@@ -588,45 +588,65 @@ export const Fragment = {
       archived: false,
     }
   ) {
-    const rows = await _db.execO<
-      FragmentRow & { rank: number; snippet: string; thread_id: string }
-    >(
+    const q = escapeFts5InvalidChars(content);
+    const rows = await _db.execO<{
+      title: string;
+      created_at: string;
+      match: string;
+      match_count: number;
+      rank: number;
+      thread_id: string;
+      last_message_created_at: string;
+    }>(
       `
-      SELECT
-        m.thread_id,
-        fts.*,
-        fts.rank,
-        snippet (fragment_fts, -1, '<mark>', '</mark>', '…', 18) AS snippet
-      FROM
-        fragment_fts fts
-        LEFT OUTER JOIN message m ON m.id = fts.entity_id
-      WHERE
-        fragment_fts MATCH ?
-        AND fts.entity_type = 'message'
-      ORDER BY
-        CREATED_AT DESC
-      LIMIT 500
-      ;
+WITH
+  message_fragments AS (
+    SELECT
+      coalesce(m.thread_id, fts.entity_id) as 'thread_id',
+      fts.*,
+      fts.rank,
+      snippet (fragment_fts, -1, '<mark>', '</mark>', '…', 64) AS snippet
+    FROM
+      fragment_fts fts
+      LEFT OUTER JOIN message m ON m.id = fts.entity_id
+    WHERE
+      fragment_fts MATCH ?
+    ORDER BY
+      CREATED_AT DESC
+    LIMIT
+      500
+  )
+SELECT
+  t.id,
+  t.archived,
+  t.title,
+  t.created_at,
+  group_concat (m.snippet, '\n') AS 'match',
+  count(m.snippet) as 'match_count',
+  sum(m.rank) as 'rank',
+  MAX(m.created_at) AS 'last_message_created_at'
+FROM
+  message_fragments m
+  inner join thread t on t.id = m.thread_id
+GROUP BY
+  m.thread_id
+ORDER BY t.created_at DESC
+;
     `,
-      [content]
+      [q]
     );
 
-    const threads = await Thread.findMany({
-      where: { archived, id: { in: rows.map((x) => x.thread_id) } },
-    });
-    const fragments = rows.map((row) => Fragment.rowToModel(row));
-
-    // @ts-expect-error getting thrown off by the addition of rank and snippet
-    const groups = groupBy(fragments, (x) => x.thread_id);
-
-    return threads.map((thread) => {
+    return rows.map((row) => {
       return {
-        ...thread,
-        fragments: groups[thread.id],
+        ...row,
+        createdAt: dateFromSqlite(row.created_at),
+        lastMessageCreatedAt: dateFromSqlite(row.last_message_created_at),
       };
     });
   },
 };
+// replace chars with their escaped versions
+const escapeFts5InvalidChars = (s: string) => s.replaceAll(/['.\\*]/g, (x) => `"${x}"`);
 
 /**
  * Does not work for updating. sqlite was throwing indexing out of bound errors when i tried to upsert the updated rows

@@ -54,8 +54,9 @@
     .filter((x) => x.title.toLowerCase().includes(searchText.trim().toLowerCase()))
     .concat(filteredArchive);
 
-  $: xs = searchText.length > 2 ? searchResults : filteredThreads;
+  $: xs = searchText.length > 2 && searchResults.length ? searchResults : filteredThreads;
 
+  // @ts-expect-error
   $: threadGroups = Object.entries(groupBy(xs, (x) => humanizeDate(x.createdAt)));
 
   $: {
@@ -96,8 +97,9 @@
   };
 
   const openThread = () => {
-    const t = filteredThreads[index];
+    const t = xs[index];
     if (t) {
+      // @ts-expect-error The typings are mixed right now depending on the length of the text input
       $currentThread = t;
       $threadMenu.open = false;
       searchText = "";
@@ -117,7 +119,7 @@
     // use the arrow keys to move index up and down
     if (hasFocus && e.key === "ArrowDown") {
       e.preventDefault();
-      index = Math.min(index + 1, filteredThreads.length - 1);
+      index = Math.min(index + 1, xs.length - 1);
     } else if (hasFocus && e.key === "ArrowUp") {
       e.preventDefault();
       index = Math.max(index - 1, -1); // -1 is for the new chat button
@@ -126,7 +128,7 @@
       // select the current index
       if (index === -1) {
         openNewThread();
-      } else if (filteredThreads.length > 0) {
+      } else if (xs.length > 0) {
         openThread();
       }
     }
@@ -144,7 +146,7 @@
 <div
   class={classNames(
     "z-20",
-    "absolute top-[calc(100%+10px)] right-0 w-[calc(100vw_-_30px)] sm:w-dropdown rounded bg-zinc-800 border border-zinc-700 p-2",
+    "absolute top-[calc(100%+10px)] w-[calc(100vw_-_30px)] sm:w-full sm:max-w-[520px] rounded bg-zinc-800 border border-zinc-700 p-2",
     _class
   )}
   class:hidden={!$threadMenu.open}
@@ -152,6 +154,8 @@
   <input
     bind:this={input}
     bind:value={searchText}
+    autocomplete="off"
+    spellcheck={false}
     placeholder={hasArchived ? "Search... (tap SPACE to view archived)" : "Search Chats..."}
     type="text"
     class="FilterInput"
@@ -191,14 +195,16 @@
           class:active={index === serialIndex}
           class={classNames("p-2 mb-1 rounded flex flex-col w-full text-left overflow-hidden", {})}
         >
-          {#if t.archived}
-            <IconArchiveIn class="mr-2" />
-          {/if}
-          <span class="truncate">{t.title}</span>
-          {#if t.fragments}
-            {#each t.fragments as fragment, i (i)}
-              <span class="text-white text-xs px-1 truncate block overflow-hidden">
-                {@html fragment.snippet}
+          <span class="flex items-center">
+            {#if t.archived}
+              <IconArchiveIn class="mr-2" />
+            {/if}
+            <span class="truncate">{t.title}</span>
+          </span>
+          {#if t.match}
+            {#each t.match.split("\n") as fragment, i (i)}
+              <span class="text-white text-xs px-1 truncate block overflow-hidden w-full">
+                {@html fragment}
               </span>
             {/each}
           {/if}
@@ -217,5 +223,8 @@
   }
   .archived.active span {
     @apply text-white;
+  }
+  div :global(mark) {
+    @apply rounded-sm inline-block px-[2px] bg-amber-400 text-amber-950;
   }
 </style>
