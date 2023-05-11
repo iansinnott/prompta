@@ -251,7 +251,7 @@
                   return;
                 }
 
-                console.error("Unknown file type", file.name);
+                console.error("Unknown file record type. Was not 'message'|'thread'", file.name);
 
                 sys.alert("Unknown file type. Could not import.");
               }}

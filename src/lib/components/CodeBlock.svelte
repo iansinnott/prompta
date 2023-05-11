@@ -46,7 +46,6 @@
   }
 
   $: if (language && Prism.languages[language]) {
-    console.debug("Prism.highlight", { language, text, codeElement });
     let grammar = Prism.languages[language];
     try {
       highlighted = Prism.highlight(text, grammar, language);
