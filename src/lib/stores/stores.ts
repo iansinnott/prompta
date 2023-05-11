@@ -15,7 +15,7 @@ import { dev } from "$app/environment";
 
 export const showSettings = writable(false);
 
-const PENDING_THREAD_TITLE = "New Thread";
+const PENDING_THREAD_TITLE = "New Chat";
 
 const hasThreadTitle = (t: Thread) => {
   return t.title !== PENDING_THREAD_TITLE;
@@ -225,7 +225,7 @@ export const sqlite = writable<SQLite3 | null>(null);
 export const db = writable<DB | null>(null);
 export const newThread: Thread = {
   id: NEWTHREAD,
-  title: "New Chat",
+  title: PENDING_THREAD_TITLE,
   archived: false,
   createdAt: new Date(),
 };

@@ -628,25 +628,26 @@ export const Fragment = {
   },
 };
 
+/**
+ * Does not work for updating. sqlite was throwing indexing out of bound errors when i tried to upsert the updated rows
+ */
 const syncThraedFragments = debounce(async () => {
-  const newThreads = await _db.execO<{ id: string; title: string }>(
-    `
-    SELECT id, title
-    FROM
-      "thread"
-    WHERE
-      thread.id NOT IN (SELECT entity_id FROM fragment WHERE entity_type = 'thread')
-      AND title != ?
-    ;
-  `,
-    [newThread.title]
-  );
-
-  console.debug("inserting new threads", newThreads.length);
-
   await _db.tx(async (tx) => {
+    const newThreads = await tx.execO<{ id: string; title: string }>(
+      `
+      select id, title
+      from
+        "thread"
+      WHERE
+        title != ?
+        AND thread.id not in (select entity_id from fragment where entity_type = 'thread')
+      ;
+    `,
+      [newThread.title]
+    );
+
     for (const [i, x] of newThreads.entries()) {
-      console.debug("creating fragment for thread", `index=${i}`, `id=${x.id}`, x);
+      console.debug("upserting fragment for thread", `index=${i}`, `id=${x.id}`, x);
       await tx.exec(
         `INSERT INTO fragment (entity_id, entity_type, attribute, value)
                          VALUES (?, ?, ?, ?)`,
@@ -666,12 +667,12 @@ const syncThraedFragments = debounce(async () => {
 Thread.onTableChange(syncThraedFragments);
 
 const syncMessageFragments = debounce(async () => {
-  const xs = await _db.execO<{ id: string; content: string }>(`
+  await _db.tx(async (tx) => {
+    const xs = await tx.execO<{ id: string; content: string }>(`
     SELECT id, content FROM "message"
       WHERE message.id NOT IN ( SELECT entity_id FROM fragment WHERE entity_type = 'message')
   `);
 
-  await _db.tx(async (tx) => {
     for (const x of xs) {
       const fragments = await extractFragments(x.content);
       console.debug("[search fragments]", fragments);
