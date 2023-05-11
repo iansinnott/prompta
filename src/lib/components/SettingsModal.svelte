@@ -231,14 +231,16 @@
                   console.log("%c[import/v1] legacy table export", "color:salmon;");
                   const tableName = file.name.split("_")[1].split(".")[0];
 
-                  for (const row of json) {
-                    const x = mapKeys(row, (x) => {
-                      return toCamelCase(String(x));
-                    });
-                    if (tableName === "message") await ChatMessage.upsert(x);
-                    else if (tableName === "thread") await Thread.upsert(x);
-                    else throw new Error("Unknown table");
-                  }
+                  await $db.tx(async (tx) => {
+                    for (const row of json) {
+                      const x = mapKeys(row, (x) => {
+                        return toCamelCase(String(x));
+                      });
+                      if (tableName === "message") await ChatMessage.upsert(x, tx);
+                      else if (tableName === "thread") await Thread.upsert(x, tx);
+                      else throw new Error("Unknown table");
+                    }
+                  });
 
                   console.log(
                     "%c[import/v1] success",

@@ -1,4 +1,5 @@
 import initWasm, { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
+import type { TXAsync } from "@vlcn.io/xplat-api";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { marked } from "marked";
 import { DB_NAME } from "../lib/constants";
@@ -42,8 +43,18 @@ const migrations = [
 let _sqlite: SQLite3;
 let _db: DB;
 
-export const getDbVersion = async (db: DB) => {
-  const [[dbVersion]] = await _db.execA<number[]>("PRAGMA user_version");
+/**
+ * A helper for testing purposes.
+ */
+export const _withDatabase = async (db: TXAsync, cb: (db: DB) => Promise<any>) => {
+  const _initialDb = db;
+  _db = db as DB;
+  await cb(db as DB);
+  _db = _initialDb as DB;
+};
+
+export const getDbVersion = async (db: TXAsync) => {
+  const [[dbVersion]] = await db.execA<number[]>("PRAGMA user_version");
   return dbVersion;
 };
 
@@ -254,7 +265,7 @@ const crud = <T extends { id: string }>({
       };
     },
 
-    async create(t: Partial<T>) {
+    async create(t: Partial<T>, tx: TXAsync = _db) {
       const fields: any[] = [];
       const values: any[] = [];
       const placeholders: string[] = [];
@@ -276,55 +287,68 @@ const crud = <T extends { id: string }>({
         ", "
       )})`;
 
-      await _db.exec(query, values);
+      await tx.exec(query, values);
 
-      return this.findUnique({ where: { id: cid } }) as Promise<T>;
+      return this.findUnique({ where: { id: cid } }, tx) as Promise<T>;
     },
 
-    async createBulk(ts: Partial<T>[]) {
+    async createMany(ts: Partial<T>[]) {
       const allFields: string[] = [];
       const allValues: any[] = [];
       const allPlaceholders: string[] = [];
 
-      for (const [i, t] of ts.entries()) {
-        const fields: any[] = [];
-        const values: any[] = [];
-        const placeholders: string[] = [];
-
-        Object.entries(t).forEach(([key, value]) => {
-          fields.push(`"${toDbKey(key)}"`);
-          values.push(toDbValue(value));
-          placeholders.push("?");
-        });
-
-        const cid = t.id || (await generateId(t));
-        if (!fields.includes('"id"')) {
-          fields.push('"id"');
-          values.push(cid);
-          placeholders.push("?");
-        }
-
-        if (i === 0) {
-          allFields.push(...fields);
-        }
-
-        allValues.push(...values);
-        allPlaceholders.push(`(${placeholders.join(", ")})`);
+      if (ts.length === 0) {
+        return [];
       }
 
-      const query = `INSERT INTO "${tableName}" (${allFields.join(
-        ", "
-      )}) VALUES ${allPlaceholders.join(", ")}`;
+      const first = ts[0];
+      let needsId = true;
+      Object.entries(first).forEach(([k, v]) => {
+        allFields.push(`"${toDbKey(k)}"`);
+        allPlaceholders.push("?");
+        if (k === "id") {
+          needsId = false;
+        }
+      });
 
-      await _db.exec(query, allValues);
+      if (needsId) {
+        allFields.push('"id"');
+        allPlaceholders.push("?");
+      }
 
-      const createdRecords = (await this.findMany({ where: { id: { in: allValues } } })) as T[];
+      // @note Using db.prepare resulted in very odd results. It simply did not work as expected
+      const sql = `
+      INSERT INTO "${tableName}" (${allFields.join(", ")}) 
+        VALUES(${allPlaceholders.join(", ")});
+      `;
 
-      return createdRecords;
+      let count = 0;
+
+      // Running many insertions within a tx should be fast: https://vlcn.io/js/wasm#dbtx
+      await _db.tx(async (tx) => {
+        for (const [i, t] of ts.entries()) {
+          const values: any[] = [];
+
+          Object.entries(t).forEach(([key, value]) => {
+            values.push(toDbValue(value));
+          });
+
+          if (needsId) {
+            const cid = t.id || (await generateId(t));
+            values.push(cid);
+          }
+
+          await tx.exec(sql, values);
+
+          count++;
+        }
+      });
+
+      return count;
     },
 
-    async findUnique(x: { where: { id: string } }): Promise<T | undefined> {
-      const xs = await _db.execO<ThreadRow>(`select * from "${tableName}" where id=? limit 1`, [
+    async findUnique(x: { where: { id: string } }, tx: TXAsync = _db): Promise<T | undefined> {
+      const xs = await tx.execO<ThreadRow>(`select * from "${tableName}" where id=? limit 1`, [
         x.where.id,
       ]);
       return xs[0] ? rowToModel(xs[0]) : undefined;
@@ -386,20 +410,23 @@ const crud = <T extends { id: string }>({
       return rows.map((row) => rowToModel(row));
     },
 
-    async upsert(data: Partial<T>) {
+    async upsert(data: Partial<T>, tx: TXAsync = _db) {
       console.debug("upsert", tableName, data);
 
       // NOTE `create` cases are separated for reader clarity, but could be combined
       if (!data.id) {
-        return this.create(data as T); // If no ID, then create it
-      } else if (!(await this.findUnique({ where: { id: data.id } }))) {
-        return this.create(data as T); // If there _is_ an ID but it's not in the database, then create it (used for importing)
+        return this.create(data as T, tx); // If no ID, then create it
+      } else if (!(await this.findUnique({ where: { id: data.id } }, tx))) {
+        return this.create(data as T, tx); // If there _is_ an ID but it's not in the database, then create it (used for importing)
       } else {
-        return this.update({ where: { id: data.id }, data });
+        return this.update({ where: { id: data.id }, data }, tx);
       }
     },
 
-    async update(x: { where: { id: string }; data: Partial<Record<keyof T, any>> }) {
+    async update(
+      x: { where: { id: string }; data: Partial<Record<keyof T, any>> },
+      tx: TXAsync = _db
+    ) {
       if (!x.where.id) {
         throw new Error("Must provide id");
       }
@@ -409,8 +436,8 @@ const crud = <T extends { id: string }>({
       const queryParams = keysValues.flatMap(([, value]) => value).concat(x.where.id);
 
       const sql = `update "${tableName}" set ${updateExpressions} where id=?`;
-      await _db.exec(sql, queryParams);
-      return this.findUnique({ where: x.where }) as Promise<T>;
+      await tx.exec(sql, queryParams);
+      return this.findUnique({ where: x.where }, tx) as Promise<T>;
     },
 
     async findFirst(x: Omit<Parameters<typeof this.findMany>[0], "limit">): Promise<T | null> {
@@ -418,7 +445,7 @@ const crud = <T extends { id: string }>({
       return xs[0] ?? null;
     },
 
-    async delete(x: { where: Partial<Record<keyof T, any>> }) {
+    async delete(x: { where: Partial<Record<keyof T, any>> }, tx: TXAsync = _db) {
       if (!x.where.id) {
         console.warn("Mass deletion", x);
       }
@@ -427,10 +454,10 @@ const crud = <T extends { id: string }>({
       const deleteWhere = keysValues.map(([key]) => `${toDbKey(key)}=?`).join(" AND ");
       const queryParams = keysValues.flatMap(([, value]) => value);
       const sql = `delete from "${tableName}" where ${deleteWhere}`;
-      await _db.exec(sql, queryParams);
+      await tx.exec(sql, queryParams);
     },
 
-    async softDelete(x: { where: Partial<Record<keyof T, any>> }) {
+    async softDelete(x: { where: Partial<Record<keyof T, any>> }, tx: TXAsync = _db) {
       if (!x.where.id) {
         console.warn(tableName, "Soft deletion", x);
       }
@@ -442,12 +469,12 @@ const crud = <T extends { id: string }>({
       }
 
       for (const record of records) {
-        await _db.exec(`insert into "deleted_record" (id, table_name, data) values (?, ?, ?)`, [
+        await tx.exec(`insert into "deleted_record" (id, table_name, data) values (?, ?, ?)`, [
           record.id,
           tableName,
           JSON.stringify(record),
         ]);
-        await _db.exec(`delete from "${tableName}" where id=?`, [record.id]);
+        await tx.exec(`delete from "${tableName}" where id=?`, [record.id]);
       }
     },
 
@@ -601,32 +628,9 @@ export const Fragment = {
   },
 };
 
-const pendingOps: any[] = [];
-
-const attemptCommit = debounce(async () => {
-  if (!pendingOps.length) {
-    console.log("%cops complete", "color:lime;");
-    return;
-  }
-
-  let op;
-
-  while ((op = pendingOps.shift())) {
-    try {
-      await op();
-      console.log("%cops complete", "color:lime;");
-    } catch (e) {
-      console.error(e);
-      pendingOps.unshift(op); // put it back in the queue
-      break;
-    }
-  }
-}, 1000);
-
-const syncThraedFragments = debounce(() => {
-  (async () => {
-    const newThreads = await _db.execO<{ id: string; title: string }>(
-      `
+const syncThraedFragments = debounce(async () => {
+  const newThreads = await _db.execO<{ id: string; title: string }>(
+    `
     SELECT id, title
     FROM
       "thread"
@@ -635,76 +639,61 @@ const syncThraedFragments = debounce(() => {
       AND title != ?
     ;
   `,
-      [newThread.title]
-    );
+    [newThread.title]
+  );
 
-    console.debug("inserting new threads", newThreads.length);
+  console.debug("inserting new threads", newThreads.length);
 
-    await _db.tx(async (tx) => {
-      for (const [i, x] of newThreads.entries()) {
-        console.debug("creating fragment for thread", `index=${i}`, `id=${x.id}`, x);
-        await tx.exec(
-          `INSERT INTO fragment (entity_id, entity_type, attribute, value)
+  await _db.tx(async (tx) => {
+    for (const [i, x] of newThreads.entries()) {
+      console.debug("creating fragment for thread", `index=${i}`, `id=${x.id}`, x);
+      await tx.exec(
+        `INSERT INTO fragment (entity_id, entity_type, attribute, value)
                          VALUES (?, ?, ?, ?)`,
-          [x.id, "thread", "title", x.title]
-        );
-        // await Fragment.create({
-        //   entity_id: x.id,
-        //   entity_type: "thread",
-        //   attribute: "title",
-        //   value: x.title,
-        // });
-      }
-    });
+        [x.id, "thread", "title", x.title]
+      );
+    }
 
     // Threads once trashed are no longer searchable
-    //   await _db.execO<{ id: string }>(
-    //     `
-    //   DELETE FROM "fragment"
-    //   WHERE fragment.entity_type = 'thread'
-    //     AND fragment.entity_id NOT IN ( SELECT id FROM "thread")
-    //     ;
-    // `
-    //   );
-  })();
+    await tx.exec(
+      `DELETE FROM "fragment"
+          WHERE fragment.entity_type = 'thread'
+            AND fragment.entity_id NOT IN ( SELECT id FROM "thread");`
+    );
+  });
 }, 1000);
-
-(window as any).syncThraedFragments = syncThraedFragments;
 
 Thread.onTableChange(syncThraedFragments);
 
-ChatMessage.onTableChange(() => {
-  pendingOps.push(async () => {
-    const xs = await _db.execO<{ id: string; content: string }>(`
-  select id, content from "message" 
-    where message.id not in (select entity_id from fragment where entity_type='message')
+const syncMessageFragments = debounce(async () => {
+  const xs = await _db.execO<{ id: string; content: string }>(`
+    SELECT id, content FROM "message"
+      WHERE message.id NOT IN ( SELECT entity_id FROM fragment WHERE entity_type = 'message')
   `);
 
+  await _db.tx(async (tx) => {
     for (const x of xs) {
       const fragments = await extractFragments(x.content);
       console.debug("[search fragments]", fragments);
       for (const fragment of fragments) {
-        await Fragment.create({
-          entity_id: x.id,
-          entity_type: "message",
-          attribute: "content",
-          value: fragment,
-        });
+        await tx.exec(
+          `INSERT INTO fragment (entity_id, entity_type, attribute, VALUE) VALUES (?, ?, ?, ?)`,
+          [x.id, "message", "content", fragment]
+        );
       }
     }
 
     // Threads once trashed are no longer searchable
-    await _db.execO<{ id: string }>(
-      `
-  delete from "fragment" 
-    where fragment.entity_type='message' 
-      and fragment.entity_id not in (select id from "message")
-  `
+    await tx.execO<{ id: string }>(
+      `DELETE FROM "fragment"
+       WHERE
+         fragment.entity_type = 'message'
+         AND fragment.entity_id NOT IN ( SELECT id FROM "message")`
     );
   });
+}, 1000);
 
-  attemptCommit();
-});
+ChatMessage.onTableChange(syncMessageFragments);
 
 export const Preferences = {
   async findMany() {

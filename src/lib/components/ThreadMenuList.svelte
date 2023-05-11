@@ -3,8 +3,9 @@
   import classNames from "classnames";
   import { onMount, tick } from "svelte";
   import IconSparkle from "./IconSparkle.svelte";
-  import { groupBy, isMobile } from "$lib/utils";
+  import { debounce, groupBy, isMobile } from "$lib/utils";
   import IconArchiveIn from "./IconArchiveIn.svelte";
+  import { Fragment, type FragmentSearchResult } from "$lib/db";
   let _class: string = "";
   export { _class as class };
   let input: HTMLInputElement;
@@ -27,8 +28,22 @@
     }
   };
 
+  let searchResults: Awaited<ReturnType<typeof Fragment.fullTextSearch>>;
+
+  const debouncedFts = debounce((s: string, archived: boolean) => {
+    Fragment.fullTextSearch(s, { archived }).then((xs) => {
+      searchResults = xs;
+    });
+  }, 50);
+
   $: hasArchived = $archivedThreadList.length > 0;
   $: showArchived = hasArchived && (searchText.startsWith(" ") || $currentThread.archived);
+  $: if (searchText.length > 2) {
+    debouncedFts(searchText, showArchived);
+  } else {
+    searchResults = [];
+  }
+
   $: filteredArchive = showArchived
     ? $archivedThreadList.filter((x) =>
         x.title.toLowerCase().includes(searchText.trim().toLowerCase())
@@ -39,7 +54,9 @@
     .filter((x) => x.title.toLowerCase().includes(searchText.trim().toLowerCase()))
     .concat(filteredArchive);
 
-  $: threadGroups = Object.entries(groupBy(filteredThreads, (x) => humanizeDate(x.createdAt)));
+  $: xs = searchText.length > 2 ? searchResults : filteredThreads;
+
+  $: threadGroups = Object.entries(groupBy(xs, (x) => humanizeDate(x.createdAt)));
 
   $: {
     // scroll the list to the current index
@@ -172,12 +189,19 @@
           on:mouseenter={(e) => (index = serialIndex)}
           class:archived={t.archived}
           class:active={index === serialIndex}
-          class={classNames("p-2 mb-1 rounded flex items-center w-full text-left", {})}
+          class={classNames("p-2 mb-1 rounded flex flex-col w-full text-left overflow-hidden", {})}
         >
           {#if t.archived}
             <IconArchiveIn class="mr-2" />
           {/if}
           <span class="truncate">{t.title}</span>
+          {#if t.fragments}
+            {#each t.fragments as fragment, i (i)}
+              <span class="text-white text-xs px-1 truncate block overflow-hidden">
+                {@html fragment.snippet}
+              </span>
+            {/each}
+          {/if}
         </button>
       {/each}
     {/each}
