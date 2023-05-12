@@ -3,6 +3,7 @@
   import classNames from "classnames";
   import IconChevronDown from "./IconChevronDown.svelte";
   import IconSparkle from "./IconSparkle.svelte";
+  import IconChevronExpand from "./IconChevronExpand.svelte";
   let _class: string = "";
   export { _class as class };
 </script>
@@ -24,6 +25,6 @@
 
   <div class="flex-1 w-full truncate text-left">{$currentThread.title}</div>
   <div class="scale-75 text-zinc-400 pl-4">
-    <IconChevronDown />
+    <IconChevronExpand />
   </div>
 </button>

@@ -79,7 +79,7 @@
       <div>
         <IconBrainAiHybrid class="w-20 h-20" />
       </div>
-      <h3 class="font-bold text-lg">Ask GPT</h3>
+      <h3 class="font-bold text-lg">Ask Prompta</h3>
       <div class="opacity-60 text-center flex flex-col space-y-2">
         {#each chooseRandomPrompts() as prompt}
           <p>"{prompt}"</p>

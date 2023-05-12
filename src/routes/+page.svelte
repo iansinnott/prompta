@@ -325,7 +325,7 @@
         on:input={(e) => {
           resizeChatInput();
         }}
-        placeholder={sending ? "Enter to cancel" : "Ask GPT..."}
+        placeholder={sending ? "Enter to cancel" : "Ask Prompta..."}
         rows="1"
         class={classNames(
           "appearance-none flex-1 w-full px-4 py-2 bg-transparent outline-none resize-none max-h-[50svh]"
