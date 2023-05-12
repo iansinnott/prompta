@@ -1,7 +1,6 @@
 import initWasm, { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import type { TXAsync } from "@vlcn.io/xplat-api";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
-import { marked } from "marked";
 import { DB_NAME } from "../lib/constants";
 import {
   db,

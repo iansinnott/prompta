@@ -1,7 +1,6 @@
 <script lang="ts">
   import { threadMenu, currentThread, isNewThread } from "$lib/stores/stores";
   import classNames from "classnames";
-  import IconChevronDown from "./IconChevronDown.svelte";
   import IconSparkle from "./IconSparkle.svelte";
   import IconChevronExpand from "./IconChevronExpand.svelte";
   let _class: string = "";

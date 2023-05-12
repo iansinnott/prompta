@@ -8,14 +8,13 @@
     showSettings,
     threadMenu,
   } from "$lib/stores/stores";
-  import { onMount, tick } from "svelte";
+  import { tick } from "svelte";
   import IconSparkle from "./IconSparkle.svelte";
   import IconGear from "./IconGear.svelte";
   import IconHistoryClock from "./IconHistoryClock.svelte";
   import { dev } from "$app/environment";
-  import { ChatMessage, _clearDatabase } from "$lib/db";
+  import { _clearDatabase } from "$lib/db";
   import IconThreadTitle from "./IconThreadTitle.svelte";
-  import IconRefresh from "./IconRefresh.svelte";
   import IconRefreshOutline from "./IconRefreshOutline.svelte";
   import {
     createShortcutPredicate,
