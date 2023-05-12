@@ -10,7 +10,7 @@
 
 <button
   class={classNames(
-    "border border-zinc-700 rounded-lg py-2 pl-4 pr-3 flex items-center w-full sm:w-full sm:max-w-[520px]",
+    "border border-zinc-700 rounded-lg py-2 pl-4 pr-3 flex items-center w-full sm:w-full sm:max-w-[520px] group",
     _class
   )}
   on:click={() => {
@@ -24,7 +24,7 @@
   {/if}
 
   <div class="flex-1 w-full truncate text-left">{$currentThread.title}</div>
-  <div class="scale-75 text-zinc-400 pl-4">
+  <div class="scale-75 text-zinc-400 pl-4 group-hover:text-white">
     <IconChevronExpand />
   </div>
 </button>

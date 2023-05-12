@@ -23,6 +23,7 @@
   import IconClose from "$lib/components/IconClose.svelte";
   import CloseButton from "$lib/components/CloseButton.svelte";
   import { isMobile } from "$lib/utils";
+  import IconPlus from "$lib/components/IconPlus.svelte";
 
   const sys = getSystem();
   let message = "";
@@ -207,7 +208,7 @@
     </div>
     {#if $syncStore.showSyncModal}
       <div
-        class="fixed top-16 left-0 right-0 sm:right-auto sm:w-[420px] sm:left-12 bg-zinc-600 rounded-lg p-3 shadow-lg z-10 space-y-4 overflow-auto max-h-[80vh]"
+        class="fixed top-16 left-0 sm:w-[420px] sm:left-6 bg-zinc-600 rounded-lg p-3 shadow-lg z-10 space-y-4 overflow-auto max-h-[80vh]"
       >
         <button
           on:click={() => {
@@ -295,6 +296,16 @@
       <ThreadMenuButton />
       <ThreadMenuList />
     </div>
+    <div class="Right flex items-center">
+      <button
+        class="text-white/50 pr-2 sm:px-2 py-1 hover:text-white"
+        on:click={() => {
+          currentThread.reset();
+        }}
+      >
+        <IconPlus class="w-5 h-5" />
+      </button>
+    </div>
   </header>
   <div class="app-body sm:p-2">
     <ChatMessageList />
@@ -356,7 +367,7 @@
   .app-header {
     grid-area: top;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr) auto;
     @apply gap-4 items-center sm:justify-items-end;
   }
   .app-body {
