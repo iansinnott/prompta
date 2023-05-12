@@ -33,6 +33,9 @@
   const debouncedFts = debounce((s: string, archived: boolean) => {
     Fragment.fullTextSearch(s, { archived }).then((xs) => {
       searchResults = xs;
+      if (searchResults.length > 0) {
+        index = 0;
+      }
     });
   }, 64);
 
@@ -182,8 +185,11 @@
             <span class="truncate">{t.title}</span>
           </span>
           {#if t.match}
-            {#each t.match.split("\n") as fragment, i (i)}
-              <span class="text-white text-xs px-1 truncate block overflow-hidden w-full">
+            {#each t.match
+              .split("\n")
+              .slice(0, 5)
+              .map((x) => x.trim()) as fragment, i (i)}
+              <span class="text-white/80 text-xs truncate block overflow-hidden w-full">
                 {@html fragment}
               </span>
             {/each}
@@ -205,6 +211,6 @@
     @apply text-white;
   }
   div :global(mark) {
-    @apply rounded-sm inline-block px-[2px] bg-amber-400 text-amber-950;
+    @apply rounded-sm inline-block bg-teal-600/30 text-teal-200 border-b border-teal-400;
   }
 </style>
