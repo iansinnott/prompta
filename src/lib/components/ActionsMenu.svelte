@@ -106,7 +106,7 @@
     },
 
     {
-      when: () => $devStore.showDebug,
+      when: () => dev && $devStore.showDebug,
       name: "Debug - Off",
       icon: IconTerminalPrompt,
       execute: () => {
@@ -114,7 +114,7 @@
       },
     },
     {
-      when: () => !$devStore.showDebug,
+      when: () => dev && !$devStore.showDebug,
       name: "Debug - On",
       icon: IconTerminalPrompt,
       execute: () => {
@@ -123,14 +123,12 @@
     },
 
     {
-      when: () => dev,
       name: "Reload Window",
       execute: () => {
         window.location.reload();
       },
     },
     {
-      when: () => dev,
       name: "View Source Code",
       execute: () => {
         sys.openExternal("https://github.com/iansinnott/prompta");
