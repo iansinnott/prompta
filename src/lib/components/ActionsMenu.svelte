@@ -29,6 +29,8 @@
   import { isMobile } from "$lib/utils";
   import classNames from "classnames";
   import IconTrash from "./IconTrash.svelte";
+  let _class: string = "";
+  export { _class as class };
 
   const sys = getSystem();
   let input: HTMLInputElement;
@@ -319,7 +321,17 @@
 {/if}
 
 <div class="relative text-white">
-  <button on:click={toggleMenu} class:active={menuOpen} class="font-bold px-4 py-2">Actions</button>
+  <button on:click={toggleMenu} class={classNames("font-bold px-4 py-2", _class, {})}>
+    Command
+    <span class="hidden sm:inline-flex items-center space-x-1 text-white/40">
+      <kbd
+        style="font-family:system-ui, -apple-system;"
+        class={classNames("text-sm", {
+          "text-teal-300": menuOpen,
+        })}>{mapKeysToMacSymbols("meta")}K</kbd
+      >
+    </span>
+  </button>
   {#if menuOpen}
     <div
       class="absolute bottom-[calc(100%+10px)] right-0 min-w-[calc(100vw_-_30px)] sm:min-w-[425px] shadow-xl border border-zinc-700 bg-zinc-800 rounded-lg z-20 flex flex-col"
@@ -352,8 +364,9 @@
                 {#each mapKeysToMacSymbols(action.keyboard.shortcut) as key}
                   <kbd
                     style="font-family:system-ui, -apple-system;"
-                    class="bg-white/20 inline-flex items-center justify-center rounded font-mono w-6 h-6 text-sm"
-                    >{key}</kbd
+                    class={classNames(
+                      "bg-white/20 inline-flex items-center justify-center rounded font-mono w-6 h-6 text-sm"
+                    )}>{key}</kbd
                   >
                 {/each}
               </span>

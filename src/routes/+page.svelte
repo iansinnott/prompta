@@ -24,6 +24,7 @@
   import CloseButton from "$lib/components/CloseButton.svelte";
   import { isMobile } from "$lib/utils";
   import IconPlus from "$lib/components/IconPlus.svelte";
+  import { mapKeysToMacSymbols } from "$lib/keyboard/shortcuts";
 
   const sys = getSystem();
   let message = "";
@@ -342,10 +343,35 @@
           "appearance-none flex-1 w-full px-4 py-2 bg-transparent outline-none resize-none max-h-[50svh]"
         )}
       />
-      <button class="font-bold px-4 py-2" type="submit">{sending ? "Cancel" : "Send"}</button>
-      <ActionsMenu />
+      <button
+        class="font-bold px-4 py-2 flex items-center text-xs uppercase leading-[22px]"
+        type="submit"
+      >
+        <span class="mr-2">
+          {sending ? "Cancel" : "Send"}
+        </span>
+        <span class="hidden sm:inline-flex items-center space-x-1 text-white/40">
+          <kbd style="font-family:system-ui, -apple-system;" class="text-xs">{"⮐"}</kbd>
+        </span>
+      </button>
+      <ActionsMenu class="text-xs uppercase leading-[22px]" />
     </form>
   </footer>
+
+  <!-- Decided not to go with this for now -->
+  {#if false}
+    <footer
+      class="app-statusbar text-sm bg-white/5 border-t border-zinc-700 grid grid-cols-[minmax(0,1fr)_auto]"
+    >
+      <div>
+        <!-- Currently empty -->
+      </div>
+      <div class="flex items-center space-x-4">
+        <button class="uppercase text-xs tracking-wider px-2 py-2"> Send </button>
+        <ActionsMenu class="uppercase text-xs tracking-wider px-2 py-0 " />
+      </div>
+    </footer>
+  {/if}
 </div>
 
 <style>
@@ -354,11 +380,16 @@
   }
   .app-container {
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows:
+      auto
+      minmax(0, 1fr)
+      auto
+      auto;
     grid-template-areas:
       "top"
       "middle"
-      "bottom";
+      "bottom"
+      "statusbar";
 
     /* Not sure where the extra height is from, but the specific calc fixes the layout */
     /* NOTE This will be overwritten on mobile. See the manual height code above */
@@ -376,5 +407,8 @@
   }
   .app-footer {
     grid-area: bottom;
+  }
+  .app-statusbar {
+    grid-area: statusbar;
   }
 </style>
