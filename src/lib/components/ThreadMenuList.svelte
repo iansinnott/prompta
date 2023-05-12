@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { archivedThreadList, currentThread, threadList, threadMenu } from "$lib/stores/stores";
+  import { currentThread, threadList, threadMenu } from "$lib/stores/stores";
   import classNames from "classnames";
   import { onMount, tick } from "svelte";
   import IconSparkle from "./IconSparkle.svelte";
@@ -28,37 +28,17 @@
     }
   };
 
-  let searchResults: Awaited<ReturnType<typeof Fragment.fullTextSearch>>;
+  let searchResults: Awaited<ReturnType<typeof Fragment.fullTextSearch>> = [];
 
   const debouncedFts = debounce((s: string, archived: boolean) => {
     Fragment.fullTextSearch(s, { archived }).then((xs) => {
       searchResults = xs;
     });
-  }, 50);
+  }, 64);
 
-  $: hasArchived = $archivedThreadList.length > 0;
-  $: showArchived = hasArchived && (searchText.startsWith(" ") || $currentThread.archived);
-  $: if (searchText.length > 2) {
-    debouncedFts(searchText, showArchived);
-  } else {
-    searchResults = [];
-  }
-
-  $: filteredArchive = showArchived
-    ? $archivedThreadList.filter((x) =>
-        x.title.toLowerCase().includes(searchText.trim().toLowerCase())
-      )
-    : [];
-
-  $: filteredThreads = $threadList
-    .filter((x) => x.title.toLowerCase().includes(searchText.trim().toLowerCase()))
-    .concat(filteredArchive);
-
-  $: xs = searchText.length > 2 && searchResults.length ? searchResults : filteredThreads;
-
-  // @ts-expect-error
-  $: threadGroups = Object.entries(groupBy(xs, (x) => humanizeDate(x.createdAt)));
-
+  $: showArchived = searchText.startsWith(" ") || $currentThread.archived;
+  $: debouncedFts(searchText, showArchived);
+  $: threadGroups = Object.entries(groupBy(searchResults, (x) => humanizeDate(x.created_at)));
   $: {
     // scroll the list to the current index
     const el = scrollContainer?.querySelector(`[data-index="${index}"]`);
@@ -70,8 +50,8 @@
   // When the thread menu is opened...
   $: if ($threadMenu.open) {
     // Update the index to be the active thread
-    const i = filteredThreads.findIndex((t) => t.id === $currentThread.id);
-    if (i === -1 && filteredThreads.length > 0) {
+    const i = searchResults.findIndex((t) => t.id === $currentThread.id);
+    if (i === -1 && searchResults.length > 0) {
       index = 0;
     } else {
       index = i;
@@ -97,7 +77,7 @@
   };
 
   const openThread = () => {
-    const t = xs[index];
+    const t = searchResults[index];
     if (t) {
       // @ts-expect-error The typings are mixed right now depending on the length of the text input
       $currentThread = t;
@@ -119,7 +99,7 @@
     // use the arrow keys to move index up and down
     if (hasFocus && e.key === "ArrowDown") {
       e.preventDefault();
-      index = Math.min(index + 1, xs.length - 1);
+      index = Math.min(index + 1, searchResults.length - 1);
     } else if (hasFocus && e.key === "ArrowUp") {
       e.preventDefault();
       index = Math.max(index - 1, -1); // -1 is for the new chat button
@@ -128,7 +108,7 @@
       // select the current index
       if (index === -1) {
         openNewThread();
-      } else if (xs.length > 0) {
+      } else if (searchResults.length > 0) {
         openThread();
       }
     }
@@ -156,7 +136,7 @@
     bind:value={searchText}
     autocomplete="off"
     spellcheck={false}
-    placeholder={hasArchived ? "Search... (tap SPACE to view archived)" : "Search Chats..."}
+    placeholder={"Search Chats..."}
     type="text"
     class="FilterInput"
   />
@@ -177,7 +157,7 @@
       </span>
       <span> New Chat </span>
     </button>
-    {#if filteredThreads.length > 0}
+    {#if searchResults.length > 0}
       <div class="Separator h-px bg-zinc-700 my-2" />
     {/if}
     {#each threadGroups as [dateString, threads], i (dateString)}

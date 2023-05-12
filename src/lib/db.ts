@@ -566,7 +566,16 @@ export const Thread = {
   },
 };
 
-export type FragmentSearchResult = Fragment & { rank: number; snippet: string; thread_id: string };
+export type FragmentSearchResult = {
+  id: string;
+  title: string;
+  archived: boolean;
+  created_at: string;
+  last_message_created_at: string;
+  match?: string;
+  match_count?: number;
+  rank?: number;
+};
 
 export const Fragment = {
   ...crud<Fragment>({
@@ -588,17 +597,7 @@ export const Fragment = {
       archived: false,
     }
   ) {
-    const q = escapeFts5InvalidChars(content);
-    const rows = await _db.execO<{
-      title: string;
-      created_at: string;
-      match: string;
-      match_count: number;
-      rank: number;
-      thread_id: string;
-      last_message_created_at: string;
-    }>(
-      `
+    const searchAllSql = `
 WITH
   message_fragments AS (
     SELECT
@@ -628,25 +627,50 @@ SELECT
 FROM
   message_fragments m
   inner join thread t on t.id = m.thread_id
+WHERE
+  t.archived = ?
 GROUP BY
   m.thread_id
 ORDER BY t.created_at DESC
 ;
-    `,
-      [q]
-    );
+    `;
+
+    const searchThreadsSql = `
+SELECT
+    t.id,
+    t.archived,
+    t.title,
+    t.created_at,
+    (select created_at from message where thread_id = t.id order by created_at desc limit 1) AS 'last_message_created_at'
+FROM
+    thread t
+WHERE t.title like ?
+  AND t.archived = ?
+ORDER BY t.created_at DESC
+;
+    `;
+
+    let q = escapeFts5InvalidChars(content);
+    const threadOnly = q.length < 3;
+    let sql = searchAllSql;
+    if (threadOnly) {
+      sql = searchThreadsSql;
+      q = `%${q}%`;
+    }
+    const args = [q, archived ? 1 : 0];
+    const rows = await _db.execO<FragmentSearchResult>(sql, args);
 
     return rows.map((row) => {
       return {
         ...row,
-        createdAt: dateFromSqlite(row.created_at),
-        lastMessageCreatedAt: dateFromSqlite(row.last_message_created_at),
+        created_at: dateFromSqlite(row.created_at),
+        last_message_created_at: dateFromSqlite(row.last_message_created_at),
       };
     });
   },
 };
 // replace chars with their escaped versions
-const escapeFts5InvalidChars = (s: string) => s.replaceAll(/['.\\*]/g, (x) => `"${x}"`);
+const escapeFts5InvalidChars = (s: string) => s.replaceAll(/['.\\]/g, (x) => `"${x}"`);
 
 /**
  * Does not work for updating. sqlite was throwing indexing out of bound errors when i tried to upsert the updated rows

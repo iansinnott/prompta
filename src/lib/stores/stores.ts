@@ -338,29 +338,14 @@ const invalidatable = <T>(
   };
 };
 
-export const archivedThreadList = invalidatable<Thread[]>([], (set) => {
+export const threadList = invalidatable<Thread[]>([], (set) => {
   Thread.findMany({
-    where: { archived: true },
+    where: { archived: false },
     orderBy: { createdAt: "DESC" },
   }).then((xs) => {
     set(xs);
   });
 });
-
-export const threadList = invalidatable<Thread[]>(
-  [],
-  (set) => {
-    Thread.findMany({
-      where: { archived: false },
-      orderBy: { createdAt: "DESC" },
-    }).then((xs) => {
-      set(xs);
-    });
-  },
-  {
-    onInvalidated: archivedThreadList.invalidate,
-  }
-);
 
 const pendingMessageStore = writable<ChatMessage | null>(null);
 
