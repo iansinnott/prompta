@@ -170,7 +170,7 @@
   style={isMobile() ? `height: ${windowHeight}px;` : ""}
 >
   <header data-tauri-drag-region class="app-header p-4 pr-3 border-b border-zinc-700 w-full">
-    <div class="Left flex items-center space-x-4">
+    <div data-tauri-drag-region class="Left flex items-center space-x-4">
       {#if sys.isTauri}
         <CloseButton
           onClick={(e) => {
@@ -188,7 +188,7 @@
         }}
       >
         <IconSync
-          class=""
+          class="w-[18px] h-[18px]"
           innerClass={classNames({
             "text-white": !isConnectionActive,
             "text-teal-400": isConnectionActive,
@@ -292,11 +292,11 @@
         {/if}
       </div>
     {/if}
-    <div class="Middle flex items-center justify-center relative w-full">
+    <div data-tauri-drag-region class="Middle flex items-center justify-center relative w-full">
       <ThreadMenuButton />
       <ThreadMenuList />
     </div>
-    <div class="Right flex items-center">
+    <div data-tauri-drag-region class="Right flex items-center">
       <button
         class="text-white/50 pr-2 sm:px-2 py-1 hover:text-white"
         on:click={() => {
