@@ -571,7 +571,7 @@ export type FragmentSearchResult = {
   title: string;
   archived: boolean;
   created_at: string;
-  last_message_created_at: string;
+  last_message_created_at?: string;
   match?: string;
   match_count?: number;
   rank?: number;
@@ -664,7 +664,9 @@ ORDER BY t.created_at DESC
       return {
         ...row,
         created_at: dateFromSqlite(row.created_at),
-        last_message_created_at: dateFromSqlite(row.last_message_created_at),
+        last_message_created_at: row.last_message_created_at
+          ? dateFromSqlite(row.last_message_created_at)
+          : undefined,
       };
     });
   },
