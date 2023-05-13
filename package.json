@@ -24,6 +24,7 @@
     "@tailwindcss/typography": "0.5.9",
     "@tauri-apps/cli": "1.2.3",
     "@types/prismjs": "1.26.0",
+    "@types/marked": "^4.0.0",
     "autoprefixer": "~10.4.7",
     "cross-env": "7.0.3",
     "postcss": "~8.4.14",
@@ -51,6 +52,7 @@
     "prism-svelte": "0.5.0",
     "prismjs": "1.29.0",
     "svelte-markdown": "0.2.3",
+    "marked": "^4.0.0",
     "uuid": "9.0.0"
   }
 }

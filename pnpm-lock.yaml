@@ -22,6 +22,9 @@ dependencies:
   classnames:
     specifier: 2.3.2
     version: 2.3.2
+  marked:
+    specifier: ^4.0.0
+    version: 4.3.0
   nanoid:
     specifier: 4.0.2
     version: 4.0.2
@@ -57,6 +60,9 @@ devDependencies:
   '@tauri-apps/cli':
     specifier: 1.2.3
     version: 1.2.3
+  '@types/marked':
+    specifier: ^4.0.0
+    version: 4.0.8
   '@types/prismjs':
     specifier: 1.26.0
     version: 1.26.0
@@ -548,7 +554,6 @@ packages:
 
   /@types/marked@4.0.8:
     resolution: {integrity: sha512-HVNzMT5QlWCOdeuBsgXP8EZzKUf0+AXzN+sLmjvaB3ZlLqO+e4u0uXrdw9ub69wBKFs+c6/pA4r9sy6cCDvImw==}
-    dev: false
 
   /@types/node@18.15.11:
     resolution: {integrity: sha512-E5Kwq2n4SbMzQOn6wnmBjuK9ouqlURrcZDVfbo9ftDDTFt3nk7ZKK4GMOzoYgnpQJKcxwQw+lGaBvvlMo0qN/Q==}
