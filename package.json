@@ -1,6 +1,6 @@
 {
   "name": "prompta",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "private": true,
   "scripts": {
     "dev": "tauri dev",
@@ -23,8 +23,8 @@
     "@sveltejs/kit": "^1.5.0",
     "@tailwindcss/typography": "0.5.9",
     "@tauri-apps/cli": "1.2.3",
-    "@types/prismjs": "1.26.0",
     "@types/marked": "^4.0.0",
+    "@types/prismjs": "1.26.0",
     "autoprefixer": "~10.4.7",
     "cross-env": "7.0.3",
     "postcss": "~8.4.14",
@@ -47,12 +47,12 @@
     "@vlcn.io/rx-tbl": "0.8.3",
     "@vlcn.io/sync-p2p": "0.7.3",
     "classnames": "2.3.2",
+    "marked": "^4.0.0",
     "nanoid": "4.0.2",
     "openai": "3.2.1",
     "prism-svelte": "0.5.0",
     "prismjs": "1.29.0",
     "svelte-markdown": "0.2.3",
-    "marked": "^4.0.0",
     "uuid": "9.0.0"
   }
 }
