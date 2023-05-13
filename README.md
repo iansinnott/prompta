@@ -19,11 +19,15 @@ Yet another interface for chatting with ChatGPT (or GPT-4).
 
 </div>
 
+| Mobile                                       | Search chats                      | Keyboard Centric                                            | Comments                                    |
+| -------------------------------------------- | --------------------------------- | ----------------------------------------------------------- | ------------------------------------------- |
+| ![mobile view](static/screenshot_mobile.png) | ![fts](static/screenshot_fts.png) | ![keyboard centric](static/screenshot_keyboard_centric.png) | ![comments](static/screenshot_comments.png) |
+
 ## Features
 
 - [x] Search all previous conversations (full-text!)
 - [x] Sync your chat history across devices
-- [x] Keyboard focused
+- [x] Keyboard centric
 - [x] Leave notes on responses, such as "working code!" or "not working"
 - [x] Keep all your chat history stored locally
 - [x] Search previous chat threads
