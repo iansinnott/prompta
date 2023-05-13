@@ -15,7 +15,7 @@ Yet another interface for chatting with ChatGPT (or GPT-4).
 
 <div align="center">
 
-![](static/CleanShot%202023-04-23%20at%2015.02.37.jpg)
+![](static/screenshot_20230513023629.png)
 
 </div>
 
