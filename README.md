@@ -33,6 +33,11 @@ Yet another interface for chatting with ChatGPT (or GPT-4).
 - [x] Search previous chat threads
 - [x] Chat with ChatGPT or GPT-4
 
+## Roadmap
+
+- [ ] Context-window compression (See #1)
+- [ ] Chat history awareness (See #2)
+
 ## Developing
 
 The following examples use `npm` but `yarn` or `pnpm` will also work:
@@ -66,5 +71,5 @@ You will be prompted to enter a new version number. New versions that don't cont
 ## Built With
 
 - [SQLite](https://www.sqlite.org/index.html) via [vlcn/cr-sqlite](https://vlcn.io/) - SQLite compiled to WASM running in the browser using CRDTs for conflict-free replication.
-- [Tauri](https://tauri.studio) - A Rust-based alternative to Electron
+- [Tauri](https://tauri.studio) - A Rust-based alternative to Electron (Only used in desktop builds)
 - [Svelte](https://svelte.dev) - Reactive UI framework
