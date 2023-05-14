@@ -38,6 +38,19 @@ Yet another interface for chatting with ChatGPT (or GPT-4).
 - [ ] Context-window compression (See #1)
 - [ ] Chat history awareness (See #2)
 
+## How to use
+
+- Use in your web browser: [chat.prompta.dev](https://chat.prompta.dev)
+- Download the desktop app: Download the latest build from the [releases page](releases)
+
+### Running on macOS
+
+For macOS users you will need to right-click the app and select "Open" the first time you run it. This is because the app is signed but not notarized.
+
+| Right-click to open                           | Now you can click "Open"                      |
+| --------------------------------------------- | --------------------------------------------- |
+| ![macOS open](static/screenshot_macopen1.png) | ![macOS open](static/screenshot_macopen2.png) |
+
 ## Developing
 
 The following examples use `npm` but `yarn` or `pnpm` will also work:
