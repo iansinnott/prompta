@@ -12,6 +12,7 @@ import { fetchEventSource, type EventSourceMessage } from "@microsoft/fetch-even
 import { wdbRtc } from "@vlcn.io/sync-p2p";
 import { getSystem } from "$lib/gui";
 import { dev } from "$app/environment";
+import { emit } from "$lib/capture";
 
 export const showSettings = writable(false);
 
@@ -459,6 +460,8 @@ export const currentChatThread = (() => {
     });
 
     const context = await ChatMessage.findThreadContext({ threadId });
+
+    emit("chat message", { depth: context.length });
 
     let messageContext = context.map((x) => ({ content: x.content, role: x.role }));
 
