@@ -17,23 +17,31 @@
     }, 500);
   });
 
-  const loading = false;
+  let loading = false;
+
   const handleSubmit = async () => {
-    error = "";
-    if (!apiKey) {
-      error = "No API key provided";
-      console.log("API", apiKey, input.value);
-      return;
-    }
+    try {
+      error = "";
+      loading = true;
+      if (!apiKey) {
+        error = "No API key provided";
+        console.log("API", apiKey, input.value);
+        return;
+      }
 
-    const valid = await verifyOpenAiApiKey(apiKey as string);
+      const valid = await verifyOpenAiApiKey(apiKey as string);
 
-    if (valid) {
-      $showInitScreen = false;
-      $openAiConfig.apiKey = apiKey;
-    } else {
-      error = "Invalid API key";
-      console.warn("ERROR");
+      if (valid) {
+        $showInitScreen = false;
+        $openAiConfig.apiKey = apiKey;
+      } else {
+        throw new Error("Invalid API key");
+      }
+    } catch (err: any) {
+      error = err.message;
+      console.warn("Error storing api key", err);
+    } finally {
+      loading = false;
     }
   };
 </script>
