@@ -15,6 +15,7 @@ import { dev } from "$app/environment";
 import { emit } from "$lib/capture";
 
 export const showSettings = writable(false);
+export const showInitScreen = writable(false);
 
 const PENDING_THREAD_TITLE = "New Chat";
 
@@ -171,6 +172,21 @@ export const getOpenAi = () => {
   }
 
   return initOpenAi({ apiKey });
+};
+
+export const verifyOpenAiApiKey = async (apiKey: string) => {
+  try {
+    const res = await fetch("https://api.openai.com/v1/models", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+    }).then((x) => (x.ok ? x.json() : Promise.reject(x)));
+    return true;
+  } catch (err) {
+    console.error("Could not verify api key. Likely invalid", err);
+    return false;
+  }
 };
 
 export const generateThreadTitle = async ({ threadId }: { threadId: string }) => {

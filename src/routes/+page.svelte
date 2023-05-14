@@ -8,6 +8,7 @@
     showSettings,
     syncStore,
     devStore,
+    showInitScreen,
   } from "../lib/stores/stores";
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
@@ -19,12 +20,13 @@
   import classNames from "classnames";
   import IconSync from "$lib/components/IconSync.svelte";
   import CopyButton from "$lib/components/CopyButton.svelte";
-  import { slide } from "svelte/transition";
+  import { fly, slide } from "svelte/transition";
   import IconClose from "$lib/components/IconClose.svelte";
   import CloseButton from "$lib/components/CloseButton.svelte";
   import { isMobile } from "$lib/utils";
   import IconPlus from "$lib/components/IconPlus.svelte";
   import { mapKeysToMacSymbols } from "$lib/keyboard/shortcuts";
+  import InitScreen from "$lib/components/InitScreen.svelte";
 
   const sys = getSystem();
   let message = "";
@@ -371,6 +373,14 @@
         <ActionsMenu class="uppercase text-xs tracking-wider px-2 py-0 " />
       </div>
     </footer>
+  {/if}
+  {#if $showInitScreen}
+    <div
+      out:fly={{ duration: 200, opacity: 0, delay: 300 }}
+      class="fixed inset-0 z-30 bg-zinc-800 rounded-lg"
+    >
+      <InitScreen />
+    </div>
   {/if}
 </div>
 

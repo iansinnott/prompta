@@ -1,6 +1,6 @@
 <script lang="ts">
   import "../app.postcss";
-  import { openAiConfig, syncStore, showSettings } from "../lib/stores/stores";
+  import { openAiConfig, syncStore, showInitScreen } from "../lib/stores/stores";
   import { onMount } from "svelte";
   import { DatabaseMeta, initDb } from "$lib/db";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
@@ -31,7 +31,7 @@
     clearTimeout(_timeout);
 
     if (!$openAiConfig.apiKey) {
-      $showSettings = true;
+      $showInitScreen = true;
       console.warn(`No API key found. Please enter one in the settings.`);
     }
 
