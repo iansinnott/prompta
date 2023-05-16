@@ -76,12 +76,24 @@
   onMount(() => {
     telemetryDisabled = localStorage.getItem("telemetryDisabled") === "true";
   });
+
+  const siteMeta = {
+    name: "Prompta",
+    title: "Prompta - Open-source ChatGPT Client",
+    description:
+      "Prompta is an open-source UI client for talking to ChatGPT (and GPT-4). Store all your chats locally. Search them easily. Sync across devices.",
+  };
 </script>
 
 <svelte:window on:click={handleExternalUrls} />
 
 <svelte:head>
-  <title>Prompta Chat - Chat with ChatGPT and GPT-4. Sync your chats across devices.</title>
+  <title>{siteMeta.title}</title>
+  <meta name="description" content={siteMeta.description} />
+  <meta name="twitter:card" content="summary" />
+  <meta property="og:title" content={siteMeta.title} />
+  <meta property="og:description" content={siteMeta.description} />
+
   <link rel="icon" type="image/png" sizes="16x16" href="/icon_16x16.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/icon_16x16@2x.png" />
 
