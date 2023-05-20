@@ -21,6 +21,7 @@ import { getSystem } from "$lib/gui";
 import { dev } from "$app/environment";
 import { emit } from "$lib/capture";
 import { debounce } from "$lib/utils";
+import { toast } from "$lib/toast";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
@@ -608,6 +609,11 @@ export const currentChatThread = (() => {
       signal: abortController.signal,
       onerror(err) {
         console.error("Error in stream", err);
+        toast({
+          type: "error",
+          title: "Error in stream",
+          message: err.message,
+        });
         pendingMessageStore.set(null);
         throw err;
       },

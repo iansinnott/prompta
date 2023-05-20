@@ -27,6 +27,7 @@
   import IconPlus from "$lib/components/IconPlus.svelte";
   import { mapKeysToMacSymbols } from "$lib/keyboard/shortcuts";
   import InitScreen from "$lib/components/InitScreen.svelte";
+  import { toast } from "$lib/toast";
 
   const sys = getSystem();
   let message = "";
@@ -117,6 +118,10 @@
 
     if (!s) {
       console.debug("No string. Not sending.");
+      toast({
+        type: "error",
+        title: "No message",
+      });
       return;
     }
 

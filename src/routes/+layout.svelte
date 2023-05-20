@@ -7,6 +7,7 @@
   import { getSystem } from "$lib/gui";
   import classNames from "classnames";
   import { dev } from "$app/environment";
+  import Toaster from "$lib/toast/Toaster.svelte";
 
   const sys = getSystem();
 
@@ -129,3 +130,5 @@
     </div>
   {/if}
 </div>
+
+<Toaster />
