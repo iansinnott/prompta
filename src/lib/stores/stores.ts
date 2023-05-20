@@ -608,6 +608,7 @@ export const currentChatThread = (() => {
       signal: abortController.signal,
       onerror(err) {
         console.error("Error in stream", err);
+        pendingMessageStore.set(null);
         throw err;
       },
       onmessage: handleSSE,
