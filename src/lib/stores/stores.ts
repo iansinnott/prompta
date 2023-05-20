@@ -5,7 +5,14 @@ import type {
 } from "openai";
 import { derived, readable, writable, type Subscriber, get } from "svelte/store";
 import type { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
-import { ChatMessage, DatabaseMeta, Preferences, Thread } from "$lib/db";
+import {
+  ChatMessage,
+  DatabaseMeta,
+  Fragment,
+  Preferences,
+  Thread,
+  type FragmentSearchResult,
+} from "$lib/db";
 import { nanoid } from "nanoid";
 import { initOpenAi } from "$lib/llm/openai";
 import { fetchEventSource, type EventSourceMessage } from "@microsoft/fetch-event-source";
@@ -13,6 +20,7 @@ import { wdbRtc } from "@vlcn.io/sync-p2p";
 import { getSystem } from "$lib/gui";
 import { dev } from "$app/environment";
 import { emit } from "$lib/capture";
+import { debounce } from "$lib/utils";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
@@ -326,6 +334,11 @@ export const threadMenu = writable({
 
 type InvalidateOptions = {
   onInvalidated?: () => void;
+
+  /**
+   * Optional name for debugging purposes. Should not affect runtime behavior.
+   */
+  name?: string;
 };
 
 /**
@@ -349,20 +362,103 @@ const invalidatable = <T>(
   return {
     subscribe: innerStore.subscribe,
     invalidate: () => {
+      if (!_set) {
+        console.warn(
+          `WARN: Tried to invalidate store %c${
+            options.name || "<unnamed>"
+          }%c before it was subscribed. This is a %cno-op`,
+          "color:pink;",
+          "color:unset;",
+          "color:red;"
+        );
+        return;
+      }
       cb(_set);
       options.onInvalidated?.();
     },
   };
 };
 
-export const threadList = invalidatable<Thread[]>([], (set) => {
-  Thread.findMany({
-    where: { archived: false },
-    orderBy: { createdAt: "DESC" },
-  }).then((xs) => {
-    set(xs);
+interface ThreadFilterStore {
+  limit: number;
+  offset: number;
+  searchQuery: string;
+  archived?: boolean;
+}
+interface ThreadListStore {
+  error: Error | null;
+  threads: FragmentSearchResult[];
+}
+/**
+ * The thread list store includes the list of threads as well as a searchQuery to filter the list
+ */
+const createThreadListStore = () => {
+  const filterStore = writable<ThreadFilterStore>({
+    limit: 500,
+    offset: 0,
+    searchQuery: "",
+    archived: false,
   });
-});
+
+  const invalidateStore = writable<number>(0);
+
+  const invalidate = () => invalidateStore.update((x) => x + 1);
+
+  const deffaultValue = {
+    error: null,
+    threads: [],
+  };
+
+  let initial = true;
+
+  const innerStore = derived<[typeof filterStore, any], ThreadListStore>(
+    [filterStore, invalidateStore],
+    ([filters, _], set) => {
+      // Is there no more idiomatic way to make sure an async derived store has a default value?
+      if (initial) {
+        initial = false;
+        set(deffaultValue);
+      }
+
+      const query = filters.searchQuery.toLowerCase();
+      Fragment.fullTextSearch(query, {
+        archived: filters.archived,
+        limit: filters.limit,
+        offset: filters.offset,
+      })
+        .then((xs) => {
+          set({ error: null, threads: xs });
+        })
+        .catch((err) => {
+          set({ error: err, threads: [] });
+        });
+    }
+  );
+
+  const filter = (f: Partial<ThreadFilterStore>) => filterStore.update((x) => ({ ...x, ...f }));
+
+  const setQuery = debounce((query: string) => {
+    filter({ searchQuery: query });
+  }, 64);
+
+  return {
+    filter,
+    setQuery,
+    subscribe: innerStore.subscribe,
+    invalidate,
+  };
+};
+
+export const threadList = createThreadListStore();
+
+// const threadList = invalidatable<Thread[]>([], (set) => {
+//   Thread.findMany({
+//     where: { archived: false },
+//     orderBy: { createdAt: "DESC" },
+//   }).then((xs) => {
+//     set(xs);
+//   });
+// });
 
 const pendingMessageStore = writable<ChatMessage | null>(null);
 

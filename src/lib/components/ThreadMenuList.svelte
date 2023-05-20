@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { currentThread, threadList, threadMenu } from "$lib/stores/stores";
+  import { currentThread, threadMenu, threadList } from "$lib/stores/stores";
   import classNames from "classnames";
-  import { onMount, tick } from "svelte";
+  import { tick } from "svelte";
   import IconSparkle from "./IconSparkle.svelte";
   import { debounce, groupBy, isMobile } from "$lib/utils";
   import IconArchiveIn from "./IconArchiveIn.svelte";
-  import { Fragment, type FragmentSearchResult } from "$lib/db";
+  import type { Fragment } from "$lib/db";
   let _class: string = "";
   export { _class as class };
   let input: HTMLInputElement;
@@ -28,17 +28,11 @@
     }
   };
 
-  let searchResults: Awaited<ReturnType<typeof Fragment.fullTextSearch>> = [];
-
-  const debouncedFts = debounce((s: string, archived: boolean) => {
-    Fragment.fullTextSearch(s, { archived }).then((xs) => {
-      searchResults = xs;
-      if (searchResults.length > 0) {
-        index = 0;
-      }
-    });
+  const debouncedFts = debounce((searchQuery: string, archived: boolean) => {
+    threadList.filter({ searchQuery, archived });
   }, 64);
 
+  $: searchResults = $threadList.threads;
   $: showArchived = searchText.startsWith(" ") || $currentThread.archived;
   $: debouncedFts(searchText, showArchived);
   $: threadGroups = Object.entries(groupBy(searchResults, (x) => humanizeDate(x.created_at)));

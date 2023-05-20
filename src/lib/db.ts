@@ -565,7 +565,7 @@ export const Thread = {
   },
 };
 
-export type FragmentSearchResult = {
+type _FragmentSearchResult = {
   id: string;
   title: string;
   archived: boolean;
@@ -574,6 +574,14 @@ export type FragmentSearchResult = {
   match?: string;
   match_count?: number;
   rank?: number;
+};
+
+export type FragmentSearchResult = Awaited<ReturnType<typeof Fragment.fullTextSearch>>[number];
+
+export type FullTextSearchFilter = {
+  archived?: boolean;
+  limit?: number;
+  offset?: number;
 };
 
 export const Fragment = {
@@ -592,9 +600,7 @@ export const Fragment = {
   }),
   async fullTextSearch(
     content: string,
-    { archived }: { archived?: boolean } = {
-      archived: false,
-    }
+    { archived = false, limit = 500, offset = 0 }: FullTextSearchFilter = {}
   ) {
     const searchAllSql = `
 WITH
@@ -657,7 +663,7 @@ ORDER BY t.created_at DESC
       q = `%${q}%`;
     }
     const args = [q, archived ? 1 : 0];
-    const rows = await _db.execO<FragmentSearchResult>(sql, args);
+    const rows = await _db.execO<_FragmentSearchResult>(sql, args);
 
     return rows.map((row) => {
       return {
