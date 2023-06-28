@@ -97,6 +97,7 @@
         <div class:info={$gptProfileStore.model === "gpt-4"}>
           <select id="a" class="input rounded w-full" bind:value={$gptProfileStore.model}>
             <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+            <option value="gpt-3.5-turbo-16k">gpt-3.5-turbo-16k</option>
             <option value="gpt-4">gpt-4</option>
           </select>
           {#if $gptProfileStore.model === "gpt-4"}
