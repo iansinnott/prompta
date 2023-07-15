@@ -29,7 +29,7 @@ const config: PlaywrightTestConfig = {
     },
   ],
   webServer: {
-    command: "npm run dev",
+    command: "npm run ui:dev",
     port: 5173,
     reuseExistingServer: !process.env.CI,
   },
