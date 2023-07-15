@@ -2,12 +2,18 @@ import { devices, type PlaywrightTestConfig } from "@playwright/test";
 
 const config: PlaywrightTestConfig = {
   use: {
-    headless: false,
-    ...devices["iPhone 13 Mini"],
+    baseURL: "http://localhost:5173",
   },
+  projects: [
+    {
+      name: "mobile",
+      use: { ...devices["iPhone 13 Mini"] },
+    },
+  ],
   webServer: {
-    command: "npm run preview",
-    port: 4173,
+    command: "npm run dev",
+    port: 5173,
+    reuseExistingServer: !process.env.CI,
   },
   testDir: "tests",
 };

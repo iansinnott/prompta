@@ -80,12 +80,14 @@
         class="input rounded w-full focus:ring-0 focus:outline-none"
         type="password"
         placeholder="sk-abc..."
+        data-testid="APIKeyInput"
         bind:value={apiKey}
         bind:this={input}
       />
     </div>
     <button
       type="submit"
+      data-testid="SaveAPIKeyButton"
       class="w-full text-center px-2 py-[6px] rounded bg-gradient-to-r to-indigo-800 from-blue-500 text-white font-semibold tracking-wide"
     >
       {loading ? "Loading..." : "Start Chatting"}

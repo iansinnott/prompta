@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   '@microsoft/fetch-event-source':
     specifier: 2.0.1
@@ -46,8 +50,8 @@ dependencies:
 
 devDependencies:
   '@playwright/test':
-    specifier: ^1.28.1
-    version: 1.32.2
+    specifier: ^1.36.1
+    version: 1.36.1
   '@sveltejs/adapter-static':
     specifier: ~1.0.0-next.50
     version: 1.0.0-next.50(@sveltejs/kit@1.16.3)
@@ -351,13 +355,13 @@ packages:
       fastq: 1.15.0
     dev: true
 
-  /@playwright/test@1.32.2:
-    resolution: {integrity: sha512-nhaTSDpEdTTttdkDE8Z6K3icuG1DVRxrl98Qq0Lfc63SS9a2sjc9+x8ezysh7MzCKz6Y+nArml3/mmt+gqRmQQ==}
-    engines: {node: '>=14'}
+  /@playwright/test@1.36.1:
+    resolution: {integrity: sha512-YK7yGWK0N3C2QInPU6iaf/L3N95dlGdbsezLya4n0ZCh3IL7VgPGxC6Gnznh9ApWdOmkJeleT2kMTcWPRZvzqg==}
+    engines: {node: '>=16'}
     hasBin: true
     dependencies:
       '@types/node': 18.15.11
-      playwright-core: 1.32.2
+      playwright-core: 1.36.1
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
@@ -1511,9 +1515,9 @@ packages:
       pathe: 1.1.0
     dev: true
 
-  /playwright-core@1.32.2:
-    resolution: {integrity: sha512-zD7aonO+07kOTthsrCR3YCVnDcqSHIJpdFUtZEMOb6//1Rc7/6mZDRdw+nlzcQiQltOOsiqI3rrSyn/SlyjnJQ==}
-    engines: {node: '>=14'}
+  /playwright-core@1.36.1:
+    resolution: {integrity: sha512-7+tmPuMcEW4xeCL9cp9KxmYpQYHKkyjwoXRnoeTowaeNat8PoBMk/HwCYhqkH2fRkshfKEOiVus/IhID2Pg8kg==}
+    engines: {node: '>=16'}
     hasBin: true
     dev: true
 
