@@ -91,35 +91,39 @@ export const openAiConfig = (() => {
 
   const { subscribe, set, update } = writable<OpenAiAppConfig>(defaultConfig);
 
-  const persistentSet = (x: OpenAiAppConfig) => {
-    Preferences.set("openai-config", x);
+  const localStorageSet = (x: OpenAiAppConfig) => {
+    const s = JSON.stringify(x);
+    localStorage.setItem("openai-config", s);
     set(x);
   };
 
-  const persistentUpdate = (fn: (config: OpenAiAppConfig) => OpenAiAppConfig) => {
+  const localStorageUpdate = (fn: (config: OpenAiAppConfig) => OpenAiAppConfig) => {
     update((x) => {
       const v = fn(x);
-      Preferences.set("openai-config", v);
+      const s = JSON.stringify(v);
+      localStorage.setItem("openai-config", s);
       return v;
     });
   };
 
   return {
     subscribe,
-    set: persistentSet,
-    update: persistentUpdate,
+    set: localStorageSet,
+    update: localStorageUpdate,
     init: async () => {
-      const config = await Preferences.get("openai-config");
-      const siteId = await DatabaseMeta.getSiteId();
-      if (!config) {
+      const s = localStorage.getItem("openai-config");
+      let config: OpenAiAppConfig;
+      if (!s) {
         console.debug("No config found. Likely first time running the app. Using default config.");
+        config = defaultConfig;
+      } else {
+        config = JSON.parse(s) as OpenAiAppConfig;
       }
 
-      // if query param is set, use that sync chain
-      let c = config || defaultConfig;
+      const siteId = await DatabaseMeta.getSiteId();
       const urlParams = new URLSearchParams(location.search);
-      const syncChain = urlParams.get("syncChain") || c.lastSyncChain;
-      set({ ...c, siteId, lastSyncChain: syncChain });
+      const syncChain = urlParams.get("syncChain") || config.lastSyncChain;
+      set({ ...config, siteId, lastSyncChain: syncChain });
     },
   };
 })();

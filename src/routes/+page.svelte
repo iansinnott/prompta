@@ -332,6 +332,7 @@
     >
       <textarea
         data-chat-input
+        data-testid="ChatInput"
         on:keydown={(e) => {
           // send on enter
           if (e.key === "Enter" && !e.shiftKey) {

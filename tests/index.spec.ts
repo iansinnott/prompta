@@ -2,13 +2,17 @@ import { expect, test } from "@playwright/test";
 
 const apiKey = process.env.TEST_OPENAI_API_KEY as string;
 
-test("store an API key", async ({ page }) => {
-  test.skip(!apiKey, "Skipping test because no API key was provided");
+test("has chat input", async ({ page }) => {
   await page.goto("/");
-  const welcomeHeading = page.getByRole("heading", { name: "Quick setup" });
-  await expect(welcomeHeading).toBeVisible();
-  await page.getByTestId("APIKeyInput").fill(apiKey);
-  await page.getByTestId("SaveAPIKeyButton").click();
-  await expect(welcomeHeading).not.toBeVisible();
-  await expect(page.getByPlaceholder("Ask Prompta...")).toBeVisible();
+  await expect(page.getByTestId("ChatInput")).toBeVisible();
+  await page.getByTestId("ChatInput").click();
+});
+
+test("can send a message and get a response", async ({ page }) => {
+  await page.goto("/");
+  const testMessage = `this is a test message to test the app's integration with openai. Please respond with the text "pong" to verify we're connected.`;
+  const chatBox = page.getByTestId("ChatInput");
+  await chatBox.fill(testMessage);
+  await chatBox.press("Enter");
+  await expect(page.locator(".ChatMessage")).toHaveCount(2);
 });
