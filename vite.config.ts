@@ -11,6 +11,9 @@ export default defineConfig({
     // mygration files via URL, and depending on the URL actually being a URL.
     assetsInlineLimit: 0,
   },
+  define: {
+    "process.env.CI": JSON.stringify(process.env.CI),
+  },
   test: {
     include: ["src/**/*.{test,spec}.{js,ts}"],
   },
