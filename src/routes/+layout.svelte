@@ -8,6 +8,7 @@
   import classNames from "classnames";
   import { dev } from "$app/environment";
   import Toaster from "$lib/toast/Toaster.svelte";
+  import serviceWorkerPath from "../service-worker?url";
 
   const sys = getSystem();
 
@@ -78,6 +79,24 @@
   onMount(() => {
     if (!CI) {
       telemetryDisabled = localStorage.getItem("telemetryDisabled") === "true";
+    }
+  });
+
+  onMount(() => {
+    // @note servie worker is not registered on desktop (no need)
+    if (sys.isBrowser && "serviceWorker" in navigator) {
+      const fn = () => {
+        console.log("%cserviceWorker/register", "color:salmon;", serviceWorkerPath);
+        navigator.serviceWorker.register(serviceWorkerPath, {
+          type: dev ? "module" : "classic",
+        });
+      };
+      console.log("%cserviceWorker", "color:salmon;");
+      if (window.document.readyState === "complete") {
+        fn();
+      } else {
+        addEventListener("load", fn);
+      }
     }
   });
 

@@ -47,7 +47,12 @@
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<div class={classNames("InitScreen flex flex-col items-center p-12 pt-20", _class)}>
+<div
+  class={classNames(
+    "InitScreen bg-gradient-to-b from-[#1B1B1B] to-transparent flex flex-col items-center p-12 pt-20",
+    _class
+  )}
+>
   <div
     in:fly={{ duration: 500, delay: 150, y: -100, opacity: 0 }}
     out:fly={{ duration: 500, y: 30, opacity: 0 }}
