@@ -73,9 +73,12 @@
     }
   }
 
-  let telemetryDisabled = dev;
+  const CI = Boolean(process.env.CI);
+  let telemetryDisabled = dev || CI;
   onMount(() => {
-    telemetryDisabled = localStorage.getItem("telemetryDisabled") === "true";
+    if (!CI) {
+      telemetryDisabled = localStorage.getItem("telemetryDisabled") === "true";
+    }
   });
 
   const siteMeta = {
