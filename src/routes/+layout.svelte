@@ -88,7 +88,7 @@
       const fn = () => {
         console.log("%cserviceWorker/register", "color:salmon;", serviceWorkerPath);
         navigator.serviceWorker.register(serviceWorkerPath, {
-          type: dev ? "module" : "classic",
+          type: "module",
         });
       };
       console.log("%cserviceWorker", "color:salmon;");
