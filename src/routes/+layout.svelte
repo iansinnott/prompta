@@ -8,7 +8,7 @@
   import classNames from "classnames";
   import { dev } from "$app/environment";
   import Toaster from "$lib/toast/Toaster.svelte";
-  import serviceWorkerPath from "../service-worker?url";
+  import { assets } from "$app/paths";
 
   const sys = getSystem();
 
@@ -86,9 +86,10 @@
     // @note servie worker is not registered on desktop (no need)
     if (sys.isBrowser && "serviceWorker" in navigator) {
       const fn = () => {
+        const serviceWorkerPath = `${assets}/service-worker.js`;
         console.log("%cserviceWorker/register", "color:salmon;", serviceWorkerPath);
         navigator.serviceWorker.register(serviceWorkerPath, {
-          type: "module",
+          type: dev ? "module" : "classic",
         });
       };
       console.log("%cserviceWorker", "color:salmon;");
