@@ -39,7 +39,7 @@ const manifest = {
   theme_color: "#1B1B1B",
   background_color: "#ffffff",
   start_url: dev ? "/" : "https://chat.prompta.dev",
-  scope: "/",
+  scope: dev ? "/" : "https://chat.prompta.dev/",
 };
 
 export const GET: RequestHandler = async ({ url, setHeaders }) => {
