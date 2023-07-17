@@ -318,7 +318,7 @@
 {/if}
 
 <div class="relative text-white">
-  <button on:click={toggleMenu} class={classNames("font-bold px-4 py-2", _class, {})}>
+  <button type="button" on:click={toggleMenu} class={classNames("font-bold px-4 py-2", _class, {})}>
     Command
     <span class="hidden sm:inline-flex items-center space-x-1 text-white/40">
       <kbd
