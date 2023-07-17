@@ -319,7 +319,11 @@
     <ChatMessageList />
   </div>
   <!-- No padding top in order to let chat messages appaer to scroll behind -->
-  <footer class="app-footer p-3 pt-0 relative -top-px">
+  <footer
+    class={classNames("app-footer p-3 pt-0 relative -top-px", {
+      "pb-14": sys.isPWAInstalled,
+    })}
+  >
     <form
       on:submit={(e) => {
         e.preventDefault();

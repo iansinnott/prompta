@@ -27,6 +27,7 @@ interface SystemSpecificApi {
 interface SystemApi extends SystemSpecificApi {
   isTauri: boolean;
   isBrowser: boolean;
+  isPWAInstalled?: boolean;
 }
 
 export const getSystem = (): SystemApi => {
@@ -42,6 +43,7 @@ export const getSystem = (): SystemApi => {
       ...Browser,
       isTauri: false,
       isBrowser: true,
+      isPWAInstalled: window.matchMedia("(display-mode: standalone)").matches,
     };
   }
 };
