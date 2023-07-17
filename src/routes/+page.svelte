@@ -356,6 +356,7 @@
         )}
       />
       <button
+        data-testid="ChatInputSubmit"
         class="font-bold px-4 py-2 flex items-center text-xs uppercase leading-[22px]"
         type="submit"
       >
