@@ -15,14 +15,14 @@ dependencies:
     specifier: 2.0.13
     version: 2.0.13
   '@vlcn.io/crsqlite-wasm':
-    specifier: 0.10.1-next.0
-    version: 0.10.1-next.0
+    specifier: 0.14.0
+    version: 0.14.0
   '@vlcn.io/rx-tbl':
-    specifier: 0.8.3
-    version: 0.8.3
+    specifier: 0.13.0
+    version: 0.13.0
   '@vlcn.io/sync-p2p':
-    specifier: 0.7.3
-    version: 0.7.3
+    specifier: 0.12.0
+    version: 0.12.0
   classnames:
     specifier: 2.3.2
     version: 2.3.2
@@ -33,8 +33,8 @@ dependencies:
     specifier: 4.0.2
     version: 4.0.2
   openai:
-    specifier: 3.2.1
-    version: 3.2.1
+    specifier: 3.3.0
+    version: 3.3.0
   prism-svelte:
     specifier: 0.5.0
     version: 0.5.0
@@ -444,7 +444,7 @@ packages:
   /@swc/helpers@0.3.17:
     resolution: {integrity: sha512-tb7Iu+oZ+zWJZ3HJqwx8oNwSDIU440hmVMDPhpACWQWnrZHK99Bxs70gT1L2dnr5Hg50ZRWEFkQCAnOVVV0z1Q==}
     dependencies:
-      tslib: 2.5.0
+      tslib: 2.4.1
     dev: false
 
   /@tailwindcss/typography@0.5.9(tailwindcss@3.3.1):
@@ -644,41 +644,35 @@ packages:
     resolution: {integrity: sha512-yskZf4k0TgJV2atS4WgxjqICeGg1Z+hj8tjvsH2Clf17EJXAczDvn4x1zyqC0CRHDjiOkcbne/FhCKq/nykYiQ==}
     dev: false
 
-  /@vlcn.io/crsqlite-wasm@0.10.1-next.0:
-    resolution: {integrity: sha512-dnMlv3qda9p5ReI7OCk8/N67/GqmRpdmgMArghDsmOk3iHXKDkVI1xdetU22Cai2H/z2PX6qUcy1OAxnLmI2Jg==}
+  /@vlcn.io/crsqlite-wasm@0.14.0:
+    resolution: {integrity: sha512-h7qEpECLZ27hrq1IwuoOJ9s4Dq+5pFjYa8Dpsn6n2qkUfCBe6Tkwc3NQkIKXTpnUrw4EMtr6sSMNSUADR9gBVQ==}
     dependencies:
-      '@vlcn.io/wa-sqlite': 0.16.1-next.0
-      '@vlcn.io/xplat-api': 0.9.0
+      '@vlcn.io/wa-sqlite': 0.20.0
+      '@vlcn.io/xplat-api': 0.13.0
       async-mutex: 0.4.0
     dev: false
 
-  /@vlcn.io/rx-tbl@0.8.3:
-    resolution: {integrity: sha512-qmch+KiNGJ6dtpsqtoCZb1mojbwAVM+vpOxeA1X6V67118C2mFr5iTg/v7JWqo78NdLWmjVOo3L9/xXE/NN6sQ==}
+  /@vlcn.io/rx-tbl@0.13.0:
+    resolution: {integrity: sha512-vInhGhk5+76uUG05h/5p1Lzmxx/RNpXNyFRatMpTX/VcNfAK8z+1jqMWvQBq6eyfPya8p8IEmCkmpmtdgtdAgg==}
     dependencies:
-      '@vlcn.io/xplat-api': 0.8.2
+      '@vlcn.io/xplat-api': 0.13.0
     dev: false
 
-  /@vlcn.io/sync-p2p@0.7.3:
-    resolution: {integrity: sha512-UVCgjLnD1AA7zpIqIKL/I2oJ3TuRVOMPss+ZvDVGt/viSAd3z6llcRWe4a8p3MhP6S++u4f2kOYS+s+BaYCBbw==}
+  /@vlcn.io/sync-p2p@0.12.0:
+    resolution: {integrity: sha512-iUFa4t7YX6fnckuz0zsagdWtv6CRtED8x7AD5F3WDvb5amXivtILTK1hUhPeyb7UA7GtHW5bhJirjgVt1JRSKw==}
     dependencies:
       '@types/uuid': 9.0.1
-      '@vlcn.io/xplat-api': 0.8.2
+      '@vlcn.io/xplat-api': 0.13.0
       peerjs: 1.4.7
       uuid: 9.0.0
     dev: false
 
-  /@vlcn.io/wa-sqlite@0.16.1-next.0:
-    resolution: {integrity: sha512-JK+XymW5X146u3oFR/4Ru6YcZen2bGtEJdUM9b3mPPsyWAA4HDgycnI/Wd814SgwIAanYcE2yHKRJnMViy36Tg==}
+  /@vlcn.io/wa-sqlite@0.20.0:
+    resolution: {integrity: sha512-CkEtg6L6g1QiTupOJUYJkJOWFBTrrfkQxsvbOFkcWqLBi4389TOGnGYK9p5Fy0w8pZh8lTD5xjIL62h8mObkOQ==}
     dev: false
 
-  /@vlcn.io/xplat-api@0.8.2:
-    resolution: {integrity: sha512-8786UxkhJpFhZ7CSXoVeRMdPDap/fay8ThFWEQ026vtvv1OjQEVjszrpmQ3HFTN4TPe1EshZ7WUHo/hjCQ6KVA==}
-    dependencies:
-      comlink: 4.4.1
-    dev: false
-
-  /@vlcn.io/xplat-api@0.9.0:
-    resolution: {integrity: sha512-TJ0B4jxPw1NpT/KdS39T/RLiAQWlnwByxkh42SCbn+AdEqnV2PcnhCF+Id5CrepB96cJLCWh5YlD1F+uGnGI9g==}
+  /@vlcn.io/xplat-api@0.13.0:
+    resolution: {integrity: sha512-dgAcX9iEwx/3+uVzlkLRIZvsJf0XXiffepWudXPpLlkWp8mTZ2eUwoHOWgISWBUTOUQ3jtmZRHqVZgySegRE/w==}
     dependencies:
       comlink: 4.4.1
     dev: false
@@ -1437,8 +1431,8 @@ packages:
       wrappy: 1.0.2
     dev: true
 
-  /openai@3.2.1:
-    resolution: {integrity: sha512-762C9BNlJPbjjlWZi4WYK9iM2tAVAv0uUp1UmI34vb0CN5T2mjB/qM6RYBmNKMh/dN9fC+bxqPwWJZUTWW052A==}
+  /openai@3.3.0:
+    resolution: {integrity: sha512-uqxI/Au+aPRnsaQRe8CojU0eCR7I0mBiKjD3sNMzY6DaC1ZVrc85u98mtJW6voDug8fgGN+DIZmTDxTthxb7dQ==}
     dependencies:
       axios: 0.26.1
       form-data: 4.0.0
@@ -2113,10 +2107,6 @@ packages:
 
   /tslib@2.4.1:
     resolution: {integrity: sha512-tGyy4dAjRIEwI7BzsB0lynWgOpfqjUdq91XXAlIWD2OwKBH7oCl/GZG/HT4BOHrTlPMOASlMQ7veyTqpmRcrNA==}
-
-  /tslib@2.5.0:
-    resolution: {integrity: sha512-336iVw3rtn2BUK7ORdIAHTyxHGRIHVReokCR3XjbckJMK7ms8FysBfhLR8IXnAgy7T0PTPNBWKiH514FOW/WSg==}
-    dev: false
 
   /type-detect@4.0.8:
     resolution: {integrity: sha512-0fr/mIH1dlO+x7TlcMy+bIDqKPsw/70tVyeHW787goQjhmqaZe10uwLujubK9q9Lg6Fiho1KUKDYz0Z7k7g5/g==}
