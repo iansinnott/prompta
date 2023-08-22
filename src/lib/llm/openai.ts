@@ -1,17 +1,19 @@
-import { Configuration, OpenAIApi, type ChatCompletionResponseMessage } from "openai";
+import { OpenAI } from "openai";
 
-let openai: OpenAIApi;
-let configuration: Configuration;
+let openai: OpenAI;
 
 export const initOpenAi = ({ apiKey = "" }: { apiKey: string }) => {
   if (openai) {
     return openai;
   }
 
-  configuration = new Configuration({
+  openai = new OpenAI({
     apiKey,
+
+    // The app is currently all browser-based, and the key is stored locally and
+    // only sent to openai.
+    dangerouslyAllowBrowser: true,
   });
-  openai = new OpenAIApi(configuration);
 
   return openai;
 };

@@ -50,7 +50,7 @@
     "classnames": "2.3.2",
     "marked": "^4.0.0",
     "nanoid": "4.0.2",
-    "openai": "3.3.0",
+    "openai": "^4.0.1",
     "prism-svelte": "0.5.0",
     "prismjs": "1.29.0",
     "svelte-markdown": "0.2.3",

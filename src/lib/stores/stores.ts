@@ -1,7 +1,8 @@
-import type {
-  Configuration,
-  CreateChatCompletionRequest,
-  CreateChatCompletionResponse,
+import {
+  OpenAI,
+  type Configuration,
+  type CreateChatCompletionRequest,
+  type CreateChatCompletionResponse,
 } from "openai";
 import { derived, readable, writable, type Subscriber, get } from "svelte/store";
 import type { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
@@ -225,9 +226,9 @@ Do not provide a word count or add quotation marks.
   };
 
   // Generate a thread title
-  const res = await openAi.createChatCompletion(prompt);
+  const res = await openAi.chat.completions.create(prompt);
 
-  let newTitle = res.data.choices[0].message?.content || "Untitled";
+  let newTitle = res.choices[0].message?.content || "Untitled";
 
   // trim surrounding quotes, if found
   if (newTitle.startsWith('"') && newTitle.endsWith('"')) {
@@ -482,7 +483,6 @@ const handleSSE = (ev: EventSourceMessage) => {
 
   try {
     const parsed: CreateChatCompletionResponse = JSON.parse(message);
-    // @ts-expect-error types are wrong for streamed responses
     const content = parsed.choices[0].delta.content;
     if (!content) {
       console.log("Contentless message", parsed.id, parsed.object);
@@ -649,6 +649,29 @@ export const currentChatThread = (() => {
 
     if (!hasThreadTitle(get(currentThread))) {
       console.log("Generating thread title...");
+      try {
+      } catch (error) {
+        if (error instanceof OpenAI.APIError) {
+          console.error({
+            status: error.status,
+            message: error.message,
+            code: error.code,
+            type: error.type,
+          });
+          toast({
+            type: "error",
+            title: "Error generating thread title",
+            message: error.message,
+          });
+        } else {
+          console.error(error);
+          toast({
+            type: "error",
+            title: "Unknown error generating thread title",
+            message: (error as any).message,
+          });
+        }
+      }
       await generateThreadTitle({ threadId: botMessage.threadId });
     }
   };
