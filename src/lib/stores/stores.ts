@@ -1,9 +1,4 @@
-import {
-  OpenAI,
-  type Configuration,
-  type CreateChatCompletionRequest,
-  type CreateChatCompletionResponse,
-} from "openai";
+import { OpenAI, type ClientOptions } from "openai";
 import { derived, readable, writable, type Subscriber, get } from "svelte/store";
 import type { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import {
@@ -77,7 +72,7 @@ const persistentStore = <T extends Record<string, any>>(prefix: string, defaultV
 };
 
 export const openAiConfig = (() => {
-  type OpenAiAppConfig = Partial<Configuration> & {
+  type OpenAiAppConfig = Partial<ClientOptions> & {
     replicationHost: string;
     siteId: string;
     lastSyncChain: string;
@@ -208,7 +203,7 @@ export const generateThreadTitle = async ({ threadId }: { threadId: string }) =>
   const context = await ChatMessage.findThreadContext({ threadId });
   const messageContext = context.map((x) => ({ content: x.content, role: x.role }));
 
-  const prompt: CreateChatCompletionRequest = {
+  const prompt: OpenAI.Chat.CompletionCreateParamsNonStreaming = {
     model: "gpt-3.5-turbo", // @note Using the cheaper and faster model for title generation
     temperature: 0.2, // Playing around with this value the lower value seems to be more accurate?
     messages: [
@@ -482,7 +477,7 @@ const handleSSE = (ev: EventSourceMessage) => {
   }
 
   try {
-    const parsed: CreateChatCompletionResponse = JSON.parse(message);
+    const parsed: OpenAI.Chat.ChatCompletionChunk = JSON.parse(message);
     const content = parsed.choices[0].delta.content;
     if (!content) {
       console.log("Contentless message", parsed.id, parsed.object);
@@ -592,7 +587,7 @@ export const currentChatThread = (() => {
       ];
     }
 
-    const prompt: CreateChatCompletionRequest = {
+    const prompt: OpenAI.Chat.CompletionCreateParamsStreaming = {
       messages: messageContext,
       model: profile.model,
       // max_tokens: 100, // just for testing
@@ -603,6 +598,7 @@ export const currentChatThread = (() => {
 
     abortController = new AbortController();
 
+    // @todo This could use the sdk now that the new version supports streaming
     await fetchEventSource("https://api.openai.com/v1/chat/completions", {
       headers: {
         "Content-Type": "application/json",

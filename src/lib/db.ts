@@ -14,7 +14,7 @@ import {
 } from "../lib/stores/stores";
 import { dev } from "$app/environment";
 import { nanoid } from "nanoid";
-import type { ChatCompletionResponseMessageRoleEnum } from "openai";
+import type OpenAI from "openai";
 import { stringify as uuidStringify } from "uuid";
 import { basename, debounce, groupBy, sha1sum, toCamelCase, toSnakeCase } from "./utils";
 import { extractFragments } from "./markdown";
@@ -32,6 +32,8 @@ import schema from "$lib/migrations/00_init.sql?raw"; // NOTE that this is ?raw 
 import migration_01 from "$lib/migrations/01_add_archived.sql?url";
 import migration_02 from "$lib/migrations/02_add_fts.sql?url";
 import { getSystem } from "./gui";
+
+type RoleEnum = OpenAI.Chat.Completions.ChatCompletionMessage["role"];
 
 // prettier-ignore
 const migrations = [
@@ -168,7 +170,7 @@ export const initDb = async () => {
 export interface ChatMessageRow {
   id: string;
   content: string;
-  role: ChatCompletionResponseMessageRoleEnum | string;
+  role: RoleEnum | string;
   model?: string | null;
   cancelled?: boolean | null;
   thread_id: string;
@@ -177,7 +179,7 @@ export interface ChatMessageRow {
 export interface ChatMessage {
   id: string;
   content: string;
-  role: ChatCompletionResponseMessageRoleEnum | string;
+  role: RoleEnum | string;
   model?: string | null;
   cancelled?: boolean | null;
   createdAt: Date;
@@ -523,19 +525,17 @@ export const ChatMessage = {
     threadId,
   }: {
     threadId: string;
-  }): Promise<Array<Omit<ChatMessage, "role"> & { role: ChatCompletionResponseMessageRoleEnum }>> {
+  }): Promise<Array<Omit<ChatMessage, "role"> & { role: RoleEnum }>> {
     const context = await ChatMessage.findMany({
       where: {
         threadId,
         role: {
-          in: ["user", "system", "assistant"] as ChatCompletionResponseMessageRoleEnum[],
+          in: ["user", "system", "assistant"] as RoleEnum[],
         },
       },
       orderBy: { createdAt: "ASC" },
     });
-    return context as Array<
-      Omit<ChatMessage, "role"> & { role: ChatCompletionResponseMessageRoleEnum }
-    >;
+    return context as Array<Omit<ChatMessage, "role"> & { role: RoleEnum }>;
   },
 };
 
