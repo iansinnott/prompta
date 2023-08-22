@@ -856,3 +856,5 @@ ChatMessage.onTableChange(() => {
   console.debug("%cmessage table changed", "color:salmon;");
   currentChatThread.invalidate();
 });
+
+export const chatModels = writable<OpenAI.Model[]>([]);

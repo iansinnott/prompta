@@ -5,6 +5,8 @@
     showSettings,
     DEFAULT_SYSTEM_MESSAGE,
     db,
+    getOpenAi,
+    chatModels,
   } from "$lib/stores/stores";
   import { DB_NAME } from "$lib/constants";
   import AutosizeTextarea from "./AutosizeTextarea.svelte";
@@ -13,6 +15,7 @@
   import { ChatMessage, Thread } from "$lib/db";
   import { mapKeys, toCamelCase } from "$lib/utils";
   import CloseButton from "./CloseButton.svelte";
+  import type OpenAI from "openai";
 
   let schema;
   let migrationVersion;
@@ -21,6 +24,14 @@
       ?.map((x) => x.sql)
       ?.filter((x) => !x.includes("sqlite_") && !x.includes("crsql"));
     migrationVersion = (await $db?.execA<number[]>(`PRAGMA user_version`))?.[0];
+
+    if (!$chatModels.length) {
+      const openai = getOpenAi();
+      const xs = await openai.models.list();
+      $chatModels = xs.data
+        .filter((x) => x.id.startsWith("gpt"))
+        .sort((a, b) => a.id.localeCompare(b.id));
+    }
   });
   let showAdvanced = false;
 </script>
@@ -96,9 +107,9 @@
         <label for="a" class="label"> Model: </label>
         <div class:info={$gptProfileStore.model === "gpt-4"}>
           <select id="a" class="input rounded w-full" bind:value={$gptProfileStore.model}>
-            <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-            <option value="gpt-3.5-turbo-16k">gpt-3.5-turbo-16k</option>
-            <option value="gpt-4">gpt-4</option>
+            {#each $chatModels as model}
+              <option value={model.id}>{model.id}</option>
+            {/each}
           </select>
           {#if $gptProfileStore.model === "gpt-4"}
             <p>
