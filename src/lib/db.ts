@@ -682,7 +682,7 @@ const escapeFts5InvalidChars = (s: string) => s.replaceAll(/['.\\]/g, (x) => `"$
 /**
  * Does not work for updating. sqlite was throwing indexing out of bound errors when i tried to upsert the updated rows
  */
-const syncThraedFragments = debounce(async () => {
+const syncThreadFragments = debounce(async () => {
   await _db.tx(async (tx) => {
     const newThreads = await tx.execO<{ id: string; title: string }>(
       `
@@ -715,7 +715,7 @@ const syncThraedFragments = debounce(async () => {
   });
 }, 1000);
 
-Thread.onTableChange(syncThraedFragments);
+Thread.onTableChange(syncThreadFragments);
 
 const syncMessageFragments = debounce(async () => {
   await _db.tx(async (tx) => {
