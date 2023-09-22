@@ -108,3 +108,10 @@ export const sha1sum = async (s: string) => {
   const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
   return hashHex;
 };
+
+/**
+ * Determine if the app is being run as a PWA
+ */
+export const isPWAInstalled = () => {
+  return globalThis.matchMedia("(display-mode: standalone)").matches;
+};
