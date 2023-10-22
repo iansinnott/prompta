@@ -9,11 +9,14 @@
   import { dev } from "$app/environment";
   import Toaster from "$lib/toast/Toaster.svelte";
   import { assets } from "$app/paths";
+  import FullScreenError from "$lib/components/FullScreenError.svelte";
 
   const sys = getSystem();
-
+  let startupError: Error | null = null;
+  startupError = new Error("Test error");
   let appReady = false;
-  onMount(async () => {
+
+  const handleStartup = async () => {
     // throw up after a time if the app is hanging
     let _timeout = setTimeout(() => {
       throw new Error("Timed out trying to initialize");
@@ -21,7 +24,10 @@
 
     // @note The whole app assumes the db exists and is ready. Do not render before that
     try {
+      const start = performance.now();
+      console.debug("Initializing database");
       await initDb();
+      console.debug(`Database initialized in ${performance.now() - start}ms`);
     } catch (err: any) {
       await sys.alert(
         `There was an error initializing the database. Please try again. If the problem persists, please report it on GitHub.` +
@@ -50,6 +56,14 @@
       setTimeout(() => {
         syncStore.connectTo(lastSyncChain);
       }, 1000);
+    }
+  };
+
+  onMount(async () => {
+    try {
+      await handleStartup();
+    } catch (error: any) {
+      startupError = error;
     }
   });
 
@@ -143,7 +157,40 @@
     "rounded-lg": sys.isTauri,
   })}
 >
-  {#if appReady}
+  {#if startupError}
+    <FullScreenError error={startupError}>
+      <div class="prose prose-invert">
+        <h3>The app could not be initialized</h3>
+        <p>
+          <em>What can you do?</em>
+        </p>
+        <ul>
+          <li>
+            <strong> Reset your database </strong>. This will delete all your data, but it might
+            resolve the startup issue. This way you can continue using the app immediately.
+          </li>
+          <li>
+            <strong
+              >Check the{" "}
+              <a class="" target="_blank" href="https://github.com/iansinnott/prompta/issues">
+                Github Issues
+              </a></strong
+            > to see if someone has solved this problem.
+          </li>
+        </ul>
+        <div class="flex flex-col space-y-2 sm:flex-row sm:space-x-6 sm:space-y-0">
+          <button class="block bg-red-600 rounded px-2 py-2"> Reset Database </button>
+          <a
+            class="text-center block bg-gray-600 rounded px-2 py-2"
+            target="_blank"
+            href="https://github.com/iansinnott/prompta/issues/10"
+          >
+            Check the Github Issues
+          </a>
+        </div>
+      </div>
+    </FullScreenError>
+  {:else if appReady}
     <slot />
     <SettingsModal />
   {:else}

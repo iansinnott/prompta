@@ -8,6 +8,7 @@
     "strictNullChecks": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
+    "useUnknownInCatchVariables": false,
     "noImplicitAny": false,
     "sourceMap": true,
     "strict": true
