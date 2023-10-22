@@ -16,6 +16,19 @@
   startupError = new Error("Test error");
   let appReady = false;
 
+  const handleHardReset = async () => {
+    const confirmed = await sys.confirm(
+      "Are you sure you want to reset your database? This will delete all your chat history."
+    );
+
+    if (!confirmed) return;
+
+    await sys.alert("TODO: Reset the database");
+
+    // await DatabaseMeta.hardReset();
+    location.reload();
+  };
+
   const handleStartup = async () => {
     // throw up after a time if the app is hanging
     let _timeout = setTimeout(() => {
@@ -179,9 +192,14 @@
           </li>
         </ul>
         <div class="flex flex-col space-y-2 sm:flex-row sm:space-x-6 sm:space-y-0">
-          <button class="block bg-red-600 rounded px-2 py-2"> Reset Database </button>
+          <button
+            on:click={handleHardReset}
+            class="block bg-red-600 rounded px-4 py-2 cursor-pointer"
+          >
+            Reset Database
+          </button>
           <a
-            class="text-center block bg-gray-600 rounded px-2 py-2"
+            class="text-center block bg-gray-600 rounded px-4 py-2"
             target="_blank"
             href="https://github.com/iansinnott/prompta/issues/10"
           >
