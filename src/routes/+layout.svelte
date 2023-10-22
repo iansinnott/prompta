@@ -2,7 +2,7 @@
   import "../app.postcss";
   import { openAiConfig, syncStore, showInitScreen } from "../lib/stores/stores";
   import { onMount } from "svelte";
-  import { DatabaseMeta, initDb } from "$lib/db";
+  import { DatabaseMeta, getLatestDbName, incrementDbName, initDb } from "$lib/db";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
   import { getSystem } from "$lib/gui";
   import classNames from "classnames";
@@ -10,10 +10,10 @@
   import Toaster from "$lib/toast/Toaster.svelte";
   import { assets } from "$app/paths";
   import FullScreenError from "$lib/components/FullScreenError.svelte";
+  import { wrapError } from "$lib/utils";
 
   const sys = getSystem();
   let startupError: Error | null = null;
-  startupError = new Error("Test error");
   let appReady = false;
 
   const handleHardReset = async () => {
@@ -23,9 +23,14 @@
 
     if (!confirmed) return;
 
-    await sys.alert("TODO: Reset the database");
+    appReady = false;
 
-    // await DatabaseMeta.hardReset();
+    incrementDbName();
+
+    // Reloading the window should cause handleStartup to be called again on app
+    // mount, using the new db name. Using a new db name is equivalent to using
+    // a new db. The old db will not be removed, but the app will have no
+    // existing data.
     location.reload();
   };
 
@@ -39,17 +44,13 @@
     try {
       const start = performance.now();
       console.debug("Initializing database");
-      await initDb();
+      await initDb(getLatestDbName() || "");
       console.debug(`Database initialized in ${performance.now() - start}ms`);
     } catch (err: any) {
-      await sys.alert(
-        `There was an error initializing the database. Please try again. If the problem persists, please report it on GitHub.` +
-          err.message
-      );
-      throw err;
+      throw wrapError(err, `There was an error initializing the database.`);
+    } finally {
+      clearTimeout(_timeout);
     }
-
-    clearTimeout(_timeout);
 
     if (!$openAiConfig.apiKey) {
       $showInitScreen = true;
@@ -171,12 +172,11 @@
   })}
 >
   {#if startupError}
-    <FullScreenError error={startupError}>
+    <FullScreenError title="The app could not be initialized" error={startupError}>
       <div class="prose prose-invert">
-        <h3>The app could not be initialized</h3>
-        <p>
+        <h3>
           <em>What can you do?</em>
-        </p>
+        </h3>
         <ul>
           <li>
             <strong> Reset your database </strong>. This will delete all your data, but it might

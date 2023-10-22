@@ -115,3 +115,9 @@ export const sha1sum = async (s: string) => {
 export const isPWAInstalled = () => {
   return globalThis.matchMedia("(display-mode: standalone)").matches;
 };
+
+export function wrapError(innerError: Error, newMessage: string): Error {
+  const wrappedError = new Error(newMessage + "\n" + innerError.message);
+  wrappedError.stack = `${newMessage}\nCaused by: ${innerError.stack}`;
+  return wrappedError;
+}

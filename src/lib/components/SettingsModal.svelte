@@ -8,15 +8,15 @@
     getOpenAi,
     chatModels,
   } from "$lib/stores/stores";
-  import { DB_NAME } from "$lib/constants";
   import AutosizeTextarea from "./AutosizeTextarea.svelte";
   import { getSystem } from "$lib/gui";
   import { onMount } from "svelte";
-  import { ChatMessage, Thread } from "$lib/db";
+  import { ChatMessage, Thread, getLatestDbName } from "$lib/db";
   import { mapKeys, toCamelCase } from "$lib/utils";
   import CloseButton from "./CloseButton.svelte";
   import type OpenAI from "openai";
 
+  let dbName = "";
   let schema;
   let migrationVersion;
   onMount(async () => {
@@ -32,7 +32,10 @@
         .filter((x) => x.id.startsWith("gpt"))
         .sort((a, b) => a.id.localeCompare(b.id));
     }
+
+    dbName = getLatestDbName() || "";
   });
+
   let showAdvanced = false;
 </script>
 
@@ -285,7 +288,7 @@
           <div class="overflow-auto max-w-full">
             <pre
               class="py-1 px-2 rounded text-slate-300 text-sm border border-zinc-700 table whitespace-pre-wrap overflow-auto w-full">
-           {DB_NAME}<span class="text-blue-300 opacity-50">/{$openAiConfig.siteId}</span> 
+           {dbName}<span class="text-blue-300 opacity-50">/{$openAiConfig.siteId}</span> 
           </pre>
             <p class="opacity-60">
               <small> Database identifier used locally for persistent storage. </small>

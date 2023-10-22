@@ -1,7 +1,6 @@
 import initWasm, { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import type { TXAsync } from "@vlcn.io/xplat-api";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
-import { DB_NAME } from "../lib/constants";
 import {
   db,
   sqlite,
@@ -19,6 +18,67 @@ import { stringify as uuidStringify } from "uuid";
 import { basename, debounce, groupBy, sha1sum, toCamelCase, toSnakeCase } from "./utils";
 import { extractFragments } from "./markdown";
 import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
+
+const legacyDbNames = [
+  "chat_db-v1",
+  "chat_db-v2",
+  "chat_db-v3",
+  "chat_db-v4",
+  "chat_db-v5",
+  "chat_db-v8.1",
+  "chat_db-v8.2", // Testing out migration fixes
+  "chat_db-v8.1", // Moving back to 8.1 now that migrations are fixed. No data changed, just migration code
+  "chat_db-v9.1", // Starting fresh in dev
+  "chat_db-v9.2", // QA importing
+  "chat_db-v10", // Corrupted db
+  "chat_db-v10.1", // Testing syncing
+  "chat_db-v11", // fts
+  "chat_db-v11.11", // fts
+];
+
+const lsKey = "prompta--dbNames";
+
+/**
+ * Get a record of the databases we expect to be accessible to the app. Although
+ * clearly not enforced, this list should be treated as append-only. This does
+ * not mean the db version can't be moved backwards, just do so by appending.
+ *
+ * Appending a new db name effectively resets the db, without data loss since
+ * you can change it back. This is good for testing as if on a new system.
+ */
+const getDbNames = () => {
+  if (typeof localStorage === "undefined") {
+    throw new Error("localStorage is not available");
+  }
+
+  let _dbNames = localStorage.getItem(lsKey);
+
+  if (!_dbNames) {
+    _dbNames = JSON.stringify(legacyDbNames);
+    localStorage.setItem(lsKey, _dbNames);
+  }
+
+  let dbNames: string[] = [];
+
+  if (_dbNames) {
+    dbNames = JSON.parse(_dbNames);
+  }
+
+  return dbNames;
+};
+
+export const getLatestDbName = () => {
+  return getDbNames().at(-1);
+};
+
+export const incrementDbName = () => {
+  const v = (getDbNames().length + 1).toString().padStart(3, "0");
+  const next = `chat_db-v${v}`;
+
+  localStorage.setItem(lsKey, JSON.stringify([...getDbNames(), next]));
+
+  return next;
+};
 
 // ========================================================================================
 // Rudimentary Migration System
@@ -112,17 +172,21 @@ const migrateDb = async (db: DB) => {
   }
 };
 
-export const initDb = async () => {
+export const initDb = async (dbName: string) => {
   if (_db) {
     console.debug("DB already initialized");
     return;
+  }
+
+  if (!dbName) {
+    throw new Error("No database name provided");
   }
 
   // @note This only works in the browser. Don't use SSR anywhere where you need this
   _sqlite = await initWasm(() => wasmUrl);
   sqlite.set(_sqlite);
 
-  _db = await _sqlite.open(DB_NAME);
+  _db = await _sqlite.open(dbName);
   db.set(_db);
 
   await migrateDb(_db);
