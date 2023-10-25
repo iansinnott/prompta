@@ -50,6 +50,10 @@ jobs:
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
         run: npm install # Change this to npm, yarn or pnpm.
 
+      - name: Populate the verson string
+        id: git_version # ID for the step, to be referred to later
+        run: echo "PUBLIC_VERSION_STRING=$(git describe --tags --always --dirty)" >> $GITHUB_ENV
+
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
         env:

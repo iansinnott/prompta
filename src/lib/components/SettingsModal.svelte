@@ -14,7 +14,9 @@
   import { ChatMessage, Thread, getLatestDbName } from "$lib/db";
   import { mapKeys, toCamelCase } from "$lib/utils";
   import CloseButton from "./CloseButton.svelte";
-  import type OpenAI from "openai";
+  import { env } from "$env/dynamic/public";
+
+  const versionString = env.PUBLIC_VERSION_STRING;
 
   let dbName = "";
   let schema;
@@ -24,17 +26,24 @@
       ?.map((x) => x.sql)
       ?.filter((x) => !x.includes("sqlite_") && !x.includes("crsql"));
     migrationVersion = (await $db?.execA<number[]>(`PRAGMA user_version`))?.[0];
-
-    if (!$chatModels.length) {
-      const openai = getOpenAi();
-      const xs = await openai.models.list();
-      $chatModels = xs.data
-        .filter((x) => x.id.startsWith("gpt"))
-        .sort((a, b) => a.id.localeCompare(b.id));
-    }
-
     dbName = getLatestDbName() || "";
   });
+
+  const updateAvailableModels = async () => {
+    if ($chatModels.length) {
+      console.debug("Already have models, not re-fetching");
+    }
+
+    const openai = getOpenAi();
+    const xs = await openai.models.list();
+    $chatModels = xs.data
+      .filter((x) => x.id.startsWith("gpt"))
+      .sort((a, b) => a.id.localeCompare(b.id));
+  };
+
+  $: if ($showSettings) {
+    updateAvailableModels();
+  }
 
   let showAdvanced = false;
 </script>
@@ -63,6 +72,7 @@
         class="text-3xl mb-4 px-4 pt-4 border-b border-zinc-600 pb-4 flex-shrink-0 flex items-center justify-between"
       >
         <span> Settings </span>
+        <small class="text-sm opacity-70">Prompta {versionString}</small>
         <CloseButton
           class=""
           onClick={() => {
@@ -71,6 +81,13 @@
         />
       </h1>
       <div class="content flex-1">
+        <label class="label" for="b">Version</label>
+        <div>
+          Prompta {versionString}
+        </div>
+
+        <div class="Separator h-px bg-zinc-700 my-4" />
+
         <h3 class="text-xl mb-4 sm:col-span-2">OpenAI</h3>
 
         <label class="label" for="b"> API Key: </label>
