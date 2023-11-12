@@ -46,6 +46,7 @@
   }
 
   let showAdvanced = false;
+  let openaiBaseUrl = "https://api.openai.com/v1";
 </script>
 
 <!-- Hide on escape -->
@@ -190,6 +191,31 @@
         </button>
         {#if showAdvanced}
           <!-- separator -->
+
+          <h3 class="text-xl mb-4 sm:col-span-2">Custom OpenAI Settings</h3>
+
+          <label class="label" for="b"> Base URL: </label>
+          <div class:warning={!openaiBaseUrl}>
+            <input
+              id="b"
+              class="input rounded w-full"
+              type="text"
+              placeholder="https://api.openai.com/v1/"
+              bind:value={openaiBaseUrl}
+            />
+            <p class="leading-tight">
+              <small>
+                You can set a custom OpenAI base url to use Prompta with tools
+                like helicone or local LLMs that have OpenAI compatible APIs (eg <a
+                  href="https://github.com/mudler/LocalAI"
+                  class="text-blue-200 hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer">LocalAI</a
+                >)
+              </small>
+            </p>
+          </div>
+
           <h3 class="text-xl mb-4 sm:col-span-2">Database</h3>
 
           <label for="export" class="label">Export:</label>
