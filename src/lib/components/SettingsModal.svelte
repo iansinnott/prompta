@@ -253,7 +253,7 @@
                     `Are you sure you want to import ${file.name}? Although unlikely, this can cause data loss if you are importing two exports from the same database.`
                   ))
                 ) {
-                  console.log("Canclled");
+                  console.log("Cancelled");
                   return;
                 }
 
