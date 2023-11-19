@@ -41,11 +41,18 @@
       .sort((a, b) => a.id.localeCompare(b.id));
   };
 
+  let showAdvanced = false;
+  let customModel = ''
+
   $: if ($showSettings) {
     updateAvailableModels();
   }
 
-  let showAdvanced = false;
+
+  $: if (customModel) {
+    $gptProfileStore.model = customModel;
+  }
+
 </script>
 
 <!-- Hide on escape -->
@@ -219,6 +226,22 @@
                   target="_blank"
                   rel="noopener noreferrer">LiteLLM</a
                 >.
+              </small>
+            </p>
+          </div>
+
+          <label class="label" for="c"> Custom Model: </label>
+          <div>
+            <input
+              id="c"
+              class="input rounded w-full"
+              type="text"
+              placeholder="Enter custom model name"
+              bind:value={customModel}
+            />
+            <p class="leading-tight">
+              <small>
+                You can set a custom OpenAI model to use with Prompta. This will override the model choice above.
               </small>
             </p>
           </div>
