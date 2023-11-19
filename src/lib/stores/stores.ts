@@ -221,7 +221,15 @@ Do not provide a word count or add quotation marks.
   };
 
   // Generate a thread title
-  const res = await openAi.chat.completions.create(prompt);
+  const baseURL = get(openAiConfig)?.baseURL || '';
+  const res = await fetch(`${baseURL.endsWith('/') ? baseURL.slice(0, -1) : baseURL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${get(openAiConfig).apiKey}`
+    },
+    body: JSON.stringify(prompt)
+  }).then(response => response.json());
 
   let newTitle = res.choices[0].message?.content || "Untitled";
 
@@ -599,7 +607,7 @@ export const currentChatThread = (() => {
     abortController = new AbortController();
 
     // @todo This could use the sdk now that the new version supports streaming
-    await fetchEventSource("https://api.openai.com/v1/chat/completions", {
+    await fetchEventSource(`${conf?.baseURL?.endsWith('/') ? conf.baseURL.slice(0, -1) : conf.baseURL}/chat/completions`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${conf.apiKey}`,
