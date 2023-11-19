@@ -184,6 +184,14 @@ export const getOpenAi = () => {
 };
 
 export const verifyOpenAiApiKey = async (apiKey: string) => {
+  const conf = get(openAiConfig);
+  const baseURL = conf.baseURL as string;
+
+  // Skip verification if the base url is not the standard openai base url
+  if (baseURL && baseURL !== 'https://api.openai.com/v1/') {
+    return true;
+  }
+
   try {
     const res = await fetch("https://api.openai.com/v1/models", {
       headers: {
