@@ -52,6 +52,9 @@
     $gptProfileStore.model = customModel;
   }
 
+  $: if (!$openAiConfig.baseURL) {
+    $openAiConfig.baseURL = "https://api.openai.com/v1/";
+  }
 </script>
 
 <!-- Hide on escape -->

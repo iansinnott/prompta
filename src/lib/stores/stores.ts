@@ -83,6 +83,7 @@ export const openAiConfig = (() => {
     replicationHost: "",
     siteId: "",
     lastSyncChain: "",
+    baseURL: 'https://api.openai.com/v1/'
   };
 
   const { subscribe, set, update } = writable<OpenAiAppConfig>(defaultConfig);
@@ -230,7 +231,7 @@ Do not provide a word count or add quotation marks.
   };
 
   // Generate a thread title
-  const baseURL = get(openAiConfig)?.baseURL || '';
+  const baseURL = get(openAiConfig)?.baseURL || 'https://api.openai.com/v1/';
   const res = await fetch(`${baseURL.endsWith('/') ? baseURL.slice(0, -1) : baseURL}/chat/completions`, {
     method: 'POST',
     headers: {
