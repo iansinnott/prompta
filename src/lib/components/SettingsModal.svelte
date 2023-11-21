@@ -48,7 +48,6 @@
     updateAvailableModels();
   }
 
-
   $: if (customModel) {
     $gptProfileStore.model = customModel;
   }
