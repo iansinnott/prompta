@@ -71,19 +71,21 @@ const persistentStore = <T extends Record<string, any>>(prefix: string, defaultV
   };
 };
 
-export const openAiConfig = (() => {
-  type OpenAiAppConfig = Partial<ClientOptions> & {
-    replicationHost: string;
-    siteId: string;
-    lastSyncChain: string;
-  };
+type OpenAiAppConfig = Partial<ClientOptions> & {
+  replicationHost: string;
+  siteId: string;
+  lastSyncChain: string;
+};
 
+export const openAiConfig = (() => {
   const defaultConfig: OpenAiAppConfig = {
     apiKey: "",
+    baseURL: "https://api.openai.com/v1/",
+
+    // NOTE: since these are not infact OpenAI options some separation might be less prone to confusion.
     replicationHost: "",
     siteId: "",
     lastSyncChain: "",
-    baseURL: 'https://api.openai.com/v1/'
   };
 
   const { subscribe, set, update } = writable<OpenAiAppConfig>(defaultConfig);
@@ -174,14 +176,17 @@ export const gptProfileStore = (() => {
 })();
 
 export const getOpenAi = () => {
-  const conf = get(openAiConfig);
-  const apiKey = conf.apiKey as string;
+  const { apiKey, baseURL } = get(openAiConfig);
 
   if (!apiKey) {
     throw new Error("No API key");
   }
 
-  return initOpenAi({ apiKey });
+  if (!baseURL) {
+    throw new Error("No API URL");
+  }
+
+  return initOpenAi({ apiKey, baseURL });
 };
 
 export const verifyOpenAiApiKey = async (apiKey: string) => {
@@ -189,12 +194,16 @@ export const verifyOpenAiApiKey = async (apiKey: string) => {
   const baseURL = conf.baseURL as string;
 
   // Skip verification if the base url is not the standard openai base url
-  if (baseURL && baseURL !== 'https://api.openai.com/v1/') {
+  // because we aren't sure custom URL supports it. The base URL is assumed to
+  // suppor the OpenAI API, but the models endpoint may be overlooked in favor
+  // of merely supporting chat-related endpoints.
+  if (baseURL && baseURL !== "https://api.openai.com/v1/") {
     return true;
   }
 
+  // Ping the models endpoint to verify the api key
   try {
-    const res = await fetch("https://api.openai.com/v1/models", {
+    await fetch("https://api.openai.com/v1/models", {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
@@ -213,7 +222,6 @@ export const generateThreadTitle = async ({ threadId }: { threadId: string }) =>
   const messageContext = context.map((x) => ({ content: x.content, role: x.role }));
 
   const prompt: OpenAI.Chat.CompletionCreateParamsNonStreaming = {
-   // @note Using the cheaper and faster model for title generation
     model: get(gptProfileStore)?.model || "gpt-3.5-turbo", // Use custom model if present, else use turbo 3.5
     temperature: 0.2, // Playing around with this value the lower value seems to be more accurate?
     messages: [
@@ -231,15 +239,7 @@ Do not provide a word count or add quotation marks.
   };
 
   // Generate a thread title
-  const baseURL = get(openAiConfig)?.baseURL || 'https://api.openai.com/v1/';
-  const res = await fetch(`${baseURL.endsWith('/') ? baseURL.slice(0, -1) : baseURL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${get(openAiConfig).apiKey}`
-    },
-    body: JSON.stringify(prompt)
-  }).then(response => response.json());
+  const res = await openAi.chat.completions.create(prompt);
 
   let newTitle = res.choices[0].message?.content || "Untitled";
 
@@ -470,15 +470,6 @@ const createThreadListStore = () => {
 
 export const threadList = createThreadListStore();
 
-// const threadList = invalidatable<Thread[]>([], (set) => {
-//   Thread.findMany({
-//     where: { archived: false },
-//     orderBy: { createdAt: "DESC" },
-//   }).then((xs) => {
-//     set(xs);
-//   });
-// });
-
 const pendingMessageStore = writable<ChatMessage | null>(null);
 
 export const inProgressMessageId = derived(pendingMessageStore, (x) => x?.id);
@@ -616,8 +607,11 @@ export const currentChatThread = (() => {
 
     abortController = new AbortController();
 
+    // NOTE the lack of leading slash. Important for the URL to be relative to the base URL including its path
+    const endpoint = new URL("chat/completions", conf.baseURL);
+
     // @todo This could use the sdk now that the new version supports streaming
-    await fetchEventSource(`${conf?.baseURL?.endsWith('/') ? conf.baseURL.slice(0, -1) : conf.baseURL}/chat/completions`, {
+    await fetchEventSource(endpoint.href, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${conf.apiKey}`,

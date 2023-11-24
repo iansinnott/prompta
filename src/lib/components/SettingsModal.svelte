@@ -31,7 +31,7 @@
 
   const updateAvailableModels = async () => {
     if ($chatModels.length) {
-      console.debug("Already have models, not re-fetching");
+      console.debug("Already have models, but refetching for latest");
     }
 
     const openai = getOpenAi();
@@ -42,15 +42,12 @@
   };
 
   let showAdvanced = false;
-  let customModel = ''
 
   $: if ($showSettings) {
     updateAvailableModels();
   }
 
-  $: if (customModel) {
-    $gptProfileStore.model = customModel;
-  }
+  $: hasCustomModel = !$chatModels.some((x) => x.id == $gptProfileStore.model);
 
   $: if (!$openAiConfig.baseURL) {
     $openAiConfig.baseURL = "https://api.openai.com/v1/";
@@ -140,11 +137,10 @@
               <option value={model.id}>{model.id}</option>
             {/each}
           </select>
-          {#if $gptProfileStore.model === "gpt-4"}
-            <p>
+          {#if hasCustomModel}
+            <p class="border border-yellow-400 mt-2 rounded bg-yellow-500/20">
               <small
-                >Warning: gpt-4 may require an invite. If chat doesn't work make sure your account
-                has an invite by checking your email.</small
+                ><strong>WARNING:</strong> Using custom model. See "Advanced" settings below.</small
               >
             </p>
           {/if}
@@ -202,10 +198,10 @@
 
           <h3 class="text-xl mb-4 sm:col-span-2">Custom OpenAI Settings</h3>
 
-          <label class="label" for="b"> Base URL: </label>
+          <label class="label" for="baseUrl"> Base URL: </label>
           <div>
             <input
-              id="b"
+              id="baseUrl"
               class="input rounded w-full"
               type="text"
               placeholder="https://api.openai.com/v1/"
@@ -213,9 +209,8 @@
             />
             <p class="leading-tight">
               <small>
-                You can set a custom OpenAI base url to use Prompta with 3rd
-                party tools such as helicone or local LLMs that expose OpenAI
-                compatible APIs like <a
+                You can set a custom OpenAI base url to use Prompta with 3rd party tools such as
+                helicone or local LLMs that expose OpenAI compatible APIs like <a
                   href="https://github.com/mudler/LocalAI"
                   class="text-blue-200 hover:underline"
                   target="_blank"
@@ -232,18 +227,19 @@
             </p>
           </div>
 
-          <label class="label" for="c"> Custom Model: </label>
+          <label class="label" for="customModel"> Custom Model: </label>
           <div>
             <input
-              id="c"
+              id="customModel"
               class="input rounded w-full"
               type="text"
               placeholder="Enter custom model name"
-              bind:value={customModel}
+              bind:value={$gptProfileStore.model}
             />
             <p class="leading-tight">
               <small>
-                You can set a custom OpenAI model to use with Prompta. This will override the model choice above.
+                You can set a custom OpenAI model to use with Prompta. This will override the model
+                choice above.
               </small>
             </p>
           </div>
