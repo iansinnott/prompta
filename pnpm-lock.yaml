@@ -18,8 +18,8 @@ dependencies:
     specifier: 0.16.0-next.0
     version: 0.16.0-next.0
   '@vlcn.io/rx-tbl':
-    specifier: 0.13.0
-    version: 0.13.0
+    specifier: 0.15.0-next.0
+    version: 0.15.0-next.0
   '@vlcn.io/sync-p2p':
     specifier: 0.12.0
     version: 0.12.0
@@ -658,10 +658,10 @@ packages:
       async-mutex: 0.4.0
     dev: false
 
-  /@vlcn.io/rx-tbl@0.13.0:
-    resolution: {integrity: sha512-vInhGhk5+76uUG05h/5p1Lzmxx/RNpXNyFRatMpTX/VcNfAK8z+1jqMWvQBq6eyfPya8p8IEmCkmpmtdgtdAgg==}
+  /@vlcn.io/rx-tbl@0.15.0-next.0:
+    resolution: {integrity: sha512-04zVUtbh9D1Eu9zjWN1oLpSawT+MXRHrGdtMzqnU9ik77y+FmJ1nqZ8XfNEPT8QYhNjVuWiTS7LPJ36NQ9hH4w==}
     dependencies:
-      '@vlcn.io/xplat-api': 0.13.0
+      '@vlcn.io/xplat-api': 0.15.0-next.0
     dev: false
 
   /@vlcn.io/sync-p2p@0.12.0:
