@@ -278,7 +278,7 @@ const sqliteFromDate = (date: Date) => {
 
 export const DatabaseMeta = {
   async getSiteId() {
-    const r = await _db.execA("SELECT crsql_siteid()");
+    const r = await _db.execA("SELECT crsql_site_id()");
     const raw = r[0][0];
     const siteid = uuidStringify(raw);
     return siteid as string;

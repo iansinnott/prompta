@@ -15,8 +15,8 @@ dependencies:
     specifier: 2.0.13
     version: 2.0.13
   '@vlcn.io/crsqlite-wasm':
-    specifier: 0.14.0
-    version: 0.14.0
+    specifier: 0.16.0-next.0
+    version: 0.16.0-next.0
   '@vlcn.io/rx-tbl':
     specifier: 0.13.0
     version: 0.13.0
@@ -650,11 +650,11 @@ packages:
     resolution: {integrity: sha512-yskZf4k0TgJV2atS4WgxjqICeGg1Z+hj8tjvsH2Clf17EJXAczDvn4x1zyqC0CRHDjiOkcbne/FhCKq/nykYiQ==}
     dev: false
 
-  /@vlcn.io/crsqlite-wasm@0.14.0:
-    resolution: {integrity: sha512-h7qEpECLZ27hrq1IwuoOJ9s4Dq+5pFjYa8Dpsn6n2qkUfCBe6Tkwc3NQkIKXTpnUrw4EMtr6sSMNSUADR9gBVQ==}
+  /@vlcn.io/crsqlite-wasm@0.16.0-next.0:
+    resolution: {integrity: sha512-6JSB8gS/ls98Yg3HnyVM52WnhHynjz6WJTWqa2Av4UipM1Ldpm2jcBM9ZdeIeOiLKLI7C5FcioTLY7G94NrPNw==}
     dependencies:
-      '@vlcn.io/wa-sqlite': 0.20.0
-      '@vlcn.io/xplat-api': 0.13.0
+      '@vlcn.io/wa-sqlite': 0.22.0-next.0
+      '@vlcn.io/xplat-api': 0.15.0-next.0
       async-mutex: 0.4.0
     dev: false
 
@@ -673,12 +673,18 @@ packages:
       uuid: 9.0.0
     dev: false
 
-  /@vlcn.io/wa-sqlite@0.20.0:
-    resolution: {integrity: sha512-CkEtg6L6g1QiTupOJUYJkJOWFBTrrfkQxsvbOFkcWqLBi4389TOGnGYK9p5Fy0w8pZh8lTD5xjIL62h8mObkOQ==}
+  /@vlcn.io/wa-sqlite@0.22.0-next.0:
+    resolution: {integrity: sha512-qRp4q1vMhDEneB9Sl1lUDRzrt9EUQaoJ9mPiouIvMcPiNlbjassvPCSOwhEeqZ6KlM6YF02rh9nN33RpQ7R+FQ==}
     dev: false
 
   /@vlcn.io/xplat-api@0.13.0:
     resolution: {integrity: sha512-dgAcX9iEwx/3+uVzlkLRIZvsJf0XXiffepWudXPpLlkWp8mTZ2eUwoHOWgISWBUTOUQ3jtmZRHqVZgySegRE/w==}
+    dependencies:
+      comlink: 4.4.1
+    dev: false
+
+  /@vlcn.io/xplat-api@0.15.0-next.0:
+    resolution: {integrity: sha512-z4+EkN3xPZCyxHuXmxylAqbCQc9v5bKk7OOiAihrL+fszgYzodQOgLsTPKNr1P5TgAZ/Qp/7ZJWwmCQyvMb99A==}
     dependencies:
       comlink: 4.4.1
     dev: false
