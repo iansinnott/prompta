@@ -300,7 +300,6 @@
                 }
 
                 const json = JSON.parse(file.data);
-                console.log("JSON");
 
                 if (
                   !(await sys.confirm(
