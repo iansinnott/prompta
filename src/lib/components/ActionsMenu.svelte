@@ -53,23 +53,34 @@
       execute: currentChatThread.regenerateResponse,
     },
     {
+      when: () => !sys.isBrowser,
       name: "Chat History",
       icon: IconHistoryClock,
-      keyboard: {
-        shortcut: "meta+p",
-      },
+      keyboard: { shortcut: "meta+p" },
       execute: () => ($threadMenu.open = !$threadMenu.open),
     },
     {
+      when: () => sys.isBrowser,
+      name: "Chat History",
+      icon: IconHistoryClock,
+      keyboard: { shortcut: "ctrl+p" },
+      execute: () => ($threadMenu.open = !$threadMenu.open),
+    },
+    {
+      when: () => !sys.isBrowser,
       name: "New Chat",
       icon: IconSparkle,
-      keyboard: {
-        shortcut: "meta+n", // @note Only works in the Tauri app. In a browser the browser takes precedence
-      },
+      keyboard: { shortcut: "meta+n" }, // NOTE Meta key with N only works in the Tauri app. In a browser this opens a new window
       altFilterText: "thread",
-      execute: () => {
-        currentThread.reset();
-      },
+      execute: currentThread.reset,
+    },
+    {
+      when: () => sys.isBrowser,
+      name: "New Chat",
+      icon: IconSparkle,
+      keyboard: { shortcut: "ctrl+n" },
+      altFilterText: "thread",
+      execute: currentThread.reset,
     },
     {
       name: "Archive Chat",
