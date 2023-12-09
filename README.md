@@ -26,7 +26,7 @@ Yet another interface for chatting with ChatGPT (or GPT-4).
 ## Features
 
 - [x] Search all previous conversations (full-text!)
-- [x] Sync your chat history across devices
+- [ ] Sync your chat history across devices
 - [x] Keyboard centric
 - [x] Leave notes on responses, such as "working code!" or "not working"
 - [x] Keep all your chat history stored locally
