@@ -19,6 +19,10 @@ import { basename, debounce, groupBy, sha1sum, toCamelCase, toSnakeCase } from "
 import { extractFragments } from "./markdown";
 import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
 
+import schemaRaw from "$lib/migrations/prompta_schema.sql?raw";
+
+import { getSystem } from "./gui";
+
 const legacyDbNames = [
   "chat_db-v1",
   "chat_db-v2",
@@ -80,10 +84,6 @@ export const incrementDbName = () => {
 
   return next;
 };
-
-import schemaRaw from "$lib/migrations/XX_prompta_schema.sql?raw";
-
-import { getSystem } from "./gui";
 
 type RoleEnum = OpenAI.Chat.Completions.ChatCompletionMessage["role"];
 
