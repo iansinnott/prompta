@@ -43,9 +43,10 @@
     // @note The whole app assumes the db exists and is ready. Do not render before that
     try {
       const start = performance.now();
+      const dbName = getLatestDbName();
       console.debug("Initializing database");
-      await initDb(getLatestDbName() || "");
-      console.debug(`Database initialized in ${performance.now() - start}ms`);
+      await initDb(dbName || "");
+      console.debug(`Database initialized in ${performance.now() - start}ms :: ${dbName}`);
     } catch (err: any) {
       throw wrapError(err, `There was an error initializing the database.`);
     } finally {

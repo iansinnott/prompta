@@ -13,7 +13,7 @@
   import IconGear from "./IconGear.svelte";
   import IconHistoryClock from "./IconHistoryClock.svelte";
   import { dev } from "$app/environment";
-  import { _clearDatabase } from "$lib/db";
+  import { _clearDatabase, reinstateLegacyData } from "$lib/db";
   import IconThreadTitle from "./IconThreadTitle.svelte";
   import IconRefreshOutline from "./IconRefreshOutline.svelte";
   import {
@@ -115,6 +115,13 @@
       },
     },
 
+    {
+      name: "Attempt Restore DB",
+      icon: IconTerminalPrompt,
+      execute: () => {
+        reinstateLegacyData();
+      },
+    },
     {
       when: () => dev && $devStore.showDebug,
       name: "Debug - Off",
