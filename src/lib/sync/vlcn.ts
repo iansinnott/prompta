@@ -30,6 +30,9 @@ export class Syncer {
         `${this.#args.db.siteid}-last-sent-to-${this.#args.endpoint}-${this.#args.room}`
       ) ?? "0"
     );
+
+    console.log(`Last sent version: ${lastSentVersion}`);
+
     // gather our changes to send to the server
     const changes = await this.#args.pullChangesetStmt.all(null, lastSentVersion);
     if (changes.length == 0) {
@@ -89,6 +92,7 @@ export class Syncer {
     }
 
     if (msg.changes.length == 0) {
+      console.log("No changes to apply");
       return;
     }
 
@@ -141,10 +145,18 @@ export async function createSyncer(db: DBAsync, endpoint: string, room: string) 
     ) || -1
   );
   const [pullChangesetStmt, applyChangesetStmt] = await Promise.all([
+    // NOTE: commenting this out for now because site_id was not null. Not sure
+    // why it would be. Not sure how it ends up working in the demo.
+    // db.prepare(/*sql*/ `
+    //   SELECT "table", "pk", "cid", "val", "col_version", "db_version", "site_id", "cl", "seq"
+    //   FROM crsql_changes
+    //   WHERE db_version > ? AND site_id IS NULL
+    // `),
+
     db.prepare(/*sql*/ `
       SELECT "table", "pk", "cid", "val", "col_version", "db_version", "site_id", "cl", "seq" 
       FROM crsql_changes 
-      WHERE db_version > ? AND site_id IS NULL
+      WHERE db_version > ?
     `),
     db.prepare(/*sql*/ `
       INSERT INTO crsql_changes ("table", "pk", "cid", "val", "col_version", "db_version", "site_id", "cl", "seq")

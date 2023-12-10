@@ -3,9 +3,18 @@
   import classNames from "classnames";
   import { slide } from "svelte/transition";
   import CopyButton from "./CopyButton.svelte";
+  import { onMount } from "svelte";
 
   let syncString = "";
+  let showAdvanced = true;
 
+  const serverConfig = syncStore.serverConfig;
+
+  onMount(() => {
+    serverConfig.init();
+  });
+
+  $: console.log($serverConfig);
   $: isConnectionActive = $syncStore.connection !== "";
 </script>
 
@@ -91,5 +100,27 @@
         </div>
       </form>
     </div>
+  {/if}
+
+  <button
+    class="px-4 py-2 border-2 border-white/20 rounded-lg"
+    on:click={() => {
+      showAdvanced = !showAdvanced;
+    }}>{showAdvanced ? "Hide" : "Show"} Advanced</button
+  >
+
+  {#if showAdvanced}
+    <form transition:slide|local={{ duration: 150 }} on:submit|preventDefault>
+      <fieldset>
+        <label for="endpoint" class="text-lg">Endpoint</label>
+        <p class="mb-2">You can customize this to use your own sync server.</p>
+        <input
+          id="endpoint"
+          class="bg-transparent w-full outline-none appearance-none truncate px-4 rounded-lg py-2 bg-zinc-700"
+          type="text"
+          bind:value={$serverConfig.endpoint}
+        />
+      </fieldset>
+    </form>
   {/if}
 </div>

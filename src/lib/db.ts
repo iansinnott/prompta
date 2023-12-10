@@ -19,7 +19,7 @@ import { basename, debounce, groupBy, sha1sum, toCamelCase, toSnakeCase } from "
 import { extractFragments } from "./markdown";
 import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
 
-import schemaRaw from "$lib/migrations/prompta_schema.sql?raw";
+import schemaUrl from "$lib/migrations/prompta_schema.sql?url";
 
 import { getSystem } from "./gui";
 
@@ -130,8 +130,7 @@ const migrateDb = async (db: DBAsync, schema: Schema) => {
       // db, but the rest of the app will expect it to be migrated. May or may
       // not cause brakage.
       await getSystem().alert(
-        // @ts-expect-error thinks error is never?
-        "Could not migrate database. Failed on " + importUrl + "." + (error?.message || "")
+        "Could not migrate database. Failed on " + schema.name + "." + (error?.message || "")
       );
       throw error;
     }
@@ -203,8 +202,13 @@ export const initDb = async (dbName: string) => {
   _db = await _sqlite.open(dbName);
   db.set(_db);
 
+  const schemaRaw = await fetch(schemaUrl).then((r) => (r.ok ? r.text() : Promise.reject(r)));
+  console.log("schemaUrl", schemaUrl);
+  const u = new URL(schemaUrl, window.location.href);
+  const schemaName = basename(u.pathname) as string;
+
   const schema: Schema = {
-    name: "prompta_main",
+    name: schemaName,
     content: schemaRaw,
     active: true,
     namespace: "prompta",
@@ -224,13 +228,17 @@ export const initDb = async (dbName: string) => {
   subs.push(Thread.initRx(rx));
   subs.push(ChatMessage.initRx(rx));
 
-  window.onbeforeunload = () => {
+  window.onbeforeunload = async () => {
+    // NOTE: We're not syncing here, assuming the data has already been synced.
+    // Warry of some edge case where a partial sync causes data corruption,
+    // since there is no way (that I know of) to guarantee the window will not
+    // close before the sync is complete.
+    syncStore.dispose();
+
     if (_db) {
       console.debug("Closing db connection");
       _db.close();
     }
-
-    syncStore.dispose();
 
     for (const unsub of subs) {
       unsub();
@@ -830,7 +838,15 @@ const syncMessageFragments = debounce(async () => {
   });
 }, 1000);
 
+/**
+ * Messages are the real meat of the app, so we don't listen to thread changes
+ * but only messages becuase it will end up capturing changes to other tables as
+ * well.
+ */
+const syncDatabaseChanges = debounce(() => syncStore.pushChanges(), 2000);
+
 ChatMessage.onTableChange(syncMessageFragments);
+ChatMessage.onTableChange(syncDatabaseChanges);
 
 export const Preferences = {
   async findMany() {

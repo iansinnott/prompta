@@ -20,9 +20,6 @@ dependencies:
   '@vlcn.io/rx-tbl':
     specifier: 0.15.0-next.0
     version: 0.15.0-next.0
-  '@vlcn.io/sync-p2p':
-    specifier: 0.12.0
-    version: 0.12.0
   '@vlcn.io/ws-common':
     specifier: 0.1.2
     version: 0.1.2
@@ -447,12 +444,6 @@ packages:
       - supports-color
     dev: true
 
-  /@swc/helpers@0.3.17:
-    resolution: {integrity: sha512-tb7Iu+oZ+zWJZ3HJqwx8oNwSDIU440hmVMDPhpACWQWnrZHK99Bxs70gT1L2dnr5Hg50ZRWEFkQCAnOVVV0z1Q==}
-    dependencies:
-      tslib: 2.4.1
-    dev: false
-
   /@tailwindcss/typography@0.5.9(tailwindcss@3.3.1):
     resolution: {integrity: sha512-t8Sg3DyynFysV9f4JDOVISGsjazNb48AeIYQwcL+Bsq5uf4RYL75C1giZ43KISjeDGBaTN3Kxh7Xj/vRSMJUUg==}
     peerDependencies:
@@ -609,10 +600,6 @@ packages:
       sass: 1.61.0
     dev: true
 
-  /@types/uuid@9.0.1:
-    resolution: {integrity: sha512-rFT3ak0/2trgvp4yYZo5iKFEPsET7vKydKF+VRCxlQ9bpheehyAJH89dAkaLEq/j/RZXJIqcgsmPJKUP1Z28HA==}
-    dev: false
-
   /@vitest/expect@0.31.0:
     resolution: {integrity: sha512-Jlm8ZTyp6vMY9iz9Ny9a0BHnCG4fqBa8neCF6Pk/c/6vkUk49Ls6UBlgGAU82QnzzoaUs9E/mUhq/eq9uMOv/g==}
     dependencies:
@@ -670,15 +657,6 @@ packages:
       '@vlcn.io/xplat-api': 0.15.0-next.0
     dev: false
 
-  /@vlcn.io/sync-p2p@0.12.0:
-    resolution: {integrity: sha512-iUFa4t7YX6fnckuz0zsagdWtv6CRtED8x7AD5F3WDvb5amXivtILTK1hUhPeyb7UA7GtHW5bhJirjgVt1JRSKw==}
-    dependencies:
-      '@types/uuid': 9.0.1
-      '@vlcn.io/xplat-api': 0.13.0
-      peerjs: 1.4.7
-      uuid: 9.0.0
-    dev: false
-
   /@vlcn.io/wa-sqlite@0.22.0-next.2:
     resolution: {integrity: sha512-b5S+w8iub6LmYdiAhvx/7iV2PH3CjT6H8i//OtZfaBJ8OeKI6FH8L0agcPaGSjzUnN3QD3Iv7vOLoC1XNumnbA==}
     dev: false
@@ -687,12 +665,6 @@ packages:
     resolution: {integrity: sha512-rUx/1HsVZB1AMS2eldXljbF+P72DtVvUip+qybavJuho57LVtcJQfqJSfyXaMgVVuvvtqlECssS7e9SF41CMWA==}
     dependencies:
       lib0: 0.2.88
-    dev: false
-
-  /@vlcn.io/xplat-api@0.13.0:
-    resolution: {integrity: sha512-dgAcX9iEwx/3+uVzlkLRIZvsJf0XXiffepWudXPpLlkWp8mTZ2eUwoHOWgISWBUTOUQ3jtmZRHqVZgySegRE/w==}
-    dependencies:
-      comlink: 4.4.1
     dev: false
 
   /@vlcn.io/xplat-api@0.14.1:
@@ -1091,10 +1063,6 @@ packages:
   /event-target-shim@5.0.1:
     resolution: {integrity: sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==}
     engines: {node: '>=6'}
-    dev: false
-
-  /eventemitter3@4.0.7:
-    resolution: {integrity: sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==}
     dev: false
 
   /fast-diff@1.2.0:
@@ -1597,20 +1565,6 @@ packages:
     resolution: {integrity: sha512-Dp6zGqpTdETdR63lehJYPeIOqpiNBNtc7BpWSLrOje7UaIsE5aY92r/AunQA7rsXvet3lrJ3JnZX29UPTKXyKQ==}
     dev: true
 
-  /peerjs-js-binarypack@1.0.1:
-    resolution: {integrity: sha512-N6aeia3NhdpV7kiGxJV5xQiZZCVEEVjRz2T2C6UZQiBkHWHzUv/oWA4myQLcwBwO8LUoR1KWW5oStvwVesmfCg==}
-    dev: false
-
-  /peerjs@1.4.7:
-    resolution: {integrity: sha512-dWE2HIGvJO0Hm8lYHJiO/5OWl8xYtGcAuU08To1HMIfhh76ULzkCS3NIQO/PZm4noO1RhaGTkQaQ6sbAss6/Tg==}
-    engines: {node: '>= 10'}
-    dependencies:
-      '@swc/helpers': 0.3.17
-      eventemitter3: 4.0.7
-      peerjs-js-binarypack: 1.0.1
-      webrtc-adapter: 7.7.1
-    dev: false
-
   /picocolors@1.0.0:
     resolution: {integrity: sha512-1fygroTLlHu66zi26VoTDv8yRgm0Fccecssto+MhsZ0D/DGW2sm8E8AjW7NU5VVTRt5GxbeZ5qBuJr+HyLYkjQ==}
     dev: true
@@ -1837,13 +1791,6 @@ packages:
     resolution: {integrity: sha512-eP5pirNjP5+GewQfcOQY4uBiDnpqxNRc65yKPW0eSoU1XamDfc4M8oqpXGMyUyvLyxFDB0q0+DChuxxiU2FXBQ==}
     dev: true
 
-  /rtcpeerconnection-shim@1.2.15:
-    resolution: {integrity: sha512-C6DxhXt7bssQ1nHb154lqeL0SXz5Dx4RczXZu2Aa/L1NJFnEVDxFwCBo3fqtuljhHIGceg5JKBV4XJ0gW5JKyw==}
-    engines: {node: '>=6.0.0', npm: '>=3.10.0'}
-    dependencies:
-      sdp: 2.12.0
-    dev: false
-
   /run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
     dependencies:
@@ -1875,10 +1822,6 @@ packages:
       immutable: 4.3.0
       source-map-js: 1.0.2
     dev: true
-
-  /sdp@2.12.0:
-    resolution: {integrity: sha512-jhXqQAQVM+8Xj5EjJGVweuEzgtGWb3tmEEpl3CLP3cStInSbVHSg0QWOGQzNq8pSID4JkpeV2mPqlMDLrm0/Vw==}
-    dev: false
 
   /semver@7.5.1:
     resolution: {integrity: sha512-Wvss5ivl8TMRZXXESstBA4uR5iXgEN/VC5/sOcuXdVLzcdkz4HWetIoRfG5gb5X+ij/G9rw9YoGn3QoQ8OCSpw==}
@@ -2418,14 +2361,6 @@ packages:
 
   /webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
-    dev: false
-
-  /webrtc-adapter@7.7.1:
-    resolution: {integrity: sha512-TbrbBmiQBL9n0/5bvDdORc6ZfRY/Z7JnEj+EYOD1ghseZdpJ+nF2yx14k3LgQKc7JZnG7HAcL+zHnY25So9d7A==}
-    engines: {node: '>=6.0.0', npm: '>=3.10.0'}
-    dependencies:
-      rtcpeerconnection-shim: 1.2.15
-      sdp: 2.12.0
     dev: false
 
   /well-known-symbols@2.0.0:

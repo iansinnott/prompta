@@ -6,6 +6,7 @@
     generateThreadTitle,
     isNewThread,
     showSettings,
+    syncStore,
     threadMenu,
   } from "$lib/stores/stores";
   import { tick } from "svelte";
@@ -136,6 +137,36 @@
       icon: IconTerminalPrompt,
       execute: () => {
         $devStore.showDebug = true;
+      },
+    },
+
+    {
+      name: "Debug - Force Sync",
+      icon: IconTerminalPrompt,
+      execute: async () => {
+        const results = await syncStore.sync();
+        console.log("Synced", results);
+        if ((results.pulled || 0) + (results.pushed || 0)) {
+          sys.alert(`Success ↑ ${results.pushed || 0},  ↓ ${results.pulled || 0}`);
+        } else {
+          sys.alert(`Already up to date`);
+        }
+      },
+    },
+    {
+      when: () => dev && $devStore.showDebug,
+      name: "Debug - Sync: Push",
+      icon: IconTerminalPrompt,
+      execute: () => {
+        syncStore.pushChanges();
+      },
+    },
+    {
+      when: () => dev && $devStore.showDebug,
+      name: "Debug - Sync: Pull",
+      icon: IconTerminalPrompt,
+      execute: () => {
+        syncStore.pullChanges();
       },
     },
 

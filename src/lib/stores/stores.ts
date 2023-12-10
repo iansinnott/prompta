@@ -792,23 +792,20 @@ export const syncStore = (() => {
     established: string[];
     showSyncModal: boolean;
     connection: string;
-    endpoint: string;
   }>({
     pending: [],
     established: [],
     showSyncModal: false,
     connection: "",
-    endpoint: "http://localhost:8081",
+  });
+
+  const serverConfig = persistentStore<{ endpoint: string }>("server-config", {
+    endpoint: "http://localhost:8081/changes",
   });
 
   const { subscribe, update, set } = store;
 
   let syncer: Syncer | null = null;
-
-  const onConnectionChanged = (pending, established) => {
-    console.log("rtc.onConnectionsChanged", { pending, established });
-    syncStore.update((x) => ({ ...x, pending, established }));
-  };
 
   const dispose = () => {
     // lastSyncChain is used for reconnecting. We only want to clear it if the
@@ -822,6 +819,28 @@ export const syncStore = (() => {
     update((x) => ({ ...x, connection: "" }));
     syncer?.destroy();
     syncer = null;
+  };
+
+  const pushChanges = async () => {
+    if (!syncer) {
+      throw new Error("No syncer initialized. Called too early?");
+    }
+
+    return syncer.pushChanges();
+  };
+
+  const pullChanges = async () => {
+    if (!syncer) {
+      throw new Error("No syncer initialized. Called too early?");
+    }
+
+    return syncer.pullChanges();
+  };
+
+  const sync = async () => {
+    const pulled = await pullChanges();
+    const pushed = await pushChanges();
+    return { pulled, pushed };
   };
 
   return {
@@ -838,23 +857,39 @@ export const syncStore = (() => {
     disconnect: dispose, // An alias...
     destroy: dispose, // An alias...
 
-    async connectTo(s: string, { retries = 3, timeout = 600 } = {}) {
+    pullChanges,
+    pushChanges,
+    /**
+     * Sync with the server. This is a two-way sync. Pull first, then push.
+     */
+    sync,
+
+    serverConfig,
+
+    async connectTo(s: string, { retries = 3, timeout = 600, autoSync = false } = {}) {
       const _db: DBAsync | null = get(db);
       if (!_db) {
         throw new Error("No db found");
       }
 
-      syncer = await createSyncer(_db, get(store).endpoint, s);
+      // Make sure endpoint is up to date
+      await serverConfig.init();
+
+      syncer = await createSyncer(_db, get(serverConfig).endpoint, s);
 
       if (syncer) {
         openAiConfig.update((x) => ({ ...x, lastSyncChain: s }));
         update((x) => ({ ...x, connection: s }));
+        if (autoSync) {
+          await sync();
+        }
       } else {
-        console.warn(`RTC not initialized. Initializing and trying again...`);
+        console.warn(`Sync service not initialized. Initializing and trying again...`);
         return new Promise((resolve) => setTimeout(resolve, timeout)).then(() =>
           this.connectTo(s, {
             retries: retries - 1,
             timeout,
+            autoSync,
           })
         );
       }

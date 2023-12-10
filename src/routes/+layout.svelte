@@ -10,7 +10,7 @@
   import Toaster from "$lib/toast/Toaster.svelte";
   import { assets } from "$app/paths";
   import FullScreenError from "$lib/components/FullScreenError.svelte";
-  import { wrapError } from "$lib/utils";
+  import { debounce, wrapError } from "$lib/utils";
 
   const sys = getSystem();
   let startupError: Error | null = null;
@@ -69,7 +69,7 @@
 
       // Not sure why, but this doesn't work if we do it immediately.
       setTimeout(() => {
-        syncStore.connectTo(lastSyncChain);
+        syncStore.connectTo(lastSyncChain, { autoSync: true });
       }, 1000);
     }
   };
@@ -78,6 +78,7 @@
     try {
       await handleStartup();
     } catch (error: any) {
+      console.error("startup error", error);
       startupError = error;
     }
   });
@@ -136,9 +137,13 @@
     description:
       "Prompta is an open-source UI client for talking to ChatGPT (and GPT-4). Store all your chats locally. Search them easily. Sync across devices.",
   };
+
+  const handleSync = debounce(() => {
+    syncStore.sync();
+  }, 300);
 </script>
 
-<svelte:window on:click={handleExternalUrls} />
+<svelte:window on:click={handleExternalUrls} on:focus={handleSync} />
 
 <svelte:head>
   <title>{siteMeta.title}</title>
@@ -175,6 +180,11 @@
   {#if startupError}
     <FullScreenError title="The app could not be initialized" error={startupError}>
       <div class="prose prose-invert">
+        <div class="prose prose-invert mt-3">
+          <p>
+            Database Path: <code>{getLatestDbName()}</code>
+          </p>
+        </div>
         <h3>
           <em>What can you do?</em>
         </h3>
