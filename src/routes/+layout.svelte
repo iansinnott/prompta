@@ -138,9 +138,12 @@
       "Prompta is an open-source UI client for talking to ChatGPT (and GPT-4). Store all your chats locally. Search them easily. Sync across devices.",
   };
 
+  $: isConnectionActive = $syncStore.connection !== "";
+
   const handleSync = debounce(() => {
+    if (!isConnectionActive) return;
     syncStore.sync();
-  }, 300);
+  }, 100);
 </script>
 
 <svelte:window on:click={handleExternalUrls} on:focus={handleSync} />
