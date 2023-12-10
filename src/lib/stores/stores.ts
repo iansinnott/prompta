@@ -1,3 +1,4 @@
+import type { DBAsync } from "@vlcn.io/xplat-api";
 import { OpenAI, type ClientOptions } from "openai";
 import { derived, readable, writable, type Subscriber, get } from "svelte/store";
 import type { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
@@ -12,12 +13,13 @@ import {
 import { nanoid } from "nanoid";
 import { initOpenAi } from "$lib/llm/openai";
 import { fetchEventSource, type EventSourceMessage } from "@microsoft/fetch-event-source";
-import { wdbRtc } from "@vlcn.io/sync-p2p";
 import { getSystem } from "$lib/gui";
 import { dev } from "$app/environment";
 import { emit } from "$lib/capture";
 import { debounce } from "$lib/utils";
 import { toast } from "$lib/toast";
+import { createSyncer, type Syncer } from "$lib/sync/vlcn";
+import { onMount } from "svelte";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
@@ -784,24 +786,24 @@ export const currentChatThread = (() => {
   };
 })();
 
-type RTC = Awaited<ReturnType<typeof wdbRtc>>;
-
 export const syncStore = (() => {
   const store = writable<{
     pending: string[];
     established: string[];
     showSyncModal: boolean;
     connection: string;
+    endpoint: string;
   }>({
     pending: [],
     established: [],
     showSyncModal: false,
     connection: "",
+    endpoint: "http://localhost:8081",
   });
 
   const { subscribe, update, set } = store;
 
-  let rtc: RTC | null = null;
+  let syncer: Syncer | null = null;
 
   const onConnectionChanged = (pending, established) => {
     console.log("rtc.onConnectionsChanged", { pending, established });
@@ -812,48 +814,49 @@ export const syncStore = (() => {
     // lastSyncChain is used for reconnecting. We only want to clear it if the
     // user disconnected. However, i think this function is called during
     // cleanup regardless of whether or not the user stored a sync code.
-    if (!rtc) {
+    if (!syncer) {
       openAiConfig.update((x) => ({ ...x, lastSyncChain: "" }));
     }
 
-    console.log("RTC disconnect");
+    console.log("Sync disconnect");
     update((x) => ({ ...x, connection: "" }));
-    rtc?.offConnectionsChanged(onConnectionChanged);
-    rtc?.dispose();
-    rtc = null;
+    syncer?.destroy();
+    syncer = null;
   };
 
   return {
     subscribe,
     update,
     set,
-    disconnect: dispose, // An alias...
 
     /**
-     * Disconnect from the current chain and dispose of the rtc instance. Should
-     * only be called if there is no intent to use RTC anymore this session, i.g.
+     * Disconnect from the current chain and dispose of the sync instance. Should
+     * only be called if there is no intent to use sync anymore this session, i.g.
      * when the browser is about to close
      */
     dispose,
+    disconnect: dispose, // An alias...
+    destroy: dispose, // An alias...
 
-    init: async () => {
-      const _db = get(db);
+    async connectTo(s: string, { retries = 3, timeout = 600 } = {}) {
+      const _db: DBAsync | null = get(db);
       if (!_db) {
         throw new Error("No db found");
       }
 
-      rtc = await wdbRtc(_db);
-      rtc.onConnectionsChanged(onConnectionChanged);
-    },
+      syncer = await createSyncer(_db, get(store).endpoint, s);
 
-    async connectTo(s: string, remainingRetries = 3) {
-      if (rtc) {
-        rtc.connectTo(s);
+      if (syncer) {
         openAiConfig.update((x) => ({ ...x, lastSyncChain: s }));
         update((x) => ({ ...x, connection: s }));
       } else {
         console.warn(`RTC not initialized. Initializing and trying again...`);
-        return this.init().then(() => this.connectTo(s, remainingRetries - 1));
+        return new Promise((resolve) => setTimeout(resolve, timeout)).then(() =>
+          this.connectTo(s, {
+            retries: retries - 1,
+            timeout,
+          })
+        );
       }
     },
   };

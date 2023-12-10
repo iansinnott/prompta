@@ -164,7 +164,7 @@
   )}`;
 
   // Sync via the p2p adapter is fully broken after recent vlcn upgrade
-  const isSyncSupported = false;
+  const isSyncSupported = true;
 </script>
 
 <div
