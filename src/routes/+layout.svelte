@@ -141,7 +141,6 @@
   $: isConnectionActive = $syncStore.connection !== "";
 
   const handleSync = debounce(() => {
-    if (!isConnectionActive) return;
     syncStore.sync();
   }, 100);
 </script>

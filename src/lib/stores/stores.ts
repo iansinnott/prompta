@@ -822,7 +822,7 @@ export const syncStore = (() => {
   };
 
   const pushChanges = async () => {
-    if (!syncer) {
+    if (!syncer || !get(store).connection) {
       throw new Error("No syncer initialized. Called too early?");
     }
 
@@ -830,7 +830,7 @@ export const syncStore = (() => {
   };
 
   const pullChanges = async () => {
-    if (!syncer) {
+    if (!syncer || !get(store).connection) {
       throw new Error("No syncer initialized. Called too early?");
     }
 
