@@ -67,5 +67,5 @@ jobs:
           releaseName: "Prompta v__VERSION__" # tauri-action replaces \_\_VERSION\_\_ with the app version.
           releaseBody: "See the assets to download and install this version."
           releaseDraft: false
-          prerelease: true
+          prerelease: false
           tauriScript: npm
