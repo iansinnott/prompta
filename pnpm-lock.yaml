@@ -23,6 +23,12 @@ dependencies:
   '@vlcn.io/sync-p2p':
     specifier: 0.12.0
     version: 0.12.0
+  '@vlcn.io/ws-common':
+    specifier: 0.1.2
+    version: 0.1.2
+  '@vlcn.io/xplat-api':
+    specifier: 0.14.1
+    version: 0.14.1
   classnames:
     specifier: 2.3.2
     version: 2.3.2
@@ -677,8 +683,20 @@ packages:
     resolution: {integrity: sha512-b5S+w8iub6LmYdiAhvx/7iV2PH3CjT6H8i//OtZfaBJ8OeKI6FH8L0agcPaGSjzUnN3QD3Iv7vOLoC1XNumnbA==}
     dev: false
 
+  /@vlcn.io/ws-common@0.1.2:
+    resolution: {integrity: sha512-rUx/1HsVZB1AMS2eldXljbF+P72DtVvUip+qybavJuho57LVtcJQfqJSfyXaMgVVuvvtqlECssS7e9SF41CMWA==}
+    dependencies:
+      lib0: 0.2.88
+    dev: false
+
   /@vlcn.io/xplat-api@0.13.0:
     resolution: {integrity: sha512-dgAcX9iEwx/3+uVzlkLRIZvsJf0XXiffepWudXPpLlkWp8mTZ2eUwoHOWgISWBUTOUQ3jtmZRHqVZgySegRE/w==}
+    dependencies:
+      comlink: 4.4.1
+    dev: false
+
+  /@vlcn.io/xplat-api@0.14.1:
+    resolution: {integrity: sha512-Y63WDk0kkt6i1WzlD6StiFXXHP+YJaDO/SW0S9+dyoEZDvkDLHr1HrKsfBn1JreBnbCd5fOhm/gRP49m1Ksfhg==}
     dependencies:
       comlink: 4.4.1
     dev: false
@@ -1270,6 +1288,10 @@ packages:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
     dev: true
 
+  /isomorphic.js@0.2.5:
+    resolution: {integrity: sha512-PIeMbHqMt4DnUP3MA/Flc0HElYjMXArsw1qwJZcm9sqR8mq3l8NYizFMty0pWwE/tzIGH3EKK5+jes5mAr85yw==}
+    dev: false
+
   /jiti@1.18.2:
     resolution: {integrity: sha512-QAdOptna2NYiSSpv0O/BwoHBSmz4YhpzJHyi+fnMRTXFjp7B8i/YG5Z8IfusxB1ufjcD2Sre1F3R+nX3fvy7gg==}
     hasBin: true
@@ -1288,6 +1310,14 @@ packages:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
     engines: {node: '>=6'}
     dev: true
+
+  /lib0@0.2.88:
+    resolution: {integrity: sha512-KyroiEvCeZcZEMx5Ys+b4u4eEBbA1ch7XUaBhYpwa/nPMrzTjUhI4RfcytmQfYoTBPcdyx+FX6WFNIoNuJzJfQ==}
+    engines: {node: '>=16'}
+    hasBin: true
+    dependencies:
+      isomorphic.js: 0.2.5
+    dev: false
 
   /lilconfig@2.1.0:
     resolution: {integrity: sha512-utWOt/GHzuUxnLKxB6dk81RoOeoNeHgbrXiuGk4yyF5qlRz+iIVWu56E2fqGHFrXz0QNUhLB/8nKqvRH66JKGQ==}
