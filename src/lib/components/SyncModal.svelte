@@ -43,8 +43,8 @@
     <div class="flex flex-col space-y-4" transition:slide|local={{ duration: 150 }}>
       <small>
         Enabling sync allows you to access your chats from multiple devices, and is totally
-        optional. Sync happens via peer-to-peer connection, so your chats are only sent directly to
-        devices with your sync code.
+        optional. Your messages will be synced through a sync server. You can use the default
+        (sync.prompta.dev) or run your own.
       </small>
     </div>
   {:else}
