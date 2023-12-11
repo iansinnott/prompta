@@ -1,5 +1,5 @@
 import initWasm, { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
-import type { TXAsync } from "@vlcn.io/xplat-api";
+import type { TXAsync, Schema, DBAsync } from "@vlcn.io/xplat-api";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import {
   db,
@@ -19,6 +19,10 @@ import { basename, debounce, groupBy, sha1sum, toCamelCase, toSnakeCase } from "
 import { extractFragments } from "./markdown";
 import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
 
+import schemaUrl from "$lib/migrations/prompta_schema.sql?url";
+
+import { getSystem } from "./gui";
+
 const legacyDbNames = [
   "chat_db-v1",
   "chat_db-v2",
@@ -34,6 +38,7 @@ const legacyDbNames = [
   "chat_db-v10.1", // Testing syncing
   "chat_db-v11", // fts
   "chat_db-v11.11", // fts
+  "chat_db-v12", // auto migrate
 ];
 
 const lsKey = "prompta--dbNames";
@@ -80,26 +85,7 @@ export const incrementDbName = () => {
   return next;
 };
 
-// ========================================================================================
-// Rudimentary Migration System
-// ========================================================================================
-
-// The reason for ?url importing migrations is to use their filename as a
-// version number.
-import schema from "$lib/migrations/00_init.sql?raw"; // NOTE that this is ?raw imported, while migrations are URL imported
-
-// @note Migrations requrie no asset inlining. See vite.config.ts
-import migration_01 from "$lib/migrations/01_add_archived.sql?url";
-import migration_02 from "$lib/migrations/02_add_fts.sql?url";
-import { getSystem } from "./gui";
-
 type RoleEnum = OpenAI.Chat.Completions.ChatCompletionMessage["role"];
-
-// prettier-ignore
-const migrations = [
-  migration_01,
-  migration_02,
-];
 
 let _sqlite: SQLite3;
 let _db: DB;
@@ -119,42 +105,22 @@ export const getDbVersion = async (db: TXAsync) => {
   return dbVersion;
 };
 
-const migrateDb = async (db: DB) => {
-  for (const x of schema.split(";")) {
-    await _db.exec(x);
-  }
+/**
+ * This is entirely a wrapper around the built in automigrate functionality.
+ * This used to do more, but now that vlcn has migrate functionality we use it.
+ */
+const migrateDb = async (db: DBAsync, schema: Schema) => {
+  try {
+    const result = await _db.automigrateTo(schema.name, schema.content);
 
-  for (const importUrl of migrations) {
-    const dbVersion = await getDbVersion(_db);
-    const migrationVersion = Number(basename(importUrl)?.split("_")[0]);
-
-    if (dbVersion >= migrationVersion) {
-      console.log("%cmigrate skip=true", "color:gray;", {
-        dbVersion,
-        migrationVersion,
-        path: basename(importUrl),
-      });
-      continue;
+    if (result === "noop") {
+      console.log("%cmigrate op=noop", "color:gray;");
+    } else if (result === "migrate") {
+      console.log("%cmigrate op=migrate", "color:green;");
+    } else if (result === "apply") {
+      console.log("%cmigrate op=apply", "color:orange;");
     }
-
-    const raw = await fetch(importUrl).then((x) => x.text());
-    console.log("%cmigrate", "color:salmon;", "skip=false", {
-      dbVersion,
-      migrationVersion,
-      path: basename(importUrl),
-    });
-    console.debug(raw);
-    let error: null | Error = null;
-
-    // for (const x of raw.split(";")) {
-    try {
-      await _db.exec(raw);
-    } catch (err: any) {
-      error = new Error(err.message + " SQL: " + raw);
-      break;
-    }
-    // }
-
+  } catch (error) {
     if (error) {
       // NOTE This will generate two alert messages most likely, if the base
       // level error handler also alerts. However the additional context is
@@ -164,10 +130,57 @@ const migrateDb = async (db: DB) => {
       // db, but the rest of the app will expect it to be migrated. May or may
       // not cause brakage.
       await getSystem().alert(
-        // @ts-expect-error thinks error is never?
-        "Could not migrate database. Failed on " + importUrl + "." + (error?.message || "")
+        "Could not migrate database. Failed on " + schema.name + "." + (error?.message || "")
       );
       throw error;
+    }
+  }
+};
+
+export const reinstateLegacyData = async (
+  database: DBAsync = _db as DBAsync,
+  currentDbName = getLatestDbName()
+) => {
+  if (!currentDbName) {
+    throw new Error("No current db name found");
+  }
+
+  const legacyDbNames = getDbNames();
+  const i = legacyDbNames.indexOf(currentDbName);
+  const legacyDbName = legacyDbNames[i - 1];
+
+  if (!legacyDbName) {
+    throw new Error("No legacy db found");
+    return;
+  }
+
+  if (!_sqlite) {
+    throw new Error("No sqlite instance found");
+    return;
+  }
+
+  let legacyDb;
+  try {
+    legacyDb = await _sqlite.open(legacyDbName);
+  } catch (error) {
+    console.error("opening legacy db", error);
+    throw new Error("Could not open legacy db: " + legacyDbName);
+  }
+
+  const tables = ["thread", "message", "fragment"];
+
+  for (const table of tables) {
+    const rows = await legacyDb.execO(`select * from "${table}"`);
+    console.log("legacy rows", rows.length);
+    for (const row of rows) {
+      const keys = Object.keys(row);
+      const values = Object.values(row);
+      const placeholders = values.map(() => "?").join(", ");
+      const query = `insert or ignore into "${table}" (${keys.join(
+        ", "
+      )}) values (${placeholders})`;
+      console.log("query", query);
+      await database.exec(query, values);
     }
   }
 };
@@ -189,7 +202,19 @@ export const initDb = async (dbName: string) => {
   _db = await _sqlite.open(dbName);
   db.set(_db);
 
-  await migrateDb(_db);
+  const schemaRaw = await fetch(schemaUrl).then((r) => (r.ok ? r.text() : Promise.reject(r)));
+  console.log("schemaUrl", schemaUrl);
+  const u = new URL(schemaUrl, window.location.href);
+  const schemaName = basename(u.pathname) as string;
+
+  const schema: Schema = {
+    name: schemaName,
+    content: schemaRaw,
+    active: true,
+    namespace: "prompta",
+  };
+
+  await migrateDb(_db, schema);
 
   // Initialize stores
   for (const s of [currentThread, profilesStore, openAiConfig]) {
@@ -203,13 +228,17 @@ export const initDb = async (dbName: string) => {
   subs.push(Thread.initRx(rx));
   subs.push(ChatMessage.initRx(rx));
 
-  window.onbeforeunload = () => {
+  const teardown = async () => {
+    // NOTE: We're not syncing here, assuming the data has already been synced.
+    // Warry of some edge case where a partial sync causes data corruption,
+    // since there is no way (that I know of) to guarantee the window will not
+    // close before the sync is complete.
+    syncStore.dispose();
+
     if (_db) {
       console.debug("Closing db connection");
-      _db.close();
+      await _db.close();
     }
-
-    syncStore.dispose();
 
     for (const unsub of subs) {
       unsub();
@@ -229,6 +258,8 @@ export const initDb = async (dbName: string) => {
       (window as any)[k] = v;
     }
   }
+
+  return teardown;
 };
 
 export interface ChatMessageRow {
@@ -809,7 +840,15 @@ const syncMessageFragments = debounce(async () => {
   });
 }, 1000);
 
+/**
+ * Messages are the real meat of the app, so we don't listen to thread changes
+ * but only messages becuase it will end up capturing changes to other tables as
+ * well.
+ */
+const syncDatabaseChanges = debounce(() => syncStore.pushChanges(), 2000);
+
 ChatMessage.onTableChange(syncMessageFragments);
+ChatMessage.onTableChange(syncDatabaseChanges);
 
 export const Preferences = {
   async findMany() {

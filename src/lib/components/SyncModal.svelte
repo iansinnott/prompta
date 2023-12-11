@@ -3,15 +3,43 @@
   import classNames from "classnames";
   import { slide } from "svelte/transition";
   import CopyButton from "./CopyButton.svelte";
+  import { onMount } from "svelte";
+  import { error } from "@sveltejs/kit";
 
   let syncString = "";
+  let showAdvanced = true;
 
+  const serverConfig = syncStore.serverConfig;
+
+  onMount(() => {
+    serverConfig.init();
+  });
+
+  $: console.log($serverConfig);
   $: isConnectionActive = $syncStore.connection !== "";
 </script>
 
 <div
   class="fixed top-16 left-0 sm:w-[420px] sm:left-6 bg-zinc-600 rounded-lg p-3 shadow-lg z-10 space-y-4 overflow-auto max-h-[80vh]"
 >
+  <div>
+    <p>
+      <span class="text-sm">Announce: </span>Sync
+      <span class="font-mono p-1 bg-black text-green-500 rounded-full text-xs font-bold"
+        >v2:beta</span
+      >
+    </p>
+    <p>
+      <small class="leading-none"
+        >This is a rewrite of the initial syncing mechanism. It may have bugs. Please report sync
+        <a
+          class="text-blue-200 underline"
+          href="https://github.com/iansinnott/prompta/issues"
+          target="_blank">issues</a
+        > if you encounter them.</small
+      >
+    </p>
+  </div>
   <button
     on:click={() => {
       if ($syncStore.connection) {
@@ -33,7 +61,13 @@
       class={classNames({
         "text-zinc-300": !isConnectionActive,
         "text-teal-300": isConnectionActive,
-      })}>{isConnectionActive ? "Active" : "Inactive"}</span
+        "text-red-600": $syncStore.error,
+      })}
+      >{$syncStore.error
+        ? $syncStore.error.message
+        : isConnectionActive
+        ? "Active"
+        : "Inactive"}</span
     >
   </h2>
 
@@ -43,8 +77,8 @@
     <div class="flex flex-col space-y-4" transition:slide|local={{ duration: 150 }}>
       <small>
         Enabling sync allows you to access your chats from multiple devices, and is totally
-        optional. Sync happens via peer-to-peer connection, so your chats are only sent directly to
-        devices with your sync code.
+        optional. Your messages will be synced through a sync server. You can use the default
+        (sync.prompta.dev) or run your own.
       </small>
     </div>
   {:else}
@@ -91,5 +125,27 @@
         </div>
       </form>
     </div>
+  {/if}
+
+  <button
+    class="px-4 py-2 border-2 border-white/20 rounded-lg"
+    on:click={() => {
+      showAdvanced = !showAdvanced;
+    }}>{showAdvanced ? "Hide" : "Show"} Advanced</button
+  >
+
+  {#if showAdvanced}
+    <form transition:slide|local={{ duration: 150 }} on:submit|preventDefault>
+      <fieldset>
+        <label for="endpoint" class="text-lg">Endpoint</label>
+        <p class="mb-2">You can customize this to use your own sync server.</p>
+        <input
+          id="endpoint"
+          class="bg-transparent w-full outline-none appearance-none truncate px-4 rounded-lg py-2 bg-zinc-700"
+          type="text"
+          bind:value={$serverConfig.endpoint}
+        />
+      </fieldset>
+    </form>
   {/if}
 </div>

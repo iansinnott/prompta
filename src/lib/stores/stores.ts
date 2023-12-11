@@ -1,3 +1,4 @@
+import type { DBAsync } from "@vlcn.io/xplat-api";
 import { OpenAI, type ClientOptions } from "openai";
 import { derived, readable, writable, type Subscriber, get } from "svelte/store";
 import type { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
@@ -12,12 +13,14 @@ import {
 import { nanoid } from "nanoid";
 import { initOpenAi } from "$lib/llm/openai";
 import { fetchEventSource, type EventSourceMessage } from "@microsoft/fetch-event-source";
-import { wdbRtc } from "@vlcn.io/sync-p2p";
 import { getSystem } from "$lib/gui";
 import { dev } from "$app/environment";
 import { emit } from "$lib/capture";
 import { debounce } from "$lib/utils";
 import { toast } from "$lib/toast";
+import { createSyncer, getDefaultEndpoint, type Syncer } from "$lib/sync/vlcn";
+import { onMount } from "svelte";
+import { debug } from "svelte/internal";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
@@ -784,76 +787,165 @@ export const currentChatThread = (() => {
   };
 })();
 
-type RTC = Awaited<ReturnType<typeof wdbRtc>>;
-
 export const syncStore = (() => {
   const store = writable<{
     pending: string[];
     established: string[];
     showSyncModal: boolean;
     connection: string;
+    error: null | {
+      message: string;
+      _error?: Error;
+    };
   }>({
     pending: [],
     established: [],
     showSyncModal: false,
     connection: "",
+    error: null,
+  });
+
+  const serverConfig = persistentStore<{ endpoint: string }>("server-config", {
+    endpoint: getDefaultEndpoint(),
   });
 
   const { subscribe, update, set } = store;
 
-  let rtc: RTC | null = null;
-
-  const onConnectionChanged = (pending, established) => {
-    console.log("rtc.onConnectionsChanged", { pending, established });
-    syncStore.update((x) => ({ ...x, pending, established }));
-  };
+  let syncAdapter: Syncer | null = null;
 
   const dispose = () => {
     // lastSyncChain is used for reconnecting. We only want to clear it if the
     // user disconnected. However, i think this function is called during
     // cleanup regardless of whether or not the user stored a sync code.
-    if (!rtc) {
+    if (!syncAdapter) {
       openAiConfig.update((x) => ({ ...x, lastSyncChain: "" }));
     }
 
-    console.log("RTC disconnect");
+    console.log("Sync disconnect");
     update((x) => ({ ...x, connection: "" }));
-    rtc?.offConnectionsChanged(onConnectionChanged);
-    rtc?.dispose();
-    rtc = null;
+    syncAdapter?.destroy();
+    syncAdapter = null;
+  };
+
+  const pushChanges = async () => {
+    if (!get(store).connection) {
+      console.log("No connection enabled. Ignoring sync.");
+      return;
+    }
+
+    if (!syncAdapter) {
+      throw new Error("No syncer initialized. Called too early?");
+    }
+
+    return syncAdapter.pushChanges();
+  };
+
+  const pullChanges = async () => {
+    if (!get(store).connection) {
+      console.log("No connection enabled. Ignoring sync.");
+      return;
+    }
+
+    if (!syncAdapter || !get(store).connection) {
+      throw new Error("No syncer initialized. Called too early?");
+    }
+
+    return syncAdapter.pullChanges();
+  };
+
+  const healthcheck = async () => {
+    if (!get(store).connection) {
+      console.log("No connection enabled. Ignoring sync.");
+      return false;
+    }
+
+    if (!syncAdapter || !get(store).connection) {
+      return false;
+    }
+
+    const endpoint = get(serverConfig).endpoint;
+    const u = new URL("/health", endpoint);
+    const res = await fetch(u).then((x) => (x.ok ? x.json() : Promise.reject(x)));
+
+    return res.status === "ok" && res.n === 47;
+  };
+
+  const sync = async () => {
+    const pulled = await pullChanges();
+    const pushed = await pushChanges();
+    const healthy = await healthcheck();
+
+    if (!healthy) {
+      update((x) => ({ ...x, error: { message: "Server is not healthy" } }));
+    } else {
+      update((x) => ({ ...x, error: null }));
+    }
+
+    return { pulled, pushed };
   };
 
   return {
     subscribe,
     update,
     set,
-    disconnect: dispose, // An alias...
 
     /**
-     * Disconnect from the current chain and dispose of the rtc instance. Should
-     * only be called if there is no intent to use RTC anymore this session, i.g.
+     * Disconnect from the current chain and dispose of the sync instance. Should
+     * only be called if there is no intent to use sync anymore this session, i.g.
      * when the browser is about to close
      */
     dispose,
+    disconnect: dispose, // An alias...
+    destroy: dispose, // An alias...
 
-    init: async () => {
-      const _db = get(db);
+    pullChanges,
+    pushChanges,
+    /**
+     * Sync with the server. This is a two-way sync. Pull first, then push.
+     */
+    sync,
+    healthcheck,
+
+    resetSyncState: async () => {
+      await syncAdapter?.resetSyncState();
+    },
+
+    serverConfig,
+
+    async connectTo(s: string, { retries = 3, timeout = 600, autoSync = false } = {}) {
+      const _db: DBAsync | null = get(db);
       if (!_db) {
         throw new Error("No db found");
       }
 
-      rtc = await wdbRtc(_db);
-      rtc.onConnectionsChanged(onConnectionChanged);
-    },
+      // Make sure endpoint is up to date
+      await serverConfig.init();
 
-    async connectTo(s: string, remainingRetries = 3) {
-      if (rtc) {
-        rtc.connectTo(s);
+      const healthy = await healthcheck();
+      if (!healthy && get(store).connection) {
+        update((x) => ({ ...x, error: { message: "Could not connect" } }));
+        return;
+      }
+
+      syncAdapter = await createSyncer(_db, get(serverConfig).endpoint, s);
+
+      if (syncAdapter) {
         openAiConfig.update((x) => ({ ...x, lastSyncChain: s }));
-        update((x) => ({ ...x, connection: s }));
+        update((x) => ({ ...x, connection: s, error: null }));
+        if (autoSync) {
+          await sync();
+        }
+      } else if (retries > 0) {
+        console.warn(`Sync service not initialized. Initializing and trying again...`);
+        return new Promise((resolve) => setTimeout(resolve, timeout)).then(() =>
+          this.connectTo(s, {
+            retries: retries - 1,
+            timeout,
+            autoSync,
+          })
+        );
       } else {
-        console.warn(`RTC not initialized. Initializing and trying again...`);
-        return this.init().then(() => this.connectTo(s, remainingRetries - 1));
+        throw new Error("Could not initialize sync service");
       }
     },
   };

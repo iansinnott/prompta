@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist-server",
+    "rootDir": "./sync-server",
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": false,
+    "strictNullChecks": true,
+    "module": "esnext",
+    "target": "esnext",
+    "skipLibCheck": true,
+    "moduleResolution": "Node",
+    "baseUrl": "./sync-server/",
+    "declaration": false,
+    "allowJs": true,
+    "declarationMap": false,
+    "strict": true
+  },
+  "include": ["./sync-server"],
+  "exclude": []
+}

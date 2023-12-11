@@ -1,0 +1,18 @@
+fly.toml
+Dockerfile
+.dockerignore
+node_modules
+.git
+dbs
+.github
+.vscode
+.svelte-kit
+build
+dist-server
+playwright
+test-results
+tests
+tmp
+
+# NOTE for now the dockerfile is just for the server, so we don't want/need this code
+src-tauri

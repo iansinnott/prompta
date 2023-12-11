@@ -1,7 +1,7 @@
 <script lang="ts">
   import "../app.postcss";
   import { openAiConfig, syncStore, showInitScreen } from "../lib/stores/stores";
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { DatabaseMeta, getLatestDbName, incrementDbName, initDb } from "$lib/db";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
   import { getSystem } from "$lib/gui";
@@ -10,7 +10,7 @@
   import Toaster from "$lib/toast/Toaster.svelte";
   import { assets } from "$app/paths";
   import FullScreenError from "$lib/components/FullScreenError.svelte";
-  import { wrapError } from "$lib/utils";
+  import { debounce, wrapError } from "$lib/utils";
 
   const sys = getSystem();
   let startupError: Error | null = null;
@@ -34,6 +34,8 @@
     location.reload();
   };
 
+  let teardown: any;
+
   const handleStartup = async () => {
     // throw up after a time if the app is hanging
     let _timeout = setTimeout(() => {
@@ -43,9 +45,10 @@
     // @note The whole app assumes the db exists and is ready. Do not render before that
     try {
       const start = performance.now();
+      const dbName = getLatestDbName();
       console.debug("Initializing database");
-      await initDb(getLatestDbName() || "");
-      console.debug(`Database initialized in ${performance.now() - start}ms`);
+      teardown = await initDb(dbName || "");
+      console.debug(`Database initialized in ${performance.now() - start}ms :: ${dbName}`);
     } catch (err: any) {
       throw wrapError(err, `There was an error initializing the database.`);
     } finally {
@@ -68,7 +71,7 @@
 
       // Not sure why, but this doesn't work if we do it immediately.
       setTimeout(() => {
-        syncStore.connectTo(lastSyncChain);
+        syncStore.connectTo(lastSyncChain, { autoSync: true });
       }, 1000);
     }
   };
@@ -77,8 +80,13 @@
     try {
       await handleStartup();
     } catch (error: any) {
+      console.error("startup error", error);
       startupError = error;
     }
+  });
+
+  onDestroy(async () => {
+    await teardown?.();
   });
 
   function isExternalUrl(href: any) {
@@ -135,9 +143,15 @@
     description:
       "Prompta is an open-source UI client for talking to ChatGPT (and GPT-4). Store all your chats locally. Search them easily. Sync across devices.",
   };
+
+  $: isConnectionActive = $syncStore.connection !== "";
+
+  const handleSync = debounce(() => {
+    syncStore.sync();
+  }, 100);
 </script>
 
-<svelte:window on:click={handleExternalUrls} />
+<svelte:window on:click={handleExternalUrls} on:focus={handleSync} />
 
 <svelte:head>
   <title>{siteMeta.title}</title>
@@ -174,6 +188,11 @@
   {#if startupError}
     <FullScreenError title="The app could not be initialized" error={startupError}>
       <div class="prose prose-invert">
+        <div class="prose prose-invert mt-3">
+          <p>
+            Database Path: <code>{getLatestDbName()}</code>
+          </p>
+        </div>
         <h3>
           <em>What can you do?</em>
         </h3>

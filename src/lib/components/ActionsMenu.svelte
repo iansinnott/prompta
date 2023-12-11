@@ -6,6 +6,7 @@
     generateThreadTitle,
     isNewThread,
     showSettings,
+    syncStore,
     threadMenu,
   } from "$lib/stores/stores";
   import { tick } from "svelte";
@@ -13,7 +14,7 @@
   import IconGear from "./IconGear.svelte";
   import IconHistoryClock from "./IconHistoryClock.svelte";
   import { dev } from "$app/environment";
-  import { _clearDatabase } from "$lib/db";
+  import { _clearDatabase, reinstateLegacyData } from "$lib/db";
   import IconThreadTitle from "./IconThreadTitle.svelte";
   import IconRefreshOutline from "./IconRefreshOutline.svelte";
   import {
@@ -116,6 +117,13 @@
     },
 
     {
+      name: "Attempt Restore DB",
+      icon: IconTerminalPrompt,
+      execute: () => {
+        reinstateLegacyData();
+      },
+    },
+    {
       when: () => dev && $devStore.showDebug,
       name: "Debug - Off",
       icon: IconTerminalPrompt,
@@ -129,6 +137,38 @@
       icon: IconTerminalPrompt,
       execute: () => {
         $devStore.showDebug = true;
+      },
+    },
+
+    {
+      name: "Debug - Force Sync",
+      icon: IconTerminalPrompt,
+      execute: async () => {
+        console.log("Resetting sync state");
+        await syncStore.resetSyncState();
+        const results = await syncStore.sync();
+        console.log("Synced", results);
+        if ((results.pulled || 0) + (results.pushed || 0)) {
+          sys.alert(`Success ↑ ${results.pushed || 0},  ↓ ${results.pulled || 0}`);
+        } else {
+          sys.alert(`Already up to date`);
+        }
+      },
+    },
+    {
+      when: () => dev && $devStore.showDebug,
+      name: "Debug - Sync: Push",
+      icon: IconTerminalPrompt,
+      execute: () => {
+        syncStore.pushChanges();
+      },
+    },
+    {
+      when: () => dev && $devStore.showDebug,
+      name: "Debug - Sync: Pull",
+      icon: IconTerminalPrompt,
+      execute: () => {
+        syncStore.pullChanges();
       },
     },
 
