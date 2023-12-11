@@ -15,21 +15,25 @@ type Args = Readonly<{
 export class Syncer {
   readonly #args: Args;
   readonly #syncEndpoint: string;
+  #storageKey: string;
 
   constructor(args: Args) {
     this.#args = args;
     this.#syncEndpoint = `${this.#args.endpoint}/${this.#args.room}?schemaName=${
       this.#args.schemaName
     }&schemaVersion=${this.#args.schemaVersion}`;
+    this.#storageKey = `${this.#args.db.siteid}-last-sent-to-${this.#args.endpoint}-${
+      this.#args.room
+    }`;
+  }
+
+  async resetSyncState() {
+    localStorage.removeItem(this.#storageKey);
   }
 
   async pushChanges() {
     // track what we last sent to the server so we only send the diff.
-    const lastSentVersion = BigInt(
-      localStorage.getItem(
-        `${this.#args.db.siteid}-last-sent-to-${this.#args.endpoint}-${this.#args.room}`
-      ) ?? "0"
-    );
+    const lastSentVersion = BigInt(localStorage.getItem(this.#storageKey) ?? "0");
 
     console.log(`Last sent version: ${lastSentVersion}`);
 

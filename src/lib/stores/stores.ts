@@ -906,6 +906,10 @@ export const syncStore = (() => {
     sync,
     healthcheck,
 
+    resetSyncState: async () => {
+      await syncAdapter?.resetSyncState();
+    },
+
     serverConfig,
 
     async connectTo(s: string, { retries = 3, timeout = 600, autoSync = false } = {}) {

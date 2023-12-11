@@ -17,7 +17,6 @@ const envToLogger: Record<string, any> = {
     },
   },
   production: true,
-  test: false,
 };
 
 // Create our Fastify server

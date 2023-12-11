@@ -144,6 +144,8 @@
       name: "Debug - Force Sync",
       icon: IconTerminalPrompt,
       execute: async () => {
+        console.log("Resetting sync state");
+        await syncStore.resetSyncState();
         const results = await syncStore.sync();
         console.log("Synced", results);
         if ((results.pulled || 0) + (results.pushed || 0)) {
