@@ -7,7 +7,7 @@
   import { error } from "@sveltejs/kit";
 
   let syncString = "";
-  let showAdvanced = true;
+  let showAdvanced = false;
 
   const serverConfig = syncStore.serverConfig;
 
