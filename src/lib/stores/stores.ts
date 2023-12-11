@@ -875,7 +875,6 @@ export const syncStore = (() => {
     const pushed = await pushChanges();
     const healthy = await healthcheck();
 
-    console.log("%cServer is not healthy", "color:lime;", healthy);
     if (!healthy) {
       update((x) => ({ ...x, error: { message: "Server is not healthy" } }));
     } else {
