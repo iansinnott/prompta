@@ -182,12 +182,13 @@ export async function createSyncer(db: DBAsync, endpoint: string, room: string) 
   });
 }
 
-const endpoint = (() => {
+export const getDefaultEndpoint = () => {
   if (window.location.hostname === "localhost") {
     return "http://localhost:8081/changes";
   }
-  return `${window.location.protocol}//${window.location.host}/changes`;
-})();
+
+  return `https://prompta-production.up.railway.app/changes`;
+};
 
 // TODO: users should stick the syncer into context rather than re-creating it everywhere they
 // want to use it.

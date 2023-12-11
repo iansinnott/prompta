@@ -18,7 +18,7 @@ import { dev } from "$app/environment";
 import { emit } from "$lib/capture";
 import { debounce } from "$lib/utils";
 import { toast } from "$lib/toast";
-import { createSyncer, type Syncer } from "$lib/sync/vlcn";
+import { createSyncer, getDefaultEndpoint, type Syncer } from "$lib/sync/vlcn";
 import { onMount } from "svelte";
 import { debug } from "svelte/internal";
 
@@ -806,7 +806,7 @@ export const syncStore = (() => {
   });
 
   const serverConfig = persistentStore<{ endpoint: string }>("server-config", {
-    endpoint: "http://localhost:8081/changes",
+    endpoint: getDefaultEndpoint(),
   });
 
   const { subscribe, update, set } = store;

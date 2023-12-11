@@ -3,7 +3,7 @@ import { extensionPath } from "@vlcn.io/crsqlite";
 import { cryb64, Change, Changes } from "@vlcn.io/ws-common";
 import path from "path";
 import fs from "fs";
-const DB_FOLDER = "./dbs";
+const DB_FOLDER = process.env.RAILWAY_VOLUME_MOUNT_PATH || "./dbs";
 const SCHEMA_FOLDER = "./src/lib/migrations";
 
 /**

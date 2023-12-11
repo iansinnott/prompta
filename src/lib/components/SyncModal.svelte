@@ -22,6 +22,24 @@
 <div
   class="fixed top-16 left-0 sm:w-[420px] sm:left-6 bg-zinc-600 rounded-lg p-3 shadow-lg z-10 space-y-4 overflow-auto max-h-[80vh]"
 >
+  <div>
+    <p>
+      <span class="text-sm">Announce: </span>Sync
+      <span class="font-mono p-1 bg-black text-green-500 rounded-full text-xs font-bold"
+        >v2:beta</span
+      >
+    </p>
+    <p>
+      <small class="leading-none"
+        >This is a rewrite of the initial syncing mechanism. It may have bugs. Please report sync
+        <a
+          class="text-blue-200 underline"
+          href="https://github.com/iansinnott/prompta/issues"
+          target="_blank">issues</a
+        > if you encounter them.</small
+      >
+    </p>
+  </div>
   <button
     on:click={() => {
       if ($syncStore.connection) {

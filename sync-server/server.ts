@@ -2,7 +2,6 @@ import Fastify from "fastify";
 import { encode, decode, tags, hexToBytes } from "@vlcn.io/ws-common";
 import { createDb } from "./DBWrapper.js";
 import cors from "@fastify/cors";
-import * as url from "url";
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 8081;
 
