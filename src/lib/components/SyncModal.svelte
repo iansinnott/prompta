@@ -4,6 +4,7 @@
   import { slide } from "svelte/transition";
   import CopyButton from "./CopyButton.svelte";
   import { onMount } from "svelte";
+  import { error } from "@sveltejs/kit";
 
   let syncString = "";
   let showAdvanced = true;
@@ -42,7 +43,13 @@
       class={classNames({
         "text-zinc-300": !isConnectionActive,
         "text-teal-300": isConnectionActive,
-      })}>{isConnectionActive ? "Active" : "Inactive"}</span
+        "text-red-600": $syncStore.error,
+      })}
+      >{$syncStore.error
+        ? $syncStore.error.message
+        : isConnectionActive
+        ? "Active"
+        : "Inactive"}</span
     >
   </h2>
 

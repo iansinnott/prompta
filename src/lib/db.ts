@@ -228,7 +228,7 @@ export const initDb = async (dbName: string) => {
   subs.push(Thread.initRx(rx));
   subs.push(ChatMessage.initRx(rx));
 
-  window.onbeforeunload = async (e) => {
+  const teardown = async () => {
     // NOTE: We're not syncing here, assuming the data has already been synced.
     // Warry of some edge case where a partial sync causes data corruption,
     // since there is no way (that I know of) to guarantee the window will not
@@ -237,15 +237,12 @@ export const initDb = async (dbName: string) => {
 
     if (_db) {
       console.debug("Closing db connection");
-      _db.close();
+      await _db.close();
     }
 
     for (const unsub of subs) {
       unsub();
     }
-
-    e.returnValue = "";
-    return "";
   };
 
   if (dev) {
@@ -261,6 +258,8 @@ export const initDb = async (dbName: string) => {
       (window as any)[k] = v;
     }
   }
+
+  return teardown;
 };
 
 export interface ChatMessageRow {

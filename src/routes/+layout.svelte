@@ -1,7 +1,7 @@
 <script lang="ts">
   import "../app.postcss";
   import { openAiConfig, syncStore, showInitScreen } from "../lib/stores/stores";
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { DatabaseMeta, getLatestDbName, incrementDbName, initDb } from "$lib/db";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
   import { getSystem } from "$lib/gui";
@@ -34,6 +34,8 @@
     location.reload();
   };
 
+  let teardown: any;
+
   const handleStartup = async () => {
     // throw up after a time if the app is hanging
     let _timeout = setTimeout(() => {
@@ -45,7 +47,7 @@
       const start = performance.now();
       const dbName = getLatestDbName();
       console.debug("Initializing database");
-      await initDb(dbName || "");
+      teardown = await initDb(dbName || "");
       console.debug(`Database initialized in ${performance.now() - start}ms :: ${dbName}`);
     } catch (err: any) {
       throw wrapError(err, `There was an error initializing the database.`);
@@ -81,6 +83,10 @@
       console.error("startup error", error);
       startupError = error;
     }
+  });
+
+  onDestroy(async () => {
+    await teardown?.();
   });
 
   function isExternalUrl(href: any) {

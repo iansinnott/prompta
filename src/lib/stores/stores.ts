@@ -20,6 +20,7 @@ import { debounce } from "$lib/utils";
 import { toast } from "$lib/toast";
 import { createSyncer, type Syncer } from "$lib/sync/vlcn";
 import { onMount } from "svelte";
+import { debug } from "svelte/internal";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
@@ -792,11 +793,16 @@ export const syncStore = (() => {
     established: string[];
     showSyncModal: boolean;
     connection: string;
+    error: null | {
+      message: string;
+      _error?: Error;
+    };
   }>({
     pending: [],
     established: [],
     showSyncModal: false,
     connection: "",
+    error: null,
   });
 
   const serverConfig = persistentStore<{ endpoint: string }>("server-config", {
@@ -805,41 +811,77 @@ export const syncStore = (() => {
 
   const { subscribe, update, set } = store;
 
-  let syncer: Syncer | null = null;
+  let syncAdapter: Syncer | null = null;
 
   const dispose = () => {
     // lastSyncChain is used for reconnecting. We only want to clear it if the
     // user disconnected. However, i think this function is called during
     // cleanup regardless of whether or not the user stored a sync code.
-    if (!syncer) {
+    if (!syncAdapter) {
       openAiConfig.update((x) => ({ ...x, lastSyncChain: "" }));
     }
 
     console.log("Sync disconnect");
     update((x) => ({ ...x, connection: "" }));
-    syncer?.destroy();
-    syncer = null;
+    syncAdapter?.destroy();
+    syncAdapter = null;
   };
 
   const pushChanges = async () => {
-    if (!syncer || !get(store).connection) {
+    if (!get(store).connection) {
+      console.log("No connection enabled. Ignoring sync.");
+      return;
+    }
+
+    if (!syncAdapter) {
       throw new Error("No syncer initialized. Called too early?");
     }
 
-    return syncer.pushChanges();
+    return syncAdapter.pushChanges();
   };
 
   const pullChanges = async () => {
-    if (!syncer || !get(store).connection) {
+    if (!get(store).connection) {
+      console.log("No connection enabled. Ignoring sync.");
+      return;
+    }
+
+    if (!syncAdapter || !get(store).connection) {
       throw new Error("No syncer initialized. Called too early?");
     }
 
-    return syncer.pullChanges();
+    return syncAdapter.pullChanges();
+  };
+
+  const healthcheck = async () => {
+    if (!get(store).connection) {
+      console.log("No connection enabled. Ignoring sync.");
+      return false;
+    }
+
+    if (!syncAdapter || !get(store).connection) {
+      return false;
+    }
+
+    const endpoint = get(serverConfig).endpoint;
+    const u = new URL("/health", endpoint);
+    const res = await fetch(u).then((x) => (x.ok ? x.json() : Promise.reject(x)));
+
+    return res.status === "ok" && res.n === 47;
   };
 
   const sync = async () => {
     const pulled = await pullChanges();
     const pushed = await pushChanges();
+    const healthy = await healthcheck();
+
+    console.log("%cServer is not healthy", "color:lime;", healthy);
+    if (!healthy) {
+      update((x) => ({ ...x, error: { message: "Server is not healthy" } }));
+    } else {
+      update((x) => ({ ...x, error: null }));
+    }
+
     return { pulled, pushed };
   };
 
@@ -863,6 +905,7 @@ export const syncStore = (() => {
      * Sync with the server. This is a two-way sync. Pull first, then push.
      */
     sync,
+    healthcheck,
 
     serverConfig,
 
@@ -875,15 +918,21 @@ export const syncStore = (() => {
       // Make sure endpoint is up to date
       await serverConfig.init();
 
-      syncer = await createSyncer(_db, get(serverConfig).endpoint, s);
+      const healthy = await healthcheck();
+      if (!healthy && get(store).connection) {
+        update((x) => ({ ...x, error: { message: "Could not connect" } }));
+        return;
+      }
 
-      if (syncer) {
+      syncAdapter = await createSyncer(_db, get(serverConfig).endpoint, s);
+
+      if (syncAdapter) {
         openAiConfig.update((x) => ({ ...x, lastSyncChain: s }));
-        update((x) => ({ ...x, connection: s }));
+        update((x) => ({ ...x, connection: s, error: null }));
         if (autoSync) {
           await sync();
         }
-      } else {
+      } else if (retries > 0) {
         console.warn(`Sync service not initialized. Initializing and trying again...`);
         return new Promise((resolve) => setTimeout(resolve, timeout)).then(() =>
           this.connectTo(s, {
@@ -892,6 +941,8 @@ export const syncStore = (() => {
             autoSync,
           })
         );
+      } else {
+        throw new Error("Could not initialize sync service");
       }
     },
   };
