@@ -245,18 +245,17 @@ export const initDb = async (dbName: string) => {
     }
   };
 
-  if (dev) {
-    for (const [k, v] of [
-      ["Thread", Thread],
-      ["ChatMessage", ChatMessage],
-      ["DatabaseMeta", DatabaseMeta],
-      ["Preferences", Preferences],
-      ["Fragment", Fragment],
-      ["db", _db],
-    ]) {
-      // @ts-expect-error Just for dev, and the error is not consequential
-      (window as any)[k] = v;
-    }
+  // This used to be locked behind a dev flag but I find it useful to have access to it for debugging in the prod app.
+  for (const [k, v] of [
+    ["Thread", Thread],
+    ["ChatMessage", ChatMessage],
+    ["DatabaseMeta", DatabaseMeta],
+    ["Preferences", Preferences],
+    ["Fragment", Fragment],
+    ["db", _db],
+  ]) {
+    // @ts-expect-error Just for dev, and the error is not consequential
+    (window as any)[k] = v;
   }
 
   return teardown;
