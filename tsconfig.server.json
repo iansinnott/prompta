@@ -2,6 +2,7 @@
   "compilerOptions": {
     "outDir": "./dist-server",
     "rootDir": "./sync-server",
+    "useUnknownInCatchVariables": false,
     "allowSyntheticDefaultImports": true,
     "sourceMap": false,
     "strictNullChecks": true,
