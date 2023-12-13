@@ -796,6 +796,7 @@ export const syncStore = (() => {
     connection: string;
     error: null | {
       message: string;
+      detail?: string;
       _error?: Error;
     };
   }>({
@@ -877,7 +878,14 @@ export const syncStore = (() => {
     const healthy = await healthcheck();
 
     if (!healthy) {
-      update((x) => ({ ...x, error: { message: "Server is not healthy" } }));
+      update((x) => ({
+        ...x,
+        error: {
+          message: "Server is not healthy",
+          detail:
+            "Healthcheck failed. Check the endpoint and make sure that servier is up and running.",
+        },
+      }));
     } else {
       update((x) => ({ ...x, error: null }));
     }
@@ -936,6 +944,7 @@ export const syncStore = (() => {
       // Make sure endpoint is up to date
       await serverConfig.init();
 
+      console.log("SFDDS");
       const healthy = await healthcheck();
       if (!healthy && get(store).connection) {
         update((x) => ({ ...x, error: { message: "Could not connect" } }));

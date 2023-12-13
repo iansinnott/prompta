@@ -162,6 +162,7 @@
     "syncChain",
     $openAiConfig.siteId
   )}`;
+  $: console.log("sync store ERR", $syncStore.error);
 
   // Sync via the p2p adapter is fully broken after recent vlcn upgrade
   const isSyncSupported = true;
@@ -197,8 +198,9 @@
           <IconSync
             class="w-[18px] h-[18px]"
             innerClass={classNames({
-              "text-white": !isConnectionActive,
-              "text-teal-400": isConnectionActive,
+              "text-white": !$syncStore.error && !isConnectionActive,
+              "text-teal-400": !$syncStore.error && isConnectionActive,
+              "text-red-500": $syncStore.error,
             })}
           />
         </button>

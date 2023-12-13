@@ -59,9 +59,9 @@
   <h2 class="text-sm uppercase font-semibold">
     Connection: <span
       class={classNames({
-        "text-zinc-300": !isConnectionActive,
-        "text-teal-300": isConnectionActive,
-        "text-red-600": $syncStore.error,
+        "text-zinc-300": !$syncStore.error && !isConnectionActive,
+        "text-teal-300": !$syncStore.error && isConnectionActive,
+        "text-red-400 bg-black px-2 py-1": $syncStore.error,
       })}
       >{$syncStore.error
         ? $syncStore.error.message
@@ -69,6 +69,9 @@
         ? "Active"
         : "Inactive"}</span
     >
+    {#if $syncStore.error?.detail}
+      <small class="block text-xs mt-2 bg-zinc-800 px-2 py-1">{$syncStore.error.detail}</small>
+    {/if}
   </h2>
 
   <hr class="my-4 border-white/20" />
