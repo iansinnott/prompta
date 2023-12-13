@@ -135,8 +135,10 @@ export async function createDb(
     .pluck()
     .get("schema_name");
 
-  if (schemaName != null && schemaName != requestedSchemaName) {
-    // we will not allow reformatting a db to a new schema
+  const maybeIncompatibleSchma = schemaName != null && schemaName != requestedSchemaName;
+
+  if (maybeIncompatibleSchma) {
+    // we will not allow reformatting a db to a new schema for now
     closeDb(db);
     throw new Error(`Server has schema ${schemaName} but client requested ${requestedSchemaName}`);
   }
