@@ -1,5 +1,6 @@
 import { type DBAsync, type StmtAsync, firstPick } from "@vlcn.io/xplat-api";
 import { encode, decode, tags, bytesToHex } from "@vlcn.io/ws-common";
+import { dev } from "$app/environment";
 
 type Args = Readonly<{
   db: DBAsync;
@@ -183,7 +184,7 @@ export async function createSyncer(db: DBAsync, endpoint: string, room: string) 
 }
 
 export const getDefaultEndpoint = () => {
-  if (window.location.hostname === "localhost") {
+  if (dev) {
     return "http://localhost:8081";
   }
 
