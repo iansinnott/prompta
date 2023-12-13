@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import { encode, decode, tags, hexToBytes } from "@vlcn.io/ws-common";
-import { createDb } from "./DBWrapper.js";
+import { createDb, DBWrapper } from "./DBWrapper.js";
 import cors from "@fastify/cors";
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 8081;
@@ -116,6 +116,35 @@ app.post<{
     } finally {
       db.close();
     }
+  },
+});
+
+/**
+ * Endpoint for clients to register a schema with the server.
+ */
+app.post<{
+  Body: {
+    schemaName: string;
+    content: string;
+  };
+}>("/schema", {
+  handler: async (req, res) => {
+    const result = await DBWrapper.registerSchema(req.body.schemaName, req.body.content);
+    let status = 200;
+
+    switch (result.status) {
+      case "ok":
+        status = 201;
+        break;
+      case "noop":
+        status = 200;
+        break;
+      case "error":
+        status = 400;
+        break;
+    }
+
+    res.status(status).send(result);
   },
 });
 

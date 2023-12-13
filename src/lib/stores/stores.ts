@@ -9,6 +9,7 @@ import {
   Preferences,
   Thread,
   type FragmentSearchResult,
+  getCurrentSchema,
 } from "$lib/db";
 import { nanoid } from "nanoid";
 import { initOpenAi } from "$lib/llm/openai";
@@ -884,6 +885,20 @@ export const syncStore = (() => {
     return { pulled, pushed };
   };
 
+  const registerSchema = async (schemaName: string, content: string) => {
+    const endpoint = get(serverConfig).endpoint;
+    const u = new URL("/schema", endpoint);
+    const res = await fetch(u, {
+      method: "POST",
+      body: JSON.stringify({ schemaName, content }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then((x) => x.json());
+
+    return res;
+  };
+
   return {
     subscribe,
     update,
@@ -927,7 +942,21 @@ export const syncStore = (() => {
         return;
       }
 
-      syncAdapter = await createSyncer(_db, get(serverConfig).endpoint, s);
+      // await _db.execO(`SELECT key, value FROM crsql_master WHERE key in ('schema_name', 'schema_version')`)
+      const { schema_name } = await DatabaseMeta.getSchemaMeta();
+      const { content } = await getCurrentSchema();
+
+      const result = await registerSchema(schema_name, content);
+
+      if (result.status === "error") {
+        update((x) => ({ ...x, error: { message: result.error.message } }));
+        return;
+      }
+
+      console.debug("register schema ::", schema_name, result);
+
+      const syncEndpoint = new URL("/changes", get(serverConfig).endpoint).href;
+      syncAdapter = await createSyncer(_db, syncEndpoint, s);
 
       if (syncAdapter) {
         openAiConfig.update((x) => ({ ...x, lastSyncChain: s }));

@@ -184,32 +184,8 @@ export async function createSyncer(db: DBAsync, endpoint: string, room: string) 
 
 export const getDefaultEndpoint = () => {
   if (window.location.hostname === "localhost") {
-    return "http://localhost:8081/changes";
+    return "http://localhost:8081";
   }
 
-  return `https://prompta-production.up.railway.app/changes`;
+  return `https://prompta-production.up.railway.app`;
 };
-
-// TODO: users should stick the syncer into context rather than re-creating it everywhere they
-// want to use it.
-// export function useSyncer(db: DBAsync, room: string) {
-//   const [syncer, setSyncer] = useState<Syncer | null>(null);
-//   useEffect(() => {
-//     let mounted = true;
-//     const syncer = createSyncer(db, endpoint, room);
-
-//     syncer.then((s) => {
-//       if (!mounted) {
-//         return;
-//       }
-//       setSyncer(s);
-//     });
-
-//     return () => {
-//       mounted = false;
-//       syncer.then((s) => s.destroy());
-//     };
-//   }, [db, room]);
-
-//   return syncer;
-// }

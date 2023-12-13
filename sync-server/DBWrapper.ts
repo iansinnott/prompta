@@ -4,7 +4,7 @@ import { cryb64, Change, Changes } from "@vlcn.io/ws-common";
 import path from "path";
 import fs from "fs";
 const DB_FOLDER = process.env.RAILWAY_VOLUME_MOUNT_PATH || "./dbs";
-const SCHEMA_FOLDER = "./src/lib/migrations";
+const SCHEMA_FOLDER = path.join(DB_FOLDER, "schemas");
 
 /**
  * - Initializes SQLite
@@ -12,7 +12,7 @@ const SCHEMA_FOLDER = "./src/lib/migrations";
  * - Exposes `push` and `pull` changes statements
  *
  */
-class DBWrapper {
+export class DBWrapper {
   readonly #db;
   readonly #getChangesStmt;
   readonly #applyChangesStmt;
@@ -50,6 +50,52 @@ class DBWrapper {
 
   close() {
     closeDb(this.#db);
+  }
+
+  static async registerSchema(schemaName: string, content: string) {
+    await fs.promises.mkdir(SCHEMA_FOLDER, { recursive: true });
+    const version = cryb64(content);
+    const filePath = getSchemaPath(schemaName);
+    let result: {
+      status: "ok" | "error" | "noop";
+      version: string;
+      error?: {
+        message: string;
+        stack?: string;
+        code?: string;
+      };
+    };
+
+    try {
+      await fs.promises.writeFile(filePath, content, { flag: "wx" });
+      result = {
+        status: "ok",
+        version: version.toString(),
+      };
+    } catch (error) {
+      if (error.code === "EEXIST") {
+        result = {
+          status: "noop",
+          version: version.toString(),
+          error: {
+            message: `Schema file ${filePath} already exists.`,
+            code: "schema_already_exists",
+          },
+        };
+      } else {
+        result = {
+          status: "error",
+          version: version.toString(),
+          error: {
+            message: error.message,
+            stack: error.stack,
+            code: error.code,
+          },
+        };
+      }
+    }
+
+    return result;
   }
 }
 
@@ -141,7 +187,7 @@ function getDbPath(dbName: string) {
     throw new Error(`${dbName} must not include '..', '/', or '\\'`);
   }
 
-  return path.join(DB_FOLDER, dbName);
+  return path.join(DB_FOLDER, dbName + ".db");
 }
 
 function getSchemaPath(schemaName: string) {

@@ -21,6 +21,8 @@ import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
 
 import schemaUrl from "$lib/migrations/prompta_schema.sql?url";
 
+export { schemaUrl };
+
 import { getSystem } from "./gui";
 
 const legacyDbNames = [
@@ -185,6 +187,16 @@ export const reinstateLegacyData = async (
   }
 };
 
+export const getCurrentSchema = async () => {
+  const schemaRaw = await fetch(schemaUrl).then((r) => (r.ok ? r.text() : Promise.reject(r)));
+  const u = new URL(schemaUrl, window.location.href);
+  const schemaName = basename(u.pathname) as string;
+  return {
+    name: schemaName,
+    content: schemaRaw,
+  };
+};
+
 export const initDb = async (dbName: string) => {
   if (_db) {
     console.debug("DB already initialized");
@@ -202,14 +214,11 @@ export const initDb = async (dbName: string) => {
   _db = await _sqlite.open(dbName);
   db.set(_db);
 
-  const schemaRaw = await fetch(schemaUrl).then((r) => (r.ok ? r.text() : Promise.reject(r)));
-  console.log("schemaUrl", schemaUrl);
-  const u = new URL(schemaUrl, window.location.href);
-  const schemaName = basename(u.pathname) as string;
+  const { name, content } = await getCurrentSchema();
 
   const schema: Schema = {
-    name: schemaName,
-    content: schemaRaw,
+    name,
+    content,
     active: true,
     namespace: "prompta",
   };
@@ -312,6 +321,13 @@ export const DatabaseMeta = {
     const raw = r[0][0];
     const siteid = uuidStringify(raw);
     return siteid as string;
+  },
+  async getSchemaMeta() {
+    const r = await _db.execO<{ key: string; value: any }>(
+      "SELECT * FROM crsql_master where key like 'schema_%'"
+    );
+    const result = Object.fromEntries(r.map((x) => [x.key, x.value]));
+    return result as { schema_name: string; schema_version: bigint };
   },
 };
 

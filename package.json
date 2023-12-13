@@ -9,7 +9,7 @@
     "build:debug": "tauri build --debug",
     "ui:dev": "vite dev",
     "ui:build": "cross-env NODE_ENV=production vite build",
-    "dev:server": "tsc -p ./tsconfig.server.json; node ./dist-server/server.js",
+    "dev:server": "pnpm tsx --tsconfig ./tsconfig.server.json --watch ./sync-server/server.ts",
     "prod:server": "tsc -p ./tsconfig.server.json; NODE_ENV=production node ./dist-server/server.js",
     "build:server": "tsc -p ./tsconfig.server.json",
     "release": "direnv reload && yarn version && ./scripts/release.sh",
@@ -40,6 +40,7 @@
     "svelte-preprocess": "~4.10.7",
     "tailwindcss": "^3.1.5",
     "tslib": "~2.4.1",
+    "tsx": "4.6.2",
     "typescript": "^5.0.2",
     "vite": "^4.3.5",
     "vitest": "~0.31.0"
