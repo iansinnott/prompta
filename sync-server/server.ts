@@ -21,6 +21,12 @@ const envToLogger: Record<string, any> = {
 // Create our Fastify server
 const app = Fastify({
   logger: envToLogger[process.env.NODE_ENV as string] ?? true,
+
+  // Body limit is up from the default value because I ran into an issue trying
+  // to sync where my full db was ~4mb. What we really should do here is either
+  // use a different sync strategy, such as websockets, or make sure the body is
+  // sent in smaller chunks.
+  bodyLimit: 10 * 1024 * 1024, // 10mb
 });
 
 // Add a parser to handle binary data sent by the client
