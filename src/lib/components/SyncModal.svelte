@@ -15,7 +15,6 @@
     serverConfig.init();
   });
 
-  $: console.log($serverConfig);
   $: isConnectionActive = $syncStore.connection !== "";
 </script>
 
@@ -45,8 +44,9 @@
       if ($syncStore.connection) {
         syncStore.disconnect();
       } else {
-        console.log("Connecting to", $syncStore.connection);
-        syncStore.connectTo($syncStore.connection);
+        const lastSyncChain = localStorage.getItem("lastSyncChain") || $openAiConfig.siteId;
+        console.log("Connecting to", lastSyncChain);
+        syncStore.connectTo(lastSyncChain, { autoSync: true });
       }
     }}
     class={classNames("p-4 rounded-lg border border-zinc-300 w-full", {
@@ -63,11 +63,12 @@
   <hr class="my-4 border-white/20" />
 
   <h2 class="text-sm uppercase font-semibold">
-    Connection: <span
+    Connection:
+    <span
       class={classNames({
         "text-zinc-300": !$syncStore.error && !isConnectionActive,
         "text-teal-300": !$syncStore.error && isConnectionActive,
-        "text-red-400 bg-black px-2 py-1": $syncStore.error,
+        "text-red-400 bg-black px-2 py-1": Boolean($syncStore.error),
       })}
       >{$syncStore.error && isConnectionActive
         ? $syncStore.error.message
@@ -117,7 +118,7 @@
             console.warn("No sync string");
             return;
           }
-          syncStore.connectTo(syncString);
+          syncStore.connectTo(syncString, { autoSync: true });
         }}
       >
         <div

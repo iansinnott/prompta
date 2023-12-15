@@ -89,7 +89,7 @@ export const openAiConfig = (() => {
     // NOTE: since these are not infact OpenAI options some separation might be less prone to confusion.
     replicationHost: "",
     siteId: "",
-    lastSyncChain: localStorage.getItem("lastSyncChain") || "",
+    lastSyncChain: "",
   };
 
   const { subscribe, set, update } = writable<OpenAiAppConfig>(defaultConfig);
@@ -123,10 +123,8 @@ export const openAiConfig = (() => {
         config = JSON.parse(s) as OpenAiAppConfig;
       }
 
-      const urlParams = new URLSearchParams(location.search);
-      const lastSyncChain = urlParams.get("syncChain") || config.lastSyncChain;
       const siteId = await DatabaseMeta.getSiteId();
-      set({ ...config, siteId, lastSyncChain: lastSyncChain || siteId });
+      set({ ...config, siteId });
     },
   };
 })();
@@ -817,19 +815,8 @@ export const syncStore = (() => {
 
   let syncAdapter: Syncer | null = null;
 
-  const dispose = () => {
-    const lastSyncChain = get(openAiConfig).lastSyncChain;
-
-    if (lastSyncChain) {
-      localStorage.setItem("lastSyncChain", lastSyncChain);
-    }
-
-    // lastSyncChain is used for reconnecting. We only want to clear it if the
-    // user disconnected. However, i think this function is called during
-    // cleanup regardless of whether or not the user stored a sync code.
-    if (!syncAdapter) {
-      openAiConfig.update((x) => ({ ...x, lastSyncChain: "" }));
-    }
+  const disconnect = () => {
+    openAiConfig.update((x) => ({ ...x, lastSyncChain: "" }));
 
     console.log("Sync disconnect");
     update((x) => ({ ...x, connection: "" }));
@@ -864,30 +851,30 @@ export const syncStore = (() => {
   };
 
   const healthcheck = async () => {
-    if (!get(store).connection) {
-      console.log("No connection enabled. Ignoring sync.");
-      return false;
-    }
-
-    if (!syncAdapter || !get(store).connection) {
-      return false;
-    }
-
     const endpoint = get(serverConfig).endpoint;
     const u = new URL("/health", endpoint);
     const res = await fetch(u).then((x) => (x.ok ? x.json() : Promise.reject(x)));
 
-    return res.status === "ok" && res.n === 47;
+    if (res.status === "ok" && res.n === 47) {
+      return {
+        ok: true,
+      };
+    } else {
+      return {
+        ok: false,
+        detail: "Server responded but did not pass healthcheck",
+      };
+    }
   };
 
   const sync = async (arg?: Parameters<Syncer["pullChanges"]>[number]) => {
-    update((x) => ({ ...x, status: "syncing", error: null }));
     let pulled = 0;
     let pushed = 0;
 
     try {
-      const healthy = await healthcheck();
+      const { ok: healthy, detail } = await healthcheck();
       if (!healthy) {
+        console.error("Server is not healthy", detail);
         update((x) => ({
           ...x,
           status: "error",
@@ -900,7 +887,6 @@ export const syncStore = (() => {
       } else {
         pulled = (await pullChanges(arg)) || 0;
         pushed = (await pushChanges(arg)) || 0;
-        update((x) => ({ ...x, error: null, status: "idle" }));
       }
     } catch (error) {
       update((x) => ({ ...x, status: "error", error }));
@@ -929,13 +915,9 @@ export const syncStore = (() => {
     set,
 
     /**
-     * Disconnect from the current chain and dispose of the sync instance. Should
-     * only be called if there is no intent to use sync anymore this session, i.g.
-     * when the browser is about to close
+     * Disconnect from the current chain and dispose of the sync instance.
      */
-    dispose,
-    disconnect: dispose, // An alias...
-    destroy: dispose, // An alias...
+    disconnect, // An alias...
 
     pullChanges,
     pushChanges,
@@ -962,10 +944,14 @@ export const syncStore = (() => {
       // Make sure endpoint is up to date
       await serverConfig.init();
 
-      console.log("SFDDS");
+      console.log("ConnectTo", s, "retries", retries, "timeout", timeout, "autoSync", autoSync);
       const healthy = await healthcheck();
       if (!healthy && get(store).connection) {
-        update((x) => ({ ...x, error: { message: "Could not connect" }, status: "error" }));
+        update((x) => ({
+          ...x,
+          error: { message: "Could not connect", detail: "Healthcheck failed" },
+          status: "error",
+        }));
         return;
       }
 
@@ -995,7 +981,11 @@ export const syncStore = (() => {
         localStorage.setItem("lastSyncChain", s);
         update((x) => ({ ...x, connection: s, error: null }));
         if (autoSync) {
+          update((x) => ({ ...x, status: "syncing" }));
           await sync({ suppressNotification: false });
+          update((x) => ({ ...x, status: "idle" }));
+        } else {
+          update((x) => ({ ...x, status: "idle" }));
         }
       } else if (retries > 0) {
         console.warn(`Sync service not initialized. Initializing and trying again...`);

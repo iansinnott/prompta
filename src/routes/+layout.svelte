@@ -66,6 +66,7 @@
     console.debug(`App initialized. siteId=${siteId}`);
 
     const lastSyncChain = $openAiConfig.lastSyncChain;
+
     if (lastSyncChain) {
       console.debug(`Connecting to sync chain: ${lastSyncChain}`);
 
@@ -147,7 +148,9 @@
   $: isConnectionActive = $syncStore.connection !== "";
 
   const handleSync = debounce(() => {
-    syncStore.sync();
+    if ($syncStore.connection) {
+      syncStore.sync();
+    }
   }, 100);
 </script>
 
