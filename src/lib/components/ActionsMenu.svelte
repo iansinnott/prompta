@@ -29,6 +29,7 @@
   import { isMobile } from "$lib/utils";
   import classNames from "classnames";
   import IconTrash from "./IconTrash.svelte";
+  import { toast } from "$lib/toast";
   let _class: string = "";
   export { _class as class };
 
@@ -119,8 +120,20 @@
     {
       name: "Attempt Restore DB",
       icon: IconTerminalPrompt,
-      execute: () => {
-        reinstateLegacyData();
+      execute: async () => {
+        try {
+          await reinstateLegacyData();
+          toast({
+            type: "success",
+            title: "Database restored",
+          });
+        } catch (error) {
+          toast({
+            type: "error",
+            title: "Error restoring database",
+            message: error.message,
+          });
+        }
       },
     },
     {

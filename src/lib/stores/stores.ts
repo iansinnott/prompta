@@ -794,6 +794,7 @@ export const syncStore = (() => {
     established: string[];
     showSyncModal: boolean;
     connection: string;
+    status: "idle" | "syncing" | "error";
     error: null | {
       message: string;
       detail?: string;
@@ -804,6 +805,7 @@ export const syncStore = (() => {
     established: [],
     showSyncModal: false,
     connection: "",
+    status: "idle",
     error: null,
   });
 
@@ -829,7 +831,7 @@ export const syncStore = (() => {
     syncAdapter = null;
   };
 
-  const pushChanges = async () => {
+  const pushChanges = async (arg?: Parameters<Syncer["pushChanges"]>[number]) => {
     if (!get(store).connection) {
       console.log("No connection enabled. Ignoring sync.");
       return;
@@ -839,10 +841,10 @@ export const syncStore = (() => {
       throw new Error("No syncer initialized. Called too early?");
     }
 
-    return syncAdapter.pushChanges();
+    return syncAdapter.pushChanges(arg);
   };
 
-  const pullChanges = async () => {
+  const pullChanges = async (arg?: Parameters<Syncer["pullChanges"]>[number]) => {
     if (!get(store).connection) {
       console.log("No connection enabled. Ignoring sync.");
       return;
@@ -852,7 +854,7 @@ export const syncStore = (() => {
       throw new Error("No syncer initialized. Called too early?");
     }
 
-    return syncAdapter.pullChanges();
+    return syncAdapter.pullChanges(arg);
   };
 
   const healthcheck = async () => {
@@ -872,22 +874,30 @@ export const syncStore = (() => {
     return res.status === "ok" && res.n === 47;
   };
 
-  const sync = async () => {
-    const pulled = await pullChanges();
-    const pushed = await pushChanges();
-    const healthy = await healthcheck();
+  const sync = async (arg?: Parameters<Syncer["pullChanges"]>[number]) => {
+    update((x) => ({ ...x, status: "syncing", error: null }));
+    let pulled = 0;
+    let pushed = 0;
 
-    if (!healthy) {
-      update((x) => ({
-        ...x,
-        error: {
-          message: "Server is not healthy",
-          detail:
-            "Healthcheck failed. Check the endpoint and make sure that servier is up and running.",
-        },
-      }));
-    } else {
-      update((x) => ({ ...x, error: null }));
+    try {
+      const healthy = await healthcheck();
+      if (!healthy) {
+        update((x) => ({
+          ...x,
+          status: "error",
+          error: {
+            message: "Server is not healthy",
+            detail:
+              "Healthcheck failed. Check the endpoint and make sure that servier is up and running.",
+          },
+        }));
+      } else {
+        pulled = (await pullChanges(arg)) || 0;
+        pushed = (await pushChanges(arg)) || 0;
+        update((x) => ({ ...x, error: null, status: "idle" }));
+      }
+    } catch (error) {
+      update((x) => ({ ...x, status: "error", error }));
     }
 
     return { pulled, pushed };
@@ -965,13 +975,18 @@ export const syncStore = (() => {
       console.debug("register schema ::", schema_name, result);
 
       const syncEndpoint = new URL("/changes", get(serverConfig).endpoint).href;
-      syncAdapter = await createSyncer(_db, syncEndpoint, s);
+      syncAdapter = await createSyncer({
+        db: _db,
+        endpoint: syncEndpoint,
+        room: s,
+        notify: toast,
+      });
 
       if (syncAdapter) {
         openAiConfig.update((x) => ({ ...x, lastSyncChain: s }));
         update((x) => ({ ...x, connection: s, error: null }));
         if (autoSync) {
-          await sync();
+          await sync({ suppressNotification: false });
         }
       } else if (retries > 0) {
         console.warn(`Sync service not initialized. Initializing and trying again...`);

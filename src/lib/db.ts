@@ -153,12 +153,10 @@ export const reinstateLegacyData = async (
 
   if (!legacyDbName) {
     throw new Error("No legacy db found");
-    return;
   }
 
   if (!_sqlite) {
     throw new Error("No sqlite instance found");
-    return;
   }
 
   let legacyDb;

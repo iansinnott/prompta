@@ -1,6 +1,7 @@
 import { type DBAsync, type StmtAsync, firstPick } from "@vlcn.io/xplat-api";
 import { encode, decode, tags, bytesToHex } from "@vlcn.io/ws-common";
 import { dev } from "$app/environment";
+import type { toast } from "$lib/toast";
 
 type Args = Readonly<{
   db: DBAsync;
@@ -11,6 +12,7 @@ type Args = Readonly<{
   pullChangesetStmt: StmtAsync;
   applyChangesetStmt: StmtAsync;
   siteId: Uint8Array;
+  notify?: typeof toast;
 }>;
 
 export class Syncer {
@@ -32,7 +34,7 @@ export class Syncer {
     localStorage.removeItem(this.#storageKey);
   }
 
-  async pushChanges() {
+  async pushChanges({ suppressNotification = true } = {}) {
     // track what we last sent to the server so we only send the diff.
     const lastSentVersion = BigInt(localStorage.getItem(this.#storageKey) ?? "0");
 
@@ -53,6 +55,14 @@ export class Syncer {
     });
 
     console.log(`Sending ${changes.length} changes since ${lastSentVersion}`);
+
+    if (changes.length && !suppressNotification) {
+      this.#args.notify?.({
+        title: "Syncing",
+        message: `Sending ${changes.length} changes since ${lastSentVersion}`,
+        type: "info",
+      });
+    }
 
     const response = await fetch(this.#syncEndpoint, {
       method: "POST",
@@ -76,7 +86,7 @@ export class Syncer {
     return changes.length;
   }
 
-  async pullChanges() {
+  async pullChanges({ suppressNotification = true } = {}) {
     const lastSeenVersion = BigInt(
       localStorage.getItem(
         `${this.#args.db.siteid}-last-seen-from-${this.#args.endpoint}-${this.#args.room}`
@@ -99,6 +109,14 @@ export class Syncer {
     if (msg.changes.length == 0) {
       console.log("No changes to apply");
       return;
+    }
+
+    if (msg.changes.length && !suppressNotification) {
+      this.#args.notify?.({
+        title: "Syncing",
+        message: `Applying ${msg.changes.length} changes since ${lastSeenVersion}`,
+        type: "info",
+      });
     }
 
     await this.#args.db.tx(async (tx) => {
@@ -135,7 +153,17 @@ export class Syncer {
   }
 }
 
-export async function createSyncer(db: DBAsync, endpoint: string, room: string) {
+export async function createSyncer({
+  db,
+  endpoint,
+  room,
+  notify,
+}: {
+  db: DBAsync;
+  endpoint: string;
+  room: string;
+  notify?: typeof toast;
+}) {
   const schemaName = firstPick<string>(
     await db.execA<[string]>(`SELECT value FROM crsql_master WHERE key = 'schema_name'`)
   );
@@ -180,6 +208,7 @@ export async function createSyncer(db: DBAsync, endpoint: string, room: string) 
     pullChangesetStmt,
     applyChangesetStmt,
     siteId,
+    notify,
   });
 }
 

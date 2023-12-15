@@ -189,7 +189,7 @@
         <button
           style="animation-direction: reverse;"
           class={classNames("text-white/70 hover:text-white", {
-            "animate-spin": false,
+            "animate-spin": $syncStore.status === "syncing",
           })}
           on:click={() => {
             $syncStore.showSyncModal = !$syncStore.showSyncModal;
@@ -201,6 +201,7 @@
               "text-white": !$syncStore.error && !isConnectionActive,
               "text-teal-400": !$syncStore.error && isConnectionActive,
               "text-red-500": $syncStore.error,
+              "text-yellow-500 animate-pulse": $syncStore.status === "syncing",
             })}
           />
         </button>
