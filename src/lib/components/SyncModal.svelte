@@ -45,13 +45,19 @@
       if ($syncStore.connection) {
         syncStore.disconnect();
       } else {
-        console.log("Connecting to", $syncStore.connection || $openAiConfig.siteId);
-        syncStore.connectTo($syncStore.connection || $openAiConfig.siteId);
+        console.log("Connecting to", $syncStore.connection);
+        syncStore.connectTo($syncStore.connection);
       }
     }}
-    class="p-4 rounded-lg border border-zinc-300 w-full"
+    class={classNames("p-4 rounded-lg border border-zinc-300 w-full", {
+      "pointer-events-none": $syncStore.status === "connecting",
+    })}
   >
-    {$syncStore.connection ? "Disconnect" : "Enable Sync"}
+    {$syncStore.status === "connecting"
+      ? "Connecting"
+      : isConnectionActive
+      ? "Disconnect"
+      : "Enable Sync"}
   </button>
 
   <hr class="my-4 border-white/20" />
@@ -63,7 +69,7 @@
         "text-teal-300": !$syncStore.error && isConnectionActive,
         "text-red-400 bg-black px-2 py-1": $syncStore.error,
       })}
-      >{$syncStore.error
+      >{$syncStore.error && isConnectionActive
         ? $syncStore.error.message
         : isConnectionActive
         ? "Active"

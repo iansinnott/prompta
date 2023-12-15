@@ -89,7 +89,7 @@ export const openAiConfig = (() => {
     // NOTE: since these are not infact OpenAI options some separation might be less prone to confusion.
     replicationHost: "",
     siteId: "",
-    lastSyncChain: "",
+    lastSyncChain: localStorage.getItem("lastSyncChain") || "",
   };
 
   const { subscribe, set, update } = writable<OpenAiAppConfig>(defaultConfig);
@@ -123,10 +123,10 @@ export const openAiConfig = (() => {
         config = JSON.parse(s) as OpenAiAppConfig;
       }
 
-      const siteId = await DatabaseMeta.getSiteId();
       const urlParams = new URLSearchParams(location.search);
-      const syncChain = urlParams.get("syncChain") || config.lastSyncChain;
-      set({ ...config, siteId, lastSyncChain: syncChain });
+      const lastSyncChain = urlParams.get("syncChain") || config.lastSyncChain;
+      const siteId = await DatabaseMeta.getSiteId();
+      set({ ...config, siteId, lastSyncChain: lastSyncChain || siteId });
     },
   };
 })();
@@ -794,7 +794,7 @@ export const syncStore = (() => {
     established: string[];
     showSyncModal: boolean;
     connection: string;
-    status: "idle" | "syncing" | "error";
+    status: "idle" | "connecting" | "syncing" | "error";
     error: null | {
       message: string;
       detail?: string;
@@ -818,6 +818,12 @@ export const syncStore = (() => {
   let syncAdapter: Syncer | null = null;
 
   const dispose = () => {
+    const lastSyncChain = get(openAiConfig).lastSyncChain;
+
+    if (lastSyncChain) {
+      localStorage.setItem("lastSyncChain", lastSyncChain);
+    }
+
     // lastSyncChain is used for reconnecting. We only want to clear it if the
     // user disconnected. However, i think this function is called during
     // cleanup regardless of whether or not the user stored a sync code.
@@ -951,13 +957,15 @@ export const syncStore = (() => {
         throw new Error("No db found");
       }
 
+      update((x) => ({ ...x, status: "connecting", error: null }));
+
       // Make sure endpoint is up to date
       await serverConfig.init();
 
       console.log("SFDDS");
       const healthy = await healthcheck();
       if (!healthy && get(store).connection) {
-        update((x) => ({ ...x, error: { message: "Could not connect" } }));
+        update((x) => ({ ...x, error: { message: "Could not connect" }, status: "error" }));
         return;
       }
 
@@ -984,6 +992,7 @@ export const syncStore = (() => {
 
       if (syncAdapter) {
         openAiConfig.update((x) => ({ ...x, lastSyncChain: s }));
+        localStorage.setItem("lastSyncChain", s);
         update((x) => ({ ...x, connection: s, error: null }));
         if (autoSync) {
           await sync({ suppressNotification: false });
