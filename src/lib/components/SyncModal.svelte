@@ -93,7 +93,7 @@
         <span>
           {$syncStore.connection || "Not connected"}
         </span>
-        <CopyButton text={$openAiConfig.siteId} />
+        <CopyButton text={$syncStore.connection} />
       </div>
     </div>
 
