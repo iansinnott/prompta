@@ -54,6 +54,12 @@
   $: if (!$openAiConfig.baseURL) {
     $openAiConfig.baseURL = "https://api.openai.com/v1/";
   }
+
+  $: {
+    if ($openAiConfig.baseURL || $openAiConfig.apiKey) {
+      updateAvailableModels();
+    }
+  }
 </script>
 
 <!-- Hide on escape -->
