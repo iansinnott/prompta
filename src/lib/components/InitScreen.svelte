@@ -76,7 +76,7 @@
     out:fly={{ duration: 300, delay: 0, y: 50, opacity: 0 }}
     class="mt-8 max-w-[400px] flex flex-col space-y-4"
   >
-    <label for="sk"> OpenAi API Key </label>
+    <label for="sk"> OpenAI API Key </label>
     <div
       class={classNames("rounded p-px gradient-border", {
         error: error,
