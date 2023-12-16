@@ -44,6 +44,10 @@
       loading = false;
     }
   };
+
+  const skipInitScreen = () => {
+    $showInitScreen = false;
+  };
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -117,6 +121,13 @@
       </small>
     </p>
   </form>
+  <div
+    on:click={skipInitScreen}
+    class="fixed top-2 right-2 text-center text-white font-semibold tracking-wide cursor-pointer"
+    title="Skip"
+  >
+    &#10005;
+  </div>
 </div>
 
 <style>
