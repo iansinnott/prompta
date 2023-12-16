@@ -47,7 +47,9 @@
     updateAvailableModels();
   }
 
-  $: hasCustomModel = !$chatModels.some((x) => x.id == $gptProfileStore.model);
+  $: hasCustomModel =
+    $gptProfileStore.model &&
+    !$chatModels.some((x) => x.id == $gptProfileStore.model);
 
   $: if (!$openAiConfig.baseURL) {
     $openAiConfig.baseURL = "https://api.openai.com/v1/";
