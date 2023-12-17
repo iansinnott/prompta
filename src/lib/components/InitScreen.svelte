@@ -120,14 +120,20 @@
         wish to remove it from local storage simply delete it from the settings screen.
       </small>
     </p>
+    <button
+      type="button"
+      data-testid="SkipAPIKeyButton"
+      class="w-full text-center px-2 py-[6px] rounded text-white font-semibold tracking-wide border border-white/30 hover:bg-white/10"
+      on:click={skipInitScreen}
+    >
+      Skip
+    </button>
+    <p class="leading-tight">
+      <small>
+        Skip this step if you want to use local models or use an API other than OpenAI official.
+      </small>
+    </p>
   </form>
-  <div
-    on:click={skipInitScreen}
-    class="fixed top-2 right-2 text-center text-white font-semibold tracking-wide cursor-pointer"
-    title="Skip"
-  >
-    &#10005;
-  </div>
 </div>
 
 <style>
