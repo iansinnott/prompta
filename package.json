@@ -9,6 +9,7 @@
     "build:debug": "tauri build --debug",
     "ui:dev": "vite dev",
     "ui:build": "cross-env NODE_ENV=production vite build",
+    "ui:build-static": "cross-env NODE_ENV=production SVELTE_ADAPTER=static vite build",
     "dev:server": "pnpm tsx --tsconfig ./tsconfig.server.json --watch ./sync-server/server.ts",
     "prod:server": "tsc -p ./tsconfig.server.json; NODE_ENV=production node ./dist-server/server.js",
     "build:server": "tsc -p ./tsconfig.server.json",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.36.1",
+    "@sveltejs/adapter-auto": "2.1.1",
     "@sveltejs/adapter-static": "~2.0.2",
     "@sveltejs/kit": "^1.22.3",
     "@tailwindcss/typography": "0.5.9",

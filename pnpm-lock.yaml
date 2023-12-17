@@ -67,6 +67,9 @@ devDependencies:
   '@playwright/test':
     specifier: ^1.36.1
     version: 1.36.1
+  '@sveltejs/adapter-auto':
+    specifier: 2.1.1
+    version: 2.1.1(@sveltejs/kit@1.22.3)
   '@sveltejs/adapter-static':
     specifier: ~2.0.2
     version: 2.0.2(@sveltejs/kit@1.22.3)
@@ -619,6 +622,15 @@ packages:
 
   /@polka/url@1.0.0-next.21:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
+    dev: true
+
+  /@sveltejs/adapter-auto@2.1.1(@sveltejs/kit@1.22.3):
+    resolution: {integrity: sha512-nzi6x/7/3Axh5VKQ8Eed3pYxastxoa06Y/bFhWb7h3Nu+nGRVxKAy3+hBJgmPCwWScy8n0TsstZjSVKfyrIHkg==}
+    peerDependencies:
+      '@sveltejs/kit': ^1.0.0
+    dependencies:
+      '@sveltejs/kit': 1.22.3(svelte@3.59.1)(vite@4.3.5)
+      import-meta-resolve: 4.0.0
     dev: true
 
   /@sveltejs/adapter-static@2.0.2(@sveltejs/kit@1.22.3):
@@ -1763,6 +1775,10 @@ packages:
     dependencies:
       parent-module: 1.0.1
       resolve-from: 4.0.0
+    dev: true
+
+  /import-meta-resolve@4.0.0:
+    resolution: {integrity: sha512-okYUR7ZQPH+efeuMJGlq4f8ubUgO50kByRPyt/Cy1Io4PSRsPjxME+YlVaCOx+NIToW7hCsZNFJyTPFFKepRSA==}
     dev: true
 
   /inflight@1.0.6:

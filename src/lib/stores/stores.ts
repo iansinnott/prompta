@@ -483,6 +483,8 @@ export const inProgressMessageId = derived(pendingMessageStore, (x) => x?.id);
 const handleSSE = (ev: EventSourceMessage) => {
   const message = ev.data;
 
+  console.debug("[SSE]", message);
+
   if (message === "[DONE]") {
     return; // Stream finished
   }
