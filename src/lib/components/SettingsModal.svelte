@@ -37,7 +37,7 @@
     const openai = getOpenAi();
     const xs = await openai.models.list();
     $chatModels = xs.data
-      .filter((x) => x.id.startsWith("gpt"))
+      .filter((x) => $openAiConfig.baseURL?.startsWith("https://api.openai.com/v1") ? x.id.startsWith("gpt") : true)
       .sort((a, b) => a.id.localeCompare(b.id));
   };
 
@@ -47,10 +47,18 @@
     updateAvailableModels();
   }
 
-  $: hasCustomModel = !$chatModels.some((x) => x.id == $gptProfileStore.model);
+  $: hasCustomModel =
+    $gptProfileStore.model &&
+    !$chatModels.some((x) => x.id == $gptProfileStore.model);
 
   $: if (!$openAiConfig.baseURL) {
     $openAiConfig.baseURL = "https://api.openai.com/v1/";
+  }
+
+  $: {
+    if ($openAiConfig.baseURL || $openAiConfig.apiKey) {
+      updateAvailableModels();
+    }
   }
 </script>
 

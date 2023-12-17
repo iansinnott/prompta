@@ -44,6 +44,10 @@
       loading = false;
     }
   };
+
+  const skipInitScreen = () => {
+    $showInitScreen = false;
+  };
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -72,7 +76,7 @@
     out:fly={{ duration: 300, delay: 0, y: 50, opacity: 0 }}
     class="mt-8 max-w-[400px] flex flex-col space-y-4"
   >
-    <label for="sk"> OpenAi API Key </label>
+    <label for="sk"> OpenAI API Key </label>
     <div
       class={classNames("rounded p-px gradient-border", {
         error: error,
@@ -117,6 +121,13 @@
       </small>
     </p>
   </form>
+  <div
+    on:click={skipInitScreen}
+    class="fixed top-2 right-2 text-center text-white font-semibold tracking-wide cursor-pointer"
+    title="Skip"
+  >
+    &#10005;
+  </div>
 </div>
 
 <style>
