@@ -224,7 +224,7 @@ export const generateThreadTitle = async ({ threadId }: { threadId: string }) =>
   const messageContext = context.map((x) => ({ content: x.content, role: x.role }));
 
   const prompt: OpenAI.Chat.CompletionCreateParamsNonStreaming = {
-    model: get(gptProfileStore)?.model || "gpt-3.5-turbo", // Use custom model if present, else use turbo 3.5
+    model: get(gptProfileStore)?.model || "gpt-3.5-turbo-1106", // Use custom model if present, else use turbo 3.5
     temperature: 0.2, // Playing around with this value the lower value seems to be more accurate?
     messages: [
       ...messageContext,

@@ -15,6 +15,7 @@
   import { mapKeys, toCamelCase } from "$lib/utils";
   import CloseButton from "./CloseButton.svelte";
   import { env } from "$env/dynamic/public";
+  import { toast } from "$lib/toast";
 
   const versionString = env.PUBLIC_VERSION_STRING;
 
@@ -29,23 +30,38 @@
     dbName = getLatestDbName() || "";
   });
 
+  let modelsLoading = false;
+
   const updateAvailableModels = async () => {
     if ($chatModels.length) {
       console.debug("Already have models, but refetching for latest");
     }
 
-    const openai = getOpenAi();
-    const xs = await openai.models.list();
-    let _chatModels = xs.data;
+    modelsLoading = true;
 
-    // For OpenAI API v1, we only want models relevant to chat. i.e. no whisper, embedding models, etc
-    if ($openAiConfig.baseURL?.startsWith("https://api.openai.com/v1")) {
-      _chatModels = _chatModels.filter((x) => x.id.startsWith("gpt"));
+    try {
+      const openai = getOpenAi();
+      const xs = await openai.models.list();
+      let _chatModels = xs.data;
+
+      // For OpenAI API v1, we only want models relevant to chat. i.e. no whisper, embedding models, etc
+      if ($openAiConfig.baseURL?.startsWith("https://api.openai.com/v1")) {
+        _chatModels = _chatModels.filter((x) => x.id.startsWith("gpt"));
+      }
+
+      _chatModels.sort((a, b) => a.id.localeCompare(b.id));
+
+      $chatModels = _chatModels;
+    } catch (error) {
+      console.error("Error fetching models", error);
+      toast({
+        title: "Error fetching models",
+        message: error.message,
+        type: "error",
+      });
+    } finally {
+      modelsLoading = false;
     }
-
-    _chatModels.sort((a, b) => a.id.localeCompare(b.id));
-
-    $chatModels = _chatModels;
   };
 
   let showAdvanced = false;
@@ -112,6 +128,12 @@
             type="password"
             placeholder="sk-abc..."
             bind:value={$openAiConfig.apiKey}
+            on:blur={(e) => {
+              // Assume the API key was changed and refetch models
+              if (e.currentTarget.value) {
+                updateAvailableModels();
+              }
+            }}
           />
           <p class="leading-tight">
             <small>
@@ -139,7 +161,12 @@
         </div>
 
         <label for="a" class="label"> Model: </label>
-        <div class:info={$gptProfileStore.model === "gpt-4"}>
+        <div class="relative">
+          {#if modelsLoading}
+            <div class="absolute bg-gray-600 text-white top-2 inset-x-2 rounded px-2">
+              Loading...
+            </div>
+          {/if}
           <select id="a" class="input rounded w-full" bind:value={$gptProfileStore.model}>
             {#each $chatModels as model}
               <option value={model.id}>{model.id}</option>
