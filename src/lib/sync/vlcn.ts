@@ -178,18 +178,10 @@ export async function createSyncer({
     ) || -1
   );
   const [pullChangesetStmt, applyChangesetStmt] = await Promise.all([
-    // NOTE: commenting this out for now because site_id was not null. Not sure
-    // why it would be. Not sure how it ends up working in the demo.
-    // db.prepare(/*sql*/ `
-    //   SELECT "table", "pk", "cid", "val", "col_version", "db_version", "site_id", "cl", "seq"
-    //   FROM crsql_changes
-    //   WHERE db_version > ? AND site_id IS NULL
-    // `),
-
     db.prepare(/*sql*/ `
       SELECT "table", "pk", "cid", "val", "col_version", "db_version", "site_id", "cl", "seq" 
       FROM crsql_changes 
-      WHERE db_version > ?
+      WHERE db_version > ? AND site_id = crsql_site_id()
     `),
     db.prepare(/*sql*/ `
       INSERT INTO crsql_changes ("table", "pk", "cid", "val", "col_version", "db_version", "site_id", "cl", "seq")
