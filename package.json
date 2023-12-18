@@ -59,14 +59,20 @@
     "@vlcn.io/ws-common": "0.1.2",
     "@vlcn.io/xplat-api": "0.14.1",
     "better-sqlite3": "9.2.2",
+    "bits-ui": "0.11.8",
     "classnames": "2.3.2",
+    "clsx": "2.0.0",
+    "cmdk-sv": "0.0.12",
     "fastify": "4.24.3",
+    "lucide-svelte": "0.298.0",
     "marked": "^4.0.0",
     "nanoid": "4.0.2",
     "openai": "^4.0.1",
     "prism-svelte": "0.5.0",
     "prismjs": "1.29.0",
     "svelte-markdown": "0.2.3",
+    "tailwind-merge": "2.1.0",
+    "tailwind-variants": "0.1.19",
     "uuid": "9.0.0"
   }
 }
