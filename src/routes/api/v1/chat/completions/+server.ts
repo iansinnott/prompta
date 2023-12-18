@@ -12,11 +12,13 @@ const isModelWhitelisted = (modelName: string) => {
   const freeModels = new Set([
     // This are roughly ordered by my subjective interpretation of how good they are
     "nousresearch/nous-capybara-7b",
-    "gryphe/mythomist-7b",
     "huggingfaceh4/zephyr-7b-beta",
-    "openchat/openchat-7b",
+    "gryphe/mythomist-7b",
     "rwkv/rwkv-5-world-3b",
     "recursal/rwkv-5-3b-ai-town",
+    "openchat/openchat-7b",
+
+    // I've separated out the instruct models, although they are good
     "mistralai/mistral-7b-instruct",
     "mistralai/mixtral-8x7b-instruct",
   ]);
