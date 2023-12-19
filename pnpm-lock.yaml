@@ -60,8 +60,8 @@ dependencies:
     specifier: 1.29.0
     version: 1.29.0
   svelte-markdown:
-    specifier: 0.2.3
-    version: 0.2.3(svelte@4.0.0)
+    specifier: 0.4.0
+    version: 0.4.0(svelte@4.0.0)
   uuid:
     specifier: 9.0.0
     version: 9.0.0
@@ -859,6 +859,11 @@ packages:
 
   /@types/marked@4.0.8:
     resolution: {integrity: sha512-HVNzMT5QlWCOdeuBsgXP8EZzKUf0+AXzN+sLmjvaB3ZlLqO+e4u0uXrdw9ub69wBKFs+c6/pA4r9sy6cCDvImw==}
+    dev: true
+
+  /@types/marked@5.0.2:
+    resolution: {integrity: sha512-OucS4KMHhFzhz27KxmWg7J+kIYqyqoW5kdIEI319hqARQQUTqhao3M/F+uFnDXD0Rg72iDDZxZNxq5gvctmLlg==}
+    dev: false
 
   /@types/node-fetch@2.6.4:
     resolution: {integrity: sha512-1ZX9fcN4Rvkvgv4E6PAY5WXUFWFcRWxZa3EW83UjycOB9ljJCedb2CupIP4RZMEwF/M3eTcCihbBRgwtGbg5Rg==}
@@ -2002,6 +2007,12 @@ packages:
     hasBin: true
     dev: false
 
+  /marked@5.1.2:
+    resolution: {integrity: sha512-ahRPGXJpjMjwSOlBoTMZAK7ATXkli5qCPxZ21TG44rx1KEo44bii4ekgTDQPNRQ4Kh7JMb9Ub1PVk1NxRSsorg==}
+    engines: {node: '>= 16'}
+    hasBin: true
+    dev: false
+
   /md5-hex@3.0.1:
     resolution: {integrity: sha512-BUiRtTtV39LIJwinWBjqVsU9xhdnz7/i889V859IBFpuqGAj6LuOvHv5XLbgZ2R7ptJoJaEcxkv88/h25T7Ciw==}
     engines: {node: '>=8'}
@@ -2845,13 +2856,13 @@ packages:
       svelte: 4.0.0
     dev: true
 
-  /svelte-markdown@0.2.3(svelte@4.0.0):
-    resolution: {integrity: sha512-2h680NzTXnAD0CXhxe3GeHl6W+ayG4iKQRl+BIDRw+R0mUE0OiNxP1Vt8Rn+aWevB/LBiBIPCAwvL+0BkG057A==}
+  /svelte-markdown@0.4.0(svelte@4.0.0):
+    resolution: {integrity: sha512-d8xYJoPhhiLn/tFrO54V5p22q2+I7It8w3CpTv+O+h99LlgehxK9XwdISVBl2aNcLbLX128Nz/vu7GScWhVZjw==}
     peerDependencies:
-      svelte: ^3.0.0
+      svelte: ^4.0.0
     dependencies:
-      '@types/marked': 4.0.8
-      marked: 4.3.0
+      '@types/marked': 5.0.2
+      marked: 5.1.2
       svelte: 4.0.0
     dev: false
 
