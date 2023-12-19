@@ -11,6 +11,8 @@
   import { onMount } from "svelte";
   import ChatMessageControls from "./ChatMessageControls.svelte";
   import { autosize } from "$lib/utils";
+  import { fly, slide } from "svelte/transition";
+  import { toast } from "$lib/toast";
   let _class: string = "";
   export { _class as class };
   export let item: ChatMessage;
@@ -25,6 +27,8 @@
   $: inProgress = $inProgressMessageId === item.id;
   $: isEditing = $currentlyEditingMessage?.id === item.id;
 
+  let showControls = false;
+
   $: if (isEditing && editableTextArea) {
     editableTextArea.select();
   }
@@ -35,12 +39,18 @@
   // });
 </script>
 
+<!-- svelte-ignore a11y-no-static-element-interactions -->
 <div
   class={classNames("ChatMessage pr-2 group", _class)}
   data-message-id={item.id}
   data-role={item.role}
+  on:click={() => {
+    if (!isEditing && !inProgress) {
+      showControls = !showControls;
+    }
+  }}
 >
-  <div class="Avatar text-zinc-400 pl-2 flex flex-col items-center space-y-4 relative top-1">
+  <div class="Avatar text-zinc-400 pl-2 flex flex-col items-center space-y-4 relative top-[2px]">
     {#if item.role === "user"}
       <IconUserAvatar class="w-5 h-5 sm:w-6 sm:h-6 opacity-60" />
     {:else if item.role === "assistant"}
@@ -67,7 +77,7 @@
     class={classNames("Content prose max-w-4xl prose-invert group transition-opacity", {
       // Something about the grid styling and the child styling. We want overflow hidden horizontally but not vertically.
       "overflow-hidden": item.content.length > 20,
-      "opacity-60": item.role === "user" && !isEditing,
+      "opacity-60": item.role === "user" && !isEditing && !showControls,
       "has-cursor": $inProgressMessageId === item.id,
       // "has-cursor": true, // For debugging
     })}
@@ -77,6 +87,15 @@
         use:autosize
         bind:this={editableTextArea}
         bind:value={$currentlyEditingMessage.content}
+        on:keydown={(e) => {
+          // send on enter
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            currentlyEditingMessage.commitUpdate();
+          } else if (e.key === "Escape" && isEditing) {
+            $currentlyEditingMessage = null;
+          }
+        }}
         rows="1"
         class="w-full bg-transparent outline-none resize-none mb-3"
       />
@@ -87,8 +106,15 @@
       <SvelteMarkdown source={item.content || NBSP} renderers={{ code: CodeBlock }} />
     {/if}
 
-    {#if !inProgress && item.role !== "comment"}
-      <ChatMessageControls {item} class={classNames("-mt-3")} />
+    <!-- All this markup to accomplish a smooth animation -->
+    {#if !inProgress}
+      <div class="-mt-3">
+        {#if showControls}
+          <div transition:slide={{ duration: 150 }}>
+            <ChatMessageControls {item} />
+          </div>
+        {/if}
+      </div>
     {/if}
   </div>
 </div>
@@ -104,7 +130,6 @@
   }
   .ChatMessage[data-role="comment"] {
     @apply bg-teal-800/20 border-y border-teal-300/50 -mx-2 px-2 py-2;
-    @apply mb-4;
   }
   .ChatMessage[data-role="comment"] .Avatar {
     @apply text-teal-300/30;
@@ -125,13 +150,13 @@
   /* @note blockquote is an odd one, but it's because the blockquote has a p tag inside it */
   :global .has-cursor > *:last-child:not(ul):not(ol):not(blockquote):not(.CodeBlock)::after,
   :global .has-cursor > *:not(p):last-child > :last-child::after {
-    @apply font-mono;
+    @apply font-mono relative top-0.5;
     content: "";
     display: inline-block;
     background-color: #18d4f1;
     width: 3px;
     border-radius: 3px;
-    height: 1em;
+    height: 1.2em;
     transform: scaleY(1.2);
     transition: opacity 0.3s;
     /* box-shadow: 0 0 10px #18d4f1, 0 0 20px #18d4f1, 0 0 30px #18d4f1, 0 0 40px #18d4f1; */

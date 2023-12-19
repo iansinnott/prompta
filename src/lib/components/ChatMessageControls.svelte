@@ -16,11 +16,7 @@
   {#if item.cancelled}
     <div class="text-zinc-400 text-xs">Cancelled</div>
   {/if}
-  <div
-    class={classNames("flex space-x-3 group-hover:opacity-100", {
-      "opacity-0": !isEditing, // Do not hide the controls when editing
-    })}
-  >
+  <div class={classNames("flex space-x-3", {})}>
     <!-- Although this is not a big deal, i want to refactor this so that the item
          content isn't copied over to the copy button until clicked -->
     <CopyButton
@@ -53,20 +49,8 @@
 
     {#if isEditing}
       <button
-        on:click={async () => {
-          if (!$currentlyEditingMessage) {
-            console.warn("No message to update");
-            return;
-          }
-
-          await currentChatThread.updateMessage(item.id, {
-            content: $currentlyEditingMessage.content,
-          });
-          $currentlyEditingMessage = null;
-          toast({
-            type: "success",
-            title: "Message updated",
-          });
+        on:click={() => {
+          currentlyEditingMessage.commitUpdate();
         }}
       >
         <Check class="w-[18px] h-[18px] text-green-400" />

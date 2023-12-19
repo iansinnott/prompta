@@ -480,10 +480,38 @@ const handleSSE = (ev: EventSourceMessage) => {
   }
 };
 
-export const currentlyEditingMessage = writable<{
-  id: string;
-  content: string;
-} | null>(null);
+export const currentlyEditingMessage = (() => {
+  const store = writable<{
+    id: string;
+    content: string;
+  } | null>(null);
+
+  const { subscribe, set, update } = store;
+
+  return {
+    subscribe,
+    set,
+    update,
+
+    /**
+     * Commit pendindg changes to the message. This will update the message in the database.
+     */
+    commitUpdate: async () => {
+      const item = get(store);
+
+      if (!item) {
+        console.warn("No item found. Cannot commit update");
+        return;
+      }
+
+      await currentChatThread.updateMessage(item.id, {
+        content: item.content,
+      });
+      set(null);
+      toast({ type: "success", title: "Message updated" });
+    },
+  };
+})();
 
 export const messageText = writable("");
 
