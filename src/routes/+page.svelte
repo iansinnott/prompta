@@ -8,6 +8,7 @@
     syncStore,
     devStore,
     showInitScreen,
+    messageText,
   } from "../lib/stores/stores";
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
@@ -26,7 +27,6 @@
   import SyncModal from "$lib/components/SyncModal.svelte";
 
   const sys = getSystem();
-  let message = "";
   let textarea: HTMLTextAreaElement | null = null;
 
   // NOTE: This is exclusively for mobile. It seems there is no good way to
@@ -104,20 +104,11 @@
       return;
     }
 
-    if (!$openAiConfig.apiKey) {
-      await sys.alert(`No API key found. Please enter one in the settings.`);
-      $showSettings = true;
-      return;
-    }
-
     s = s.trim();
 
     if (!s) {
       console.debug("No string. Not sending.");
-      toast({
-        type: "error",
-        title: "No message",
-      });
+      toast({ type: "error", title: "No message" });
       return;
     }
 
@@ -142,7 +133,6 @@
       });
     }
 
-    message = "";
     await tick();
     resizeChatInput();
   }
@@ -154,14 +144,9 @@
     });
   }
 
-  $: isCommand = message.startsWith("/");
+  $: isCommand = $messageText.startsWith("/");
 
   $: isConnectionActive = $syncStore.connection !== "";
-
-  $: joinSyncUrl = `https://chat.prompta.dev?${new URLSearchParams().set(
-    "syncChain",
-    $openAiConfig.siteId
-  )}`;
 
   $: if ($syncStore.error) console.log("sync store ERR", $syncStore.error);
 
@@ -250,7 +235,7 @@
     <form
       on:submit={(e) => {
         e.preventDefault();
-        handleSubmit(message);
+        handleSubmit($messageText);
       }}
       class={classNames("flex items-end rounded-lg border border-zinc-700", {
         "shadow-[0_0_0_2px_#5baba4] bg-teal-800/20 text-teal-200": isCommand,
@@ -264,11 +249,11 @@
           // send on enter
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            handleSubmit(message);
+            handleSubmit($messageText);
           }
         }}
         bind:this={textarea}
-        bind:value={message}
+        bind:value={$messageText}
         on:input={(e) => {
           resizeChatInput();
         }}

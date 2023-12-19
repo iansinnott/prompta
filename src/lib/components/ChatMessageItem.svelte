@@ -52,8 +52,8 @@
   <div
     class={classNames("Content prose max-w-4xl prose-invert", {
       "opacity-60": item.role === "user",
-      "has-cursor": $inProgressMessageId === item.id,
-      // "has-cursor": true, // For debugging
+      // "has-cursor": $inProgressMessageId === item.id,
+      "has-cursor": true, // For debugging
     })}
   >
     {#if item.role === "user"}
@@ -120,7 +120,9 @@
     transform: scaleY(1.2);
     transition: opacity 0.3s;
     /* box-shadow: 0 0 10px #18d4f1, 0 0 20px #18d4f1, 0 0 30px #18d4f1, 0 0 40px #18d4f1; */
-    box-shadow: 0 0 8px #18d4f1, 0 0 20px #18d4f1;
+    box-shadow:
+      0 0 8px #18d4f1,
+      0 0 20px #18d4f1;
     animation: blinking 1.1s infinite;
   }
   @keyframes blinking {

@@ -506,6 +506,8 @@ const handleSSE = (ev: EventSourceMessage) => {
   }
 };
 
+export const messageText = writable("");
+
 export const currentChatThread = (() => {
   const invalidationToken = writable(Date.now());
   let lastThreadId: string | undefined = undefined;
@@ -727,21 +729,22 @@ export const currentChatThread = (() => {
     },
 
     regenerateResponse: async () => {
-      const lastMessage = get(currentChatThread).messages.at(-1);
+      const messages = get(currentChatThread).messages;
+      const lastMessage = messages.at(-1);
 
       if (!lastMessage) {
         throw new Error("No last message found. Empty thread?");
       }
 
-      if (lastMessage.role !== "assistant") {
-        throw new Error("Last message was not from the assistant");
+      // Only delete the message if it's from the bot. When it's from the user
+      // it usually means that there was an error in completion.
+      if (lastMessage.role === "assistant") {
+        await ChatMessage.delete({
+          where: {
+            id: lastMessage.id,
+          },
+        });
       }
-
-      await ChatMessage.delete({
-        where: {
-          id: lastMessage.id,
-        },
-      });
 
       promptGpt({ threadId: lastMessage.threadId }).catch((err) => {
         console.error("[gpt]", err);
@@ -775,10 +778,14 @@ export const currentChatThread = (() => {
         threadList.invalidate();
       }
 
-      await ChatMessage.create(msg);
+      const newMessage = await ChatMessage.create(msg);
 
+      const backupText = get(messageText);
+      messageText.set("");
       promptGpt({ threadId: msg.threadId as string }).catch((err) => {
         console.error("[gpt]", err);
+        messageText.set(backupText); // Restore backup text
+        return ChatMessage.delete({ where: { id: newMessage.id } }); // Delete the message
       });
     },
   };

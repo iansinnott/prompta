@@ -5,8 +5,7 @@
   import ChatMessageItem from "./ChatMessageItem.svelte";
   import IconBrainAiHybrid from "./IconBrainAiHybrid.svelte";
   import { onMount, afterUpdate, tick } from "svelte";
-  import { debounce, throttle } from "$lib/utils";
-  import { dev } from "$app/environment";
+  import { throttle } from "$lib/utils";
 
   let _class: string = "";
   export { _class as class };
