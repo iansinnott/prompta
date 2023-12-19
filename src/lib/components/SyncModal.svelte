@@ -16,6 +16,7 @@
   });
 
   $: isConnectionActive = $syncStore.connection !== "";
+  $: isConnecting = $syncStore.status === "connecting";
 </script>
 
 <div
@@ -41,7 +42,9 @@
   </div>
   <button
     on:click={() => {
-      if ($syncStore.connection) {
+      // In the case of 'connecting', we want to cancel the connection. This
+      // avoids the UI becoming unusable when there is no internet connection.
+      if ($syncStore.connection || isConnecting) {
         syncStore.disconnect();
       } else {
         const lastSyncChain = localStorage.getItem("lastSyncChain") || $openAiConfig.siteId;
@@ -49,15 +52,15 @@
         syncStore.connectTo(lastSyncChain, { autoSync: true });
       }
     }}
-    class={classNames("p-4 rounded-lg border border-zinc-300 w-full", {
-      "pointer-events-none": $syncStore.status === "connecting",
-    })}
+    class={classNames("p-4 rounded-lg border border-zinc-300 w-full", {})}
   >
-    {$syncStore.status === "connecting"
-      ? "Connecting"
-      : isConnectionActive
-      ? "Disconnect"
-      : "Enable Sync"}
+    {#if $syncStore.status === "connecting"}
+      Cancel Connection
+    {:else if isConnectionActive}
+      Disconnect
+    {:else}
+      Enable Sync
+    {/if}
   </button>
 
   <hr class="my-4 border-white/20" />
@@ -66,16 +69,24 @@
     Connection:
     <span
       class={classNames({
-        "text-zinc-300": !$syncStore.error && !isConnectionActive,
-        "text-teal-300": !$syncStore.error && isConnectionActive,
-        "text-red-400 bg-black px-2 py-1": Boolean($syncStore.error),
+        "text-zinc-300": !$syncStore.error && !isConnectionActive && !isConnecting,
+        "text-teal-300": !$syncStore.error && isConnectionActive && !isConnecting,
+        "text-red-400 bg-black px-2 py-1": Boolean($syncStore.error) && !isConnecting,
+        "text-transparent bg-gradient-roll bg-gradient-to-br from-yellow-300 to-orange-400 bg-clip-text":
+          isConnecting,
       })}
-      >{$syncStore.error && isConnectionActive
-        ? $syncStore.error.message
-        : isConnectionActive
-        ? "Active"
-        : "Inactive"}</span
     >
+      {#if $syncStore.error && isConnectionActive}
+        {$syncStore.error.message}
+      {:else if isConnecting}
+        Connecting...
+      {:else if isConnectionActive}
+        Active
+      {:else}
+        Inactive
+      {/if}
+    </span>
+
     {#if $syncStore.error?.detail}
       <small class="block text-xs mt-2 bg-zinc-800 px-2 py-1">{$syncStore.error.detail}</small>
     {/if}
@@ -98,7 +109,16 @@
         class="font-mono text-sm p-4 bg-zinc-700 rounded-lg flex justify-between items-center border-2 border-teal-500"
       >
         <span>
-          {$syncStore.connection || "Not connected"}
+          {#if $syncStore.connection}
+            {$syncStore.connection.slice(0, 4) +
+              $syncStore.connection
+                .slice(4)
+                .split("")
+                .map(() => "•")
+                .join("")}
+          {:else}
+            Not connected
+          {/if}
         </span>
         <CopyButton text={$syncStore.connection} />
       </div>
@@ -159,3 +179,19 @@
     </form>
   {/if}
 </div>
+
+<style>
+  @keyframes gradient-roll {
+    0% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: -400% 50%;
+    }
+  }
+
+  .bg-gradient-roll {
+    background-size: 200% 200%;
+    animation: gradient-roll 3s linear infinite;
+  }
+</style>

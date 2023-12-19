@@ -819,7 +819,7 @@ export const syncStore = (() => {
     openAiConfig.update((x) => ({ ...x, lastSyncChain: "" }));
 
     console.log("Sync disconnect");
-    update((x) => ({ ...x, connection: "" }));
+    update((x) => ({ ...x, connection: "", status: "idle", error: null }));
     syncAdapter?.destroy();
     syncAdapter = null;
   };
