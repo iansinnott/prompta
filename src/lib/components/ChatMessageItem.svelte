@@ -7,7 +7,7 @@
   import IconVerticalDots from "./IconVerticalDots.svelte";
   import CodeBlock from "./CodeBlock.svelte";
   import "./markdown.css";
-  import { inProgressMessageId } from "$lib/stores/stores";
+  import { currentlyEditingId, inProgressMessageId } from "$lib/stores/stores";
   import { onMount } from "svelte";
   import ChatMessageControls from "./ChatMessageControls.svelte";
   let _class: string = "";
@@ -15,12 +15,15 @@
   export let item: ChatMessage;
   let viewRaw = false;
 
+  let editableText = item.content;
+
   // Used to give the markdown renderer something to render when there is no
   // content yet. Allows the blinking cursor to appear before tokens have
   // arrived. Serves as as loading state.
   const NBSP = "\u00A0";
 
   $: inProgress = $inProgressMessageId === item.id;
+  $: isEditing = $currentlyEditingId === item.id;
 
   /// For checking perf on these list items
   // onMount(() => {

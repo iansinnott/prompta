@@ -3,9 +3,13 @@
   import CopyButton from "./CopyButton.svelte";
   import type { ChatMessage } from "$lib/db";
   import { ThumbsUp, ThumbsDown, Pencil, Trash } from "lucide-svelte";
+  import { currentChatThread, currentlyEditingId } from "$lib/stores/stores";
+  import { toast } from "$lib/toast";
   let _class: string = "";
   export { _class as class };
   export let item: ChatMessage;
+
+  $: isEditing = $currentlyEditingId === item.id;
 </script>
 
 <div class={classNames("flex space-x-3 items-center", _class)}>
@@ -24,7 +28,7 @@
       type="button"
       class=""
       on:click={() => {
-        console.log("edit");
+        $currentlyEditingId = item.id;
       }}
     >
       <Pencil class="w-[18px] h-[18px] text-white/40 hover:text-white" />
@@ -32,8 +36,12 @@
     <button
       type="button"
       class=""
-      on:click={() => {
-        console.log("remove");
+      on:click={async () => {
+        await currentChatThread.softDeleteMessage({ id: item.id });
+        toast({
+          type: "success",
+          title: "Message deleted",
+        });
       }}
     >
       <Trash class="w-[18px] h-[18px] text-white/40 hover:text-red-500" />

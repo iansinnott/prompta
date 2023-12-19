@@ -480,6 +480,8 @@ const handleSSE = (ev: EventSourceMessage) => {
   }
 };
 
+export const currentlyEditingId = writable<string | null>(null);
+
 export const messageText = writable("");
 
 export const currentChatThread = (() => {
@@ -678,6 +680,12 @@ export const currentChatThread = (() => {
         where: {
           id: threadId,
         },
+      });
+    },
+
+    softDeleteMessage: async ({ id }: { id: string }) => {
+      await ChatMessage.softDelete({
+        where: { id, threadId: get(currentThread).id },
       });
     },
 
