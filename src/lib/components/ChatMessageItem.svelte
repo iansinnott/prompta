@@ -7,15 +7,15 @@
   import IconVerticalDots from "./IconVerticalDots.svelte";
   import CodeBlock from "./CodeBlock.svelte";
   import "./markdown.css";
-  import { currentlyEditingId, inProgressMessageId } from "$lib/stores/stores";
+  import { currentlyEditingMessage, inProgressMessageId } from "$lib/stores/stores";
   import { onMount } from "svelte";
   import ChatMessageControls from "./ChatMessageControls.svelte";
+  import { autosize } from "$lib/utils";
   let _class: string = "";
   export { _class as class };
   export let item: ChatMessage;
-  let viewRaw = false;
 
-  let editableText = item.content;
+  let editableTextArea: HTMLTextAreaElement | null = null;
 
   // Used to give the markdown renderer something to render when there is no
   // content yet. Allows the blinking cursor to appear before tokens have
@@ -23,7 +23,11 @@
   const NBSP = "\u00A0";
 
   $: inProgress = $inProgressMessageId === item.id;
-  $: isEditing = $currentlyEditingId === item.id;
+  $: isEditing = $currentlyEditingMessage?.id === item.id;
+
+  $: if (isEditing && editableTextArea) {
+    editableTextArea.select();
+  }
 
   /// For checking perf on these list items
   // onMount(() => {
@@ -44,7 +48,7 @@
       <div class="sm:group-hover:block hidden absolute -top-[16px]">
         <button
           on:click={(e) => {
-            viewRaw = !viewRaw;
+            console.log("clicked secret button");
           }}
           class="hover:bg-white/20 hover:text-white rounded-full p-[2px]"
         >
@@ -60,27 +64,30 @@
     {/if}
   </div>
   <div
-    class={classNames("Content prose max-w-4xl prose-invert group", {
+    class={classNames("Content prose max-w-4xl prose-invert group transition-opacity", {
       // Something about the grid styling and the child styling. We want overflow hidden horizontally but not vertically.
       "overflow-hidden": item.content.length > 20,
-      "opacity-60": item.role === "user",
+      "opacity-60": item.role === "user" && !isEditing,
       "has-cursor": $inProgressMessageId === item.id,
       // "has-cursor": true, // For debugging
     })}
   >
-    {#if item.role === "user"}
+    {#if isEditing && $currentlyEditingMessage}
+      <textarea
+        use:autosize
+        bind:this={editableTextArea}
+        bind:value={$currentlyEditingMessage.content}
+        rows="1"
+        class="w-full bg-transparent outline-none resize-none mb-3"
+      />
+    {:else if item.role === "user"}
       <!-- User input is not considered markdown, but whitespace should be respected -->
       <p class="whitespace-pre-wrap">{item.content}</p>
     {:else}
-      <!-- Only render markdown for bot responses -->
-      {#if viewRaw}
-        <div class="whitespace-pre-wrap">{item.content}</div>
-      {:else}
-        <SvelteMarkdown source={item.content || NBSP} renderers={{ code: CodeBlock }} />
-      {/if}
+      <SvelteMarkdown source={item.content || NBSP} renderers={{ code: CodeBlock }} />
     {/if}
 
-    {#if !inProgress}
+    {#if !inProgress && item.role !== "comment"}
       <ChatMessageControls {item} class={classNames("-mt-3")} />
     {/if}
   </div>
@@ -97,6 +104,7 @@
   }
   .ChatMessage[data-role="comment"] {
     @apply bg-teal-800/20 border-y border-teal-300/50 -mx-2 px-2 py-2;
+    @apply mb-4;
   }
   .ChatMessage[data-role="comment"] .Avatar {
     @apply text-teal-300/30;

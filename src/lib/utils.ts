@@ -121,3 +121,21 @@ export function wrapError(innerError: Error, newMessage: string): Error {
   wrappedError.stack = `${newMessage}\nCaused by: ${innerError.stack}`;
   return wrappedError;
 }
+
+export const autosize = (node: HTMLElement) => {
+  function resize() {
+    node.style.height = "auto"; // Reset height to recalculate
+    node.style.height = `${node.scrollHeight}px`;
+  }
+
+  node.addEventListener("input", resize);
+
+  // Call resize initially to adjust to initial content
+  resize();
+
+  return {
+    destroy() {
+      node.removeEventListener("input", resize);
+    },
+  };
+};

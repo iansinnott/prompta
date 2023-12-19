@@ -480,7 +480,10 @@ const handleSSE = (ev: EventSourceMessage) => {
   }
 };
 
-export const currentlyEditingId = writable<string | null>(null);
+export const currentlyEditingMessage = writable<{
+  id: string;
+  content: string;
+} | null>(null);
 
 export const messageText = writable("");
 
@@ -680,6 +683,13 @@ export const currentChatThread = (() => {
         where: {
           id: threadId,
         },
+      });
+    },
+
+    updateMessage: async (id: string, msg: Partial<Omit<ChatMessage, "id">>) => {
+      return ChatMessage.update({
+        where: { id },
+        data: msg,
       });
     },
 
