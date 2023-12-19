@@ -107,13 +107,15 @@
     {/if}
 
     <!-- All this markup to accomplish a smooth animation -->
-    {#if !inProgress}
-      <div class="-mt-3">
-        {#if showControls}
-          <div transition:slide={{ duration: 150 }}>
-            <ChatMessageControls {item} />
-          </div>
-        {/if}
+    {#if showControls}
+      <div
+        transition:slide={{ duration: 150 }}
+        class="-mt-3"
+        on:click={(e) => {
+          e.stopPropagation();
+        }}
+      >
+        <ChatMessageControls {item} />
       </div>
     {/if}
   </div>
