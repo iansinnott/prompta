@@ -11,7 +11,7 @@
 </script>
 
 <div
-  transition:fly={{ y: 20, duration: 200 }}
+  transition:fly|global={{ y: 20, duration: 200 }}
   class={classNames(
     "Toast w-full bg-zinc-700 border border-white/10 rounded text-white shadow px-2 py-1 max-w-[320px]",
     props.type,

@@ -95,7 +95,7 @@
   <hr class="my-4 border-white/20" />
 
   {#if !isConnectionActive}
-    <div class="flex flex-col space-y-4" transition:slide|local={{ duration: 150 }}>
+    <div class="flex flex-col space-y-4" transition:slide={{ duration: 150 }}>
       <small>
         Enabling sync allows you to access your chats from multiple devices, and is totally
         optional. Your messages will be synced through a sync server. You can use the default
@@ -103,7 +103,7 @@
       </small>
     </div>
   {:else}
-    <div class="flex flex-col space-y-4" transition:slide|local={{ duration: 150 }}>
+    <div class="flex flex-col space-y-4" transition:slide={{ duration: 150 }}>
       <p>Copy the sync code below to share with your other devices.</p>
       <div
         class="font-mono text-sm p-4 bg-zinc-700 rounded-lg flex justify-between items-center border-2 border-teal-500"
@@ -126,7 +126,7 @@
 
     <hr class="my-4 border-white/20" />
 
-    <div class="flex flex-col space-y-4" transition:slide|local={{ duration: 150 }}>
+    <div class="flex flex-col space-y-4" transition:slide={{ duration: 150 }}>
       <h2 class="mb-4 text-sm uppercase font-semibold">Connect to new sync chain</h2>
       <p>Enter a sync code you copied from another device below to start syncing.</p>
 
@@ -165,7 +165,7 @@
   >
 
   {#if showAdvanced}
-    <form transition:slide|local={{ duration: 150 }} on:submit|preventDefault>
+    <form transition:slide={{ duration: 150 }} on:submit|preventDefault>
       <fieldset>
         <label for="endpoint" class="text-lg">Endpoint</label>
         <p class="mb-2">You can customize this to use your own sync server.</p>

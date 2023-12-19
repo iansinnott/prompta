@@ -310,7 +310,7 @@
   {/if}
   {#if $showInitScreen}
     <div
-      out:fly={{ duration: 200, opacity: 0, delay: 300 }}
+      out:fly|global={{ duration: 200, opacity: 0, delay: 300 }}
       class="fixed inset-0 z-30 bg-zinc-800 rounded-lg"
     >
       <InitScreen />

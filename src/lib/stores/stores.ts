@@ -20,8 +20,6 @@ import { emit } from "$lib/capture";
 import { debounce } from "$lib/utils";
 import { toast } from "$lib/toast";
 import { createSyncer, getDefaultEndpoint, type Syncer } from "$lib/sync/vlcn";
-import { onMount } from "svelte";
-import { debug } from "svelte/internal";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
