@@ -13,6 +13,11 @@
   export let item: ChatMessage;
   let viewRaw = false;
 
+  // Used to give the markdown renderer something to render when there is no
+  // content yet. Allows the blinking cursor to appear before tokens have
+  // arrived. Serves as as loading state.
+  const NBSP = "\u00A0";
+
   $: inProgress = $inProgressMessageId === item.id;
 
   /// For checking perf on these list items
@@ -52,8 +57,8 @@
   <div
     class={classNames("Content prose max-w-4xl prose-invert", {
       "opacity-60": item.role === "user",
-      // "has-cursor": $inProgressMessageId === item.id,
-      "has-cursor": true, // For debugging
+      "has-cursor": $inProgressMessageId === item.id,
+      // "has-cursor": true, // For debugging
     })}
   >
     {#if item.role === "user"}
@@ -67,7 +72,7 @@
       {#if viewRaw}
         <div class="whitespace-pre-wrap">{item.content}</div>
       {:else}
-        <SvelteMarkdown source={item.content} renderers={{ code: CodeBlock }} />
+        <SvelteMarkdown source={item.content || NBSP} renderers={{ code: CodeBlock }} />
       {/if}
       {#if item.cancelled}
         <div class="text-zinc-400 text-xs -mt-2">Cancelled</div>
@@ -78,7 +83,8 @@
 
 <style>
   .Content {
-    overflow: hidden; /* @note This is to prevent markdown content from overlfowing */
+    /* @note This is to prevent markdown content from overlfowing */
+    overflow: hidden;
   }
   /* ChatMessage uses a grid layout, wtih the users avatar 32px squared on the left, and a 1fr content area on the right. only one row for now */
   .ChatMessage {
