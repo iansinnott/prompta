@@ -20,58 +20,10 @@ import { emit } from "$lib/capture";
 import { debounce } from "$lib/utils";
 import { toast } from "$lib/toast";
 import { createSyncer, getDefaultEndpoint, type Syncer } from "$lib/sync/vlcn";
+import { PENDING_THREAD_TITLE, hasThreadTitle, persistentStore } from "./storeUtils";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
-
-const PENDING_THREAD_TITLE = "New Chat";
-
-const hasThreadTitle = (t: Thread) => {
-  return t.title !== PENDING_THREAD_TITLE;
-};
-
-const persistentStore = <T extends Record<string, any>>(prefix: string, defaultValue: T) => {
-  const { subscribe, set, update } = writable<T>(defaultValue);
-
-  const persistentSet = (x: T) => {
-    const entries = Object.entries(x).map(([k, v]) => [`${prefix}/${k}`, v] as [string, any]);
-    Preferences.setEntries(entries);
-    set(x);
-  };
-
-  const persistentUpdate = (fn: (x: T) => T) => {
-    update((x) => {
-      const v = fn(x);
-      persistentSet(v);
-      return v;
-    });
-  };
-
-  const init = async () => {
-    const entries = await Preferences.getEntries({
-      where: { like: `${prefix}/%` },
-    });
-
-    // If we call set with empty entries, we remove all values from the store
-    if (entries.length) {
-      set(
-        Object.fromEntries(
-          entries.map(([k, v]) => {
-            const key = k.replace(`${prefix}/`, "");
-            return [key, v];
-          })
-        ) as T
-      );
-    }
-  };
-
-  return {
-    subscribe,
-    set: persistentSet,
-    update: persistentUpdate,
-    init,
-  };
-};
 
 type OpenAiAppConfig = Partial<ClientOptions> & {
   replicationHost: string;
