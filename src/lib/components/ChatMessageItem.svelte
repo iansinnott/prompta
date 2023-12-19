@@ -8,6 +8,8 @@
   import CodeBlock from "./CodeBlock.svelte";
   import "./markdown.css";
   import { inProgressMessageId } from "$lib/stores/stores";
+  import { onMount } from "svelte";
+  import ChatMessageControls from "./ChatMessageControls.svelte";
   let _class: string = "";
   export { _class as class };
   export let item: ChatMessage;
@@ -22,7 +24,7 @@
 
   /// For checking perf on these list items
   // onMount(() => {
-  //   console.log("%cmounted", "color:salmon;font-size:18px;", item.id);
+  //   console.log("%cmounted", "color:salmon;", item.id);
   // });
 </script>
 
@@ -55,7 +57,7 @@
     {/if}
   </div>
   <div
-    class={classNames("Content prose max-w-4xl prose-invert", {
+    class={classNames("Content prose max-w-4xl prose-invert group", {
       // Something about the grid styling and the child styling. We want overflow hidden horizontally but not vertically.
       "overflow-hidden": item.content.length > 20,
       "opacity-60": item.role === "user",
@@ -65,10 +67,7 @@
   >
     {#if item.role === "user"}
       <!-- User input is not considered markdown, but whitespace should be respected -->
-      <div class="whitespace-pre-wrap">{item.content}</div>
-      <div class="text-zinc-400 text-xs mt-1">
-        {item.createdAt.toLocaleTimeString()}
-      </div>
+      <p class="whitespace-pre-wrap">{item.content}</p>
     {:else}
       <!-- Only render markdown for bot responses -->
       {#if viewRaw}
@@ -76,9 +75,10 @@
       {:else}
         <SvelteMarkdown source={item.content || NBSP} renderers={{ code: CodeBlock }} />
       {/if}
-      {#if item.cancelled}
-        <div class="text-zinc-400 text-xs -mt-2">Cancelled</div>
-      {/if}
+    {/if}
+
+    {#if !inProgress}
+      <ChatMessageControls {item} class={classNames("-mt-3")} />
     {/if}
   </div>
 </div>
