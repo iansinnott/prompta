@@ -472,6 +472,28 @@ export const threadList = createThreadListStore();
 
 const pendingMessageStore = writable<ChatMessage | null>(null);
 
+/**
+ * Initially created for debugging.
+ */
+export const insertPendingMessage = ({ threadId = "", content = "", model = "" } = {}) => {
+  if (!threadId) {
+    throw new Error("No thread id provided");
+  }
+
+  if (!model) {
+    throw new Error("No model provided");
+  }
+
+  pendingMessageStore.set({
+    id: nanoid(),
+    role: "assistant",
+    model,
+    createdAt: new Date(),
+    content,
+    threadId,
+  });
+};
+
 export const inProgressMessageId = derived(pendingMessageStore, (x) => x?.id);
 
 /**
@@ -573,14 +595,7 @@ export const currentChatThread = (() => {
       throw new Error("No GPT profile found. activeProfile=" + get(activeProfileName));
     }
 
-    pendingMessageStore.set({
-      id: nanoid(),
-      role: "assistant",
-      model: profile.model,
-      createdAt: new Date(),
-      content: "",
-      threadId,
-    });
+    insertPendingMessage({ threadId, model: profile.model });
 
     const context = await ChatMessage.findThreadContext({ threadId });
 
@@ -779,7 +794,6 @@ export const currentChatThread = (() => {
       }
 
       const newMessage = await ChatMessage.create(msg);
-
       const backupText = get(messageText);
       messageText.set("");
       promptGpt({ threadId: msg.threadId as string }).catch((err) => {
