@@ -5,7 +5,7 @@
   import ChatMessageItem from "./ChatMessageItem.svelte";
   import IconBrainAiHybrid from "./IconBrainAiHybrid.svelte";
   import { onMount, afterUpdate, tick } from "svelte";
-  import { throttle } from "$lib/utils";
+  import { isMobile, throttle } from "$lib/utils";
 
   let _class: string = "";
   export { _class as class };
@@ -59,12 +59,18 @@
       trailing: true,
     }
   );
+
+  const mobile = isMobile();
 </script>
 
 <div
   bind:this={scrollArea}
   on:wheel={handleWheel}
-  class={classNames("relative flex flex-col space-y-4 pt-2 pb-6", _class)}
+  class={classNames("relative flex flex-col space-y-4 pt-2 pb-6", _class, {
+    // I was seeing issues with a slight horizontal overflow where there shoudl
+    // have been none. This fixed it, but be wary of regressions.
+    "overflow-hidden": mobile,
+  })}
 >
   {#each messageList as x (x.id)}
     <ChatMessageItem item={x} />

@@ -56,6 +56,8 @@
   </div>
   <div
     class={classNames("Content prose max-w-4xl prose-invert", {
+      // Something about the grid styling and the child styling. We want overflow hidden horizontally but not vertically.
+      "overflow-hidden": item.content.length > 20,
       "opacity-60": item.role === "user",
       "has-cursor": $inProgressMessageId === item.id,
       // "has-cursor": true, // For debugging
@@ -82,10 +84,6 @@
 </div>
 
 <style>
-  .Content {
-    /* @note This is to prevent markdown content from overlfowing */
-    overflow: hidden;
-  }
   /* ChatMessage uses a grid layout, wtih the users avatar 32px squared on the left, and a 1fr content area on the right. only one row for now */
   .ChatMessage {
     @apply gap-2 sm:gap-6;
