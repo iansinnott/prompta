@@ -35,7 +35,7 @@
 <button
   on:click={copyToClipboard}
   class={classNames(
-    "flex items-center justify-center rounded-md border border-white/10 cursor-default leading-none",
+    "flex items-center justify-center rounded-md cursor-default leading-none",
     {
       "pl-1 pr-2 ": hasChildren,
     },
@@ -44,9 +44,9 @@
 >
   <span class="">
     {#if !hasCopied}
-      <IconCopyClipboard class="text-white/40 scale-90" />
+      <IconCopyClipboard class="text-white/40 hover:text-white" />
     {:else}
-      <IconCheckMark class="text-green-400 scale-90" />
+      <IconCheckMark class="text-green-400" />
     {/if}
   </span>
   <slot />

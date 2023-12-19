@@ -4,10 +4,11 @@
   import { slide } from "svelte/transition";
   import CopyButton from "./CopyButton.svelte";
   import { onMount } from "svelte";
-  import { error } from "@sveltejs/kit";
+  import { Eye, EyeOff } from "lucide-svelte";
 
   let syncString = "";
   let showAdvanced = false;
+  let showConnectionString = false;
 
   const serverConfig = syncStore.serverConfig;
 
@@ -112,7 +113,7 @@
           {#if $syncStore.connection}
             {$syncStore.connection.slice(0, 4) +
               $syncStore.connection
-                .slice(4)
+                .slice(8)
                 .split("")
                 .map(() => "•")
                 .join("")}
@@ -120,9 +121,29 @@
             Not connected
           {/if}
         </span>
+        <button class="" on:click={() => (showConnectionString = !showConnectionString)}>
+          {#if showConnectionString}
+            <EyeOff class="text-white/40 hover:text-white" />
+          {:else}
+            <Eye class="text-white/40 hover:text-white" />
+          {/if}
+        </button>
         <CopyButton text={$syncStore.connection} />
       </div>
     </div>
+    {#if showConnectionString}
+      <div class="flex flex-col space-y-4" transition:slide={{ duration: 150 }}>
+        <small class="block">
+          <strong>Note:</strong> This is a secret key that allows anyone to connect to your sync chain.
+          Only share it deliberately.
+        </small>
+        <div
+          class="font-mono text-sm p-1 px-2 bg-zinc-700 rounded-lg flex justify-between items-center"
+        >
+          <span>{$syncStore.connection}</span>
+        </div>
+      </div>
+    {/if}
 
     <hr class="my-4 border-white/20" />
 
