@@ -151,9 +151,13 @@
       syncStore.sync();
     }
   }, 100);
+
+  const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
 </script>
 
 <svelte:window on:click={handleExternalUrls} on:focus={handleSync} />
+
+<svelte:body class={classNames({ dark: isDarkMode })} />
 
 <svelte:head>
   <title>{siteMeta.title}</title>
