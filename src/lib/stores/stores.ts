@@ -20,60 +20,10 @@ import { emit } from "$lib/capture";
 import { debounce } from "$lib/utils";
 import { toast } from "$lib/toast";
 import { createSyncer, getDefaultEndpoint, type Syncer } from "$lib/sync/vlcn";
-import { onMount } from "svelte";
-import { debug } from "svelte/internal";
+import { PENDING_THREAD_TITLE, hasThreadTitle, persistentStore } from "./storeUtils";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
-
-const PENDING_THREAD_TITLE = "New Chat";
-
-const hasThreadTitle = (t: Thread) => {
-  return t.title !== PENDING_THREAD_TITLE;
-};
-
-const persistentStore = <T extends Record<string, any>>(prefix: string, defaultValue: T) => {
-  const { subscribe, set, update } = writable<T>(defaultValue);
-
-  const persistentSet = (x: T) => {
-    const entries = Object.entries(x).map(([k, v]) => [`${prefix}/${k}`, v] as [string, any]);
-    Preferences.setEntries(entries);
-    set(x);
-  };
-
-  const persistentUpdate = (fn: (x: T) => T) => {
-    update((x) => {
-      const v = fn(x);
-      persistentSet(v);
-      return v;
-    });
-  };
-
-  const init = async () => {
-    const entries = await Preferences.getEntries({
-      where: { like: `${prefix}/%` },
-    });
-
-    // If we call set with empty entries, we remove all values from the store
-    if (entries.length) {
-      set(
-        Object.fromEntries(
-          entries.map(([k, v]) => {
-            const key = k.replace(`${prefix}/`, "");
-            return [key, v];
-          })
-        ) as T
-      );
-    }
-  };
-
-  return {
-    subscribe,
-    set: persistentSet,
-    update: persistentUpdate,
-    init,
-  };
-};
 
 type OpenAiAppConfig = Partial<ClientOptions> & {
   replicationHost: string;
@@ -474,6 +424,28 @@ export const threadList = createThreadListStore();
 
 const pendingMessageStore = writable<ChatMessage | null>(null);
 
+/**
+ * Initially created for debugging.
+ */
+export const insertPendingMessage = ({ threadId = "", content = "", model = "" } = {}) => {
+  if (!threadId) {
+    throw new Error("No thread id provided");
+  }
+
+  if (!model) {
+    throw new Error("No model provided");
+  }
+
+  pendingMessageStore.set({
+    id: nanoid(),
+    role: "assistant",
+    model,
+    createdAt: new Date(),
+    content,
+    threadId,
+  });
+};
+
 export const inProgressMessageId = derived(pendingMessageStore, (x) => x?.id);
 
 /**
@@ -507,6 +479,41 @@ const handleSSE = (ev: EventSourceMessage) => {
     console.error("Could not JSON parse stream message", message, error);
   }
 };
+
+export const currentlyEditingMessage = (() => {
+  const store = writable<{
+    id: string;
+    content: string;
+  } | null>(null);
+
+  const { subscribe, set, update } = store;
+
+  return {
+    subscribe,
+    set,
+    update,
+
+    /**
+     * Commit pendindg changes to the message. This will update the message in the database.
+     */
+    commitUpdate: async () => {
+      const item = get(store);
+
+      if (!item) {
+        console.warn("No item found. Cannot commit update");
+        return;
+      }
+
+      await currentChatThread.updateMessage(item.id, {
+        content: item.content,
+      });
+      set(null);
+      toast({ type: "success", title: "Message updated" });
+    },
+  };
+})();
+
+export const messageText = writable("");
 
 export const currentChatThread = (() => {
   const invalidationToken = writable(Date.now());
@@ -573,14 +580,7 @@ export const currentChatThread = (() => {
       throw new Error("No GPT profile found. activeProfile=" + get(activeProfileName));
     }
 
-    pendingMessageStore.set({
-      id: nanoid(),
-      role: "assistant",
-      model: profile.model,
-      createdAt: new Date(),
-      content: "",
-      threadId,
-    });
+    insertPendingMessage({ threadId, model: profile.model });
 
     const context = await ChatMessage.findThreadContext({ threadId });
 
@@ -714,6 +714,19 @@ export const currentChatThread = (() => {
       });
     },
 
+    updateMessage: async (id: string, msg: Partial<Omit<ChatMessage, "id">>) => {
+      return ChatMessage.update({
+        where: { id },
+        data: msg,
+      });
+    },
+
+    softDeleteMessage: async ({ id }: { id: string }) => {
+      await ChatMessage.softDelete({
+        where: { id, threadId: get(currentThread).id },
+      });
+    },
+
     deleteMessages: async () => {
       if (
         !(await getSystem().confirm("Are you sure you want to delete all messages in this thread?"))
@@ -729,21 +742,22 @@ export const currentChatThread = (() => {
     },
 
     regenerateResponse: async () => {
-      const lastMessage = get(currentChatThread).messages.at(-1);
+      const messages = get(currentChatThread).messages;
+      const lastMessage = messages.at(-1);
 
       if (!lastMessage) {
         throw new Error("No last message found. Empty thread?");
       }
 
-      if (lastMessage.role !== "assistant") {
-        throw new Error("Last message was not from the assistant");
+      // Only delete the message if it's from the bot. When it's from the user
+      // it usually means that there was an error in completion.
+      if (lastMessage.role === "assistant") {
+        await ChatMessage.delete({
+          where: {
+            id: lastMessage.id,
+          },
+        });
       }
-
-      await ChatMessage.delete({
-        where: {
-          id: lastMessage.id,
-        },
-      });
 
       promptGpt({ threadId: lastMessage.threadId }).catch((err) => {
         console.error("[gpt]", err);
@@ -777,10 +791,13 @@ export const currentChatThread = (() => {
         threadList.invalidate();
       }
 
-      await ChatMessage.create(msg);
-
+      const newMessage = await ChatMessage.create(msg);
+      const backupText = get(messageText);
+      messageText.set("");
       promptGpt({ threadId: msg.threadId as string }).catch((err) => {
         console.error("[gpt]", err);
+        messageText.set(backupText); // Restore backup text
+        return ChatMessage.delete({ where: { id: newMessage.id } }); // Delete the message
       });
     },
   };
@@ -819,7 +836,7 @@ export const syncStore = (() => {
     openAiConfig.update((x) => ({ ...x, lastSyncChain: "" }));
 
     console.log("Sync disconnect");
-    update((x) => ({ ...x, connection: "" }));
+    update((x) => ({ ...x, connection: "", status: "idle", error: null }));
     syncAdapter?.destroy();
     syncAdapter = null;
   };

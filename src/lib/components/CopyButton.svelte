@@ -1,12 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import IconCheckMark from "./IconCheckMark.svelte";
-  import IconCopyClipboard from "./IconCopyClipboard.svelte";
   import classNames from "classnames";
+  import { Check, ClipboardCopy } from "lucide-svelte";
   let _class: string = "";
   export { _class as class };
 
   export let text: string;
+  export let size: string | number = 20;
 
   let hasCopied = false;
 
@@ -18,7 +18,7 @@
       return;
     }
 
-    navigator.clipboard
+    return navigator.clipboard
       .writeText(text)
       .then((x) => {
         hasCopied = true;
@@ -35,7 +35,7 @@
 <button
   on:click={copyToClipboard}
   class={classNames(
-    "flex items-center justify-center rounded-md border border-white/10 cursor-default leading-none",
+    "flex items-center justify-center rounded-md space-x-1 cursor-default leading-none",
     {
       "pl-1 pr-2 ": hasChildren,
     },
@@ -44,10 +44,12 @@
 >
   <span class="">
     {#if !hasCopied}
-      <IconCopyClipboard class="text-white/40 scale-90" />
+      <ClipboardCopy {size} class={classNames("text-white/40 hover:text-white")} />
     {:else}
-      <IconCheckMark class="text-green-400 scale-90" />
+      <Check {size} class="text-green-400" />
     {/if}
   </span>
-  <slot />
+  <span>
+    <slot />
+  </span>
 </button>

@@ -11,6 +11,7 @@
   import { assets } from "$app/paths";
   import FullScreenError from "$lib/components/FullScreenError.svelte";
   import { debounce, wrapError } from "$lib/utils";
+  import DevTooling from "$lib/components/DevTooling.svelte";
 
   const sys = getSystem();
   let startupError: Error | null = null;
@@ -145,8 +146,6 @@
       "Prompta is an open-source UI client for talking to ChatGPT (and GPT-4). Store all your chats locally. Search them easily. Sync across devices.",
   };
 
-  $: isConnectionActive = $syncStore.connection !== "";
-
   const handleSync = debounce(() => {
     if ($syncStore.connection) {
       syncStore.sync();
@@ -242,3 +241,7 @@
 </div>
 
 <Toaster />
+
+{#if appReady}
+  <DevTooling />
+{/if}

@@ -4,10 +4,11 @@
   import { slide } from "svelte/transition";
   import CopyButton from "./CopyButton.svelte";
   import { onMount } from "svelte";
-  import { error } from "@sveltejs/kit";
+  import { Eye, EyeOff } from "lucide-svelte";
 
   let syncString = "";
   let showAdvanced = false;
+  let showConnectionString = false;
 
   const serverConfig = syncStore.serverConfig;
 
@@ -16,6 +17,7 @@
   });
 
   $: isConnectionActive = $syncStore.connection !== "";
+  $: isConnecting = $syncStore.status === "connecting";
 </script>
 
 <div
@@ -41,7 +43,9 @@
   </div>
   <button
     on:click={() => {
-      if ($syncStore.connection) {
+      // In the case of 'connecting', we want to cancel the connection. This
+      // avoids the UI becoming unusable when there is no internet connection.
+      if ($syncStore.connection || isConnecting) {
         syncStore.disconnect();
       } else {
         const lastSyncChain = localStorage.getItem("lastSyncChain") || $openAiConfig.siteId;
@@ -49,15 +53,15 @@
         syncStore.connectTo(lastSyncChain, { autoSync: true });
       }
     }}
-    class={classNames("p-4 rounded-lg border border-zinc-300 w-full", {
-      "pointer-events-none": $syncStore.status === "connecting",
-    })}
+    class={classNames("p-4 rounded-lg border border-zinc-300 w-full", {})}
   >
-    {$syncStore.status === "connecting"
-      ? "Connecting"
-      : isConnectionActive
-      ? "Disconnect"
-      : "Enable Sync"}
+    {#if $syncStore.status === "connecting"}
+      Cancel Connection
+    {:else if isConnectionActive}
+      Disconnect
+    {:else}
+      Enable Sync
+    {/if}
   </button>
 
   <hr class="my-4 border-white/20" />
@@ -66,16 +70,24 @@
     Connection:
     <span
       class={classNames({
-        "text-zinc-300": !$syncStore.error && !isConnectionActive,
-        "text-teal-300": !$syncStore.error && isConnectionActive,
-        "text-red-400 bg-black px-2 py-1": Boolean($syncStore.error),
+        "text-zinc-300": !$syncStore.error && !isConnectionActive && !isConnecting,
+        "text-teal-300": !$syncStore.error && isConnectionActive && !isConnecting,
+        "text-red-400 bg-black px-2 py-1": Boolean($syncStore.error) && !isConnecting,
+        "text-transparent bg-gradient-roll bg-gradient-to-br from-yellow-300 to-orange-400 bg-clip-text":
+          isConnecting,
       })}
-      >{$syncStore.error && isConnectionActive
-        ? $syncStore.error.message
-        : isConnectionActive
-        ? "Active"
-        : "Inactive"}</span
     >
+      {#if $syncStore.error && isConnectionActive}
+        {$syncStore.error.message}
+      {:else if isConnecting}
+        Connecting...
+      {:else if isConnectionActive}
+        Active
+      {:else}
+        Inactive
+      {/if}
+    </span>
+
     {#if $syncStore.error?.detail}
       <small class="block text-xs mt-2 bg-zinc-800 px-2 py-1">{$syncStore.error.detail}</small>
     {/if}
@@ -84,7 +96,7 @@
   <hr class="my-4 border-white/20" />
 
   {#if !isConnectionActive}
-    <div class="flex flex-col space-y-4" transition:slide|local={{ duration: 150 }}>
+    <div class="flex flex-col space-y-4" transition:slide={{ duration: 150 }}>
       <small>
         Enabling sync allows you to access your chats from multiple devices, and is totally
         optional. Your messages will be synced through a sync server. You can use the default
@@ -92,21 +104,50 @@
       </small>
     </div>
   {:else}
-    <div class="flex flex-col space-y-4" transition:slide|local={{ duration: 150 }}>
+    <div class="flex flex-col space-y-4" transition:slide={{ duration: 150 }}>
       <p>Copy the sync code below to share with your other devices.</p>
       <div
         class="font-mono text-sm p-4 bg-zinc-700 rounded-lg flex justify-between items-center border-2 border-teal-500"
       >
         <span>
-          {$syncStore.connection || "Not connected"}
+          {#if $syncStore.connection}
+            {$syncStore.connection.slice(0, 4) +
+              $syncStore.connection
+                .slice(8)
+                .split("")
+                .map(() => "•")
+                .join("")}
+          {:else}
+            Not connected
+          {/if}
         </span>
+        <button class="" on:click={() => (showConnectionString = !showConnectionString)}>
+          {#if showConnectionString}
+            <EyeOff class="text-white/40 hover:text-white" />
+          {:else}
+            <Eye class="text-white/40 hover:text-white" />
+          {/if}
+        </button>
         <CopyButton text={$syncStore.connection} />
       </div>
     </div>
+    {#if showConnectionString}
+      <div class="flex flex-col space-y-4" transition:slide={{ duration: 150 }}>
+        <small class="block">
+          <strong>Note:</strong> This is a secret key that allows anyone to connect to your sync chain.
+          Only share it deliberately.
+        </small>
+        <div
+          class="font-mono text-sm p-1 px-2 bg-zinc-700 rounded-lg flex justify-between items-center"
+        >
+          <span>{$syncStore.connection}</span>
+        </div>
+      </div>
+    {/if}
 
     <hr class="my-4 border-white/20" />
 
-    <div class="flex flex-col space-y-4" transition:slide|local={{ duration: 150 }}>
+    <div class="flex flex-col space-y-4" transition:slide={{ duration: 150 }}>
       <h2 class="mb-4 text-sm uppercase font-semibold">Connect to new sync chain</h2>
       <p>Enter a sync code you copied from another device below to start syncing.</p>
 
@@ -145,7 +186,7 @@
   >
 
   {#if showAdvanced}
-    <form transition:slide|local={{ duration: 150 }} on:submit|preventDefault>
+    <form transition:slide={{ duration: 150 }} on:submit|preventDefault>
       <fieldset>
         <label for="endpoint" class="text-lg">Endpoint</label>
         <p class="mb-2">You can customize this to use your own sync server.</p>
@@ -159,3 +200,19 @@
     </form>
   {/if}
 </div>
+
+<style>
+  @keyframes gradient-roll {
+    0% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: -400% 50%;
+    }
+  }
+
+  .bg-gradient-roll {
+    background-size: 200% 200%;
+    animation: gradient-roll 3s linear infinite;
+  }
+</style>
