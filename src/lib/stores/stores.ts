@@ -20,58 +20,10 @@ import { emit } from "$lib/capture";
 import { debounce } from "$lib/utils";
 import { toast } from "$lib/toast";
 import { createSyncer, getDefaultEndpoint, type Syncer } from "$lib/sync/vlcn";
+import { PENDING_THREAD_TITLE, hasThreadTitle, persistentStore } from "./storeUtils";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
-
-const PENDING_THREAD_TITLE = "New Chat";
-
-const hasThreadTitle = (t: Thread) => {
-  return t.title !== PENDING_THREAD_TITLE;
-};
-
-const persistentStore = <T extends Record<string, any>>(prefix: string, defaultValue: T) => {
-  const { subscribe, set, update } = writable<T>(defaultValue);
-
-  const persistentSet = (x: T) => {
-    const entries = Object.entries(x).map(([k, v]) => [`${prefix}/${k}`, v] as [string, any]);
-    Preferences.setEntries(entries);
-    set(x);
-  };
-
-  const persistentUpdate = (fn: (x: T) => T) => {
-    update((x) => {
-      const v = fn(x);
-      persistentSet(v);
-      return v;
-    });
-  };
-
-  const init = async () => {
-    const entries = await Preferences.getEntries({
-      where: { like: `${prefix}/%` },
-    });
-
-    // If we call set with empty entries, we remove all values from the store
-    if (entries.length) {
-      set(
-        Object.fromEntries(
-          entries.map(([k, v]) => {
-            const key = k.replace(`${prefix}/`, "");
-            return [key, v];
-          })
-        ) as T
-      );
-    }
-  };
-
-  return {
-    subscribe,
-    set: persistentSet,
-    update: persistentUpdate,
-    init,
-  };
-};
 
 type OpenAiAppConfig = Partial<ClientOptions> & {
   replicationHost: string;
@@ -528,6 +480,39 @@ const handleSSE = (ev: EventSourceMessage) => {
   }
 };
 
+export const currentlyEditingMessage = (() => {
+  const store = writable<{
+    id: string;
+    content: string;
+  } | null>(null);
+
+  const { subscribe, set, update } = store;
+
+  return {
+    subscribe,
+    set,
+    update,
+
+    /**
+     * Commit pendindg changes to the message. This will update the message in the database.
+     */
+    commitUpdate: async () => {
+      const item = get(store);
+
+      if (!item) {
+        console.warn("No item found. Cannot commit update");
+        return;
+      }
+
+      await currentChatThread.updateMessage(item.id, {
+        content: item.content,
+      });
+      set(null);
+      toast({ type: "success", title: "Message updated" });
+    },
+  };
+})();
+
 export const messageText = writable("");
 
 export const currentChatThread = (() => {
@@ -726,6 +711,19 @@ export const currentChatThread = (() => {
         where: {
           id: threadId,
         },
+      });
+    },
+
+    updateMessage: async (id: string, msg: Partial<Omit<ChatMessage, "id">>) => {
+      return ChatMessage.update({
+        where: { id },
+        data: msg,
+      });
+    },
+
+    softDeleteMessage: async ({ id }: { id: string }) => {
+      await ChatMessage.softDelete({
+        where: { id, threadId: get(currentThread).id },
       });
     },
 

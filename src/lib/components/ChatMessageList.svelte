@@ -41,9 +41,20 @@
     tick().then(scrollToBottom);
   });
 
-  afterUpdate(() => {
+  // Scroll to bottom when the thread changes or when a new message is inserted
+  let lastThreadId = $currentThread.id;
+  let lastMessageCount = $currentChatThread?.messages.length || 0;
+  $: if (lastThreadId !== $currentThread.id) {
+    lastThreadId = $currentThread.id;
+    lastMessageCount = $currentChatThread?.messages.length || 0;
     tick().then(scrollToBottom);
-  });
+  } else if (lastMessageCount > $currentChatThread.messages.length) {
+    lastMessageCount = $currentChatThread.messages.length;
+    console.debug("same thread. not scrolling for deletion");
+  } else {
+    lastMessageCount = $currentChatThread.messages.length;
+    tick().then(scrollToBottom);
+  }
 
   const handleWheel = throttle(
     (e: WheelEvent) => {

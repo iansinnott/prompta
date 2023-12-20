@@ -194,7 +194,7 @@
 
       <!-- a "click outside" div -->
       {#if $syncStore.showSyncModal}
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div
           class="fixed inset-0 z-10"
           on:click={() => {

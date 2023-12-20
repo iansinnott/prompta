@@ -7,11 +7,17 @@
   import IconVerticalDots from "./IconVerticalDots.svelte";
   import CodeBlock from "./CodeBlock.svelte";
   import "./markdown.css";
-  import { inProgressMessageId } from "$lib/stores/stores";
+  import { currentlyEditingMessage, inProgressMessageId } from "$lib/stores/stores";
+  import { onMount } from "svelte";
+  import ChatMessageControls from "./ChatMessageControls.svelte";
+  import { autosize } from "$lib/utils";
+  import { fly, slide } from "svelte/transition";
+  import { toast } from "$lib/toast";
   let _class: string = "";
   export { _class as class };
   export let item: ChatMessage;
-  let viewRaw = false;
+
+  let editableTextArea: HTMLTextAreaElement | null = null;
 
   // Used to give the markdown renderer something to render when there is no
   // content yet. Allows the blinking cursor to appear before tokens have
@@ -19,19 +25,32 @@
   const NBSP = "\u00A0";
 
   $: inProgress = $inProgressMessageId === item.id;
+  $: isEditing = $currentlyEditingMessage?.id === item.id;
+
+  let showControls = false;
+
+  $: if (isEditing && editableTextArea) {
+    editableTextArea.select();
+  }
 
   /// For checking perf on these list items
   // onMount(() => {
-  //   console.log("%cmounted", "color:salmon;font-size:18px;", item.id);
+  //   console.log("%cmounted", "color:salmon;", item.id);
   // });
 </script>
 
+<!-- svelte-ignore a11y-no-static-element-interactions -->
 <div
   class={classNames("ChatMessage pr-2 group", _class)}
   data-message-id={item.id}
   data-role={item.role}
+  on:click={() => {
+    if (!isEditing && !inProgress) {
+      showControls = !showControls;
+    }
+  }}
 >
-  <div class="Avatar text-zinc-400 pl-2 flex flex-col items-center space-y-4 relative top-1">
+  <div class="Avatar text-zinc-400 pl-2 flex flex-col items-center space-y-4 relative top-[2px]">
     {#if item.role === "user"}
       <IconUserAvatar class="w-5 h-5 sm:w-6 sm:h-6 opacity-60" />
     {:else if item.role === "assistant"}
@@ -39,7 +58,7 @@
       <div class="sm:group-hover:block hidden absolute -top-[16px]">
         <button
           on:click={(e) => {
-            viewRaw = !viewRaw;
+            console.log("clicked secret button");
           }}
           class="hover:bg-white/20 hover:text-white rounded-full p-[2px]"
         >
@@ -55,30 +74,49 @@
     {/if}
   </div>
   <div
-    class={classNames("Content prose max-w-4xl prose-invert", {
+    class={classNames("Content prose max-w-4xl prose-invert group transition-opacity", {
       // Something about the grid styling and the child styling. We want overflow hidden horizontally but not vertically.
       "overflow-hidden": item.content.length > 20,
-      "opacity-60": item.role === "user",
+      "opacity-60": item.role === "user" && !isEditing && !showControls,
       "has-cursor": $inProgressMessageId === item.id,
       // "has-cursor": true, // For debugging
     })}
   >
-    {#if item.role === "user"}
+    {#if isEditing && $currentlyEditingMessage}
+      <textarea
+        use:autosize
+        bind:this={editableTextArea}
+        bind:value={$currentlyEditingMessage.content}
+        on:keydown={(e) => {
+          // send on enter
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            currentlyEditingMessage.commitUpdate();
+          } else if (e.key === "Escape" && isEditing) {
+            $currentlyEditingMessage = null;
+          }
+        }}
+        rows="1"
+        class="w-full bg-transparent outline-none resize-none mb-3"
+      />
+    {:else if item.role === "user"}
       <!-- User input is not considered markdown, but whitespace should be respected -->
-      <div class="whitespace-pre-wrap">{item.content}</div>
-      <div class="text-zinc-400 text-xs mt-1">
-        {item.createdAt.toLocaleTimeString()}
-      </div>
+      <p class="whitespace-pre-wrap">{item.content}</p>
     {:else}
-      <!-- Only render markdown for bot responses -->
-      {#if viewRaw}
-        <div class="whitespace-pre-wrap">{item.content}</div>
-      {:else}
-        <SvelteMarkdown source={item.content || NBSP} renderers={{ code: CodeBlock }} />
-      {/if}
-      {#if item.cancelled}
-        <div class="text-zinc-400 text-xs -mt-2">Cancelled</div>
-      {/if}
+      <SvelteMarkdown source={item.content || NBSP} renderers={{ code: CodeBlock }} />
+    {/if}
+
+    <!-- All this markup to accomplish a smooth animation -->
+    {#if showControls}
+      <div
+        transition:slide={{ duration: 150 }}
+        class="-mt-3"
+        on:click={(e) => {
+          e.stopPropagation();
+        }}
+      >
+        <ChatMessageControls {item} />
+      </div>
     {/if}
   </div>
 </div>
@@ -114,13 +152,13 @@
   /* @note blockquote is an odd one, but it's because the blockquote has a p tag inside it */
   :global .has-cursor > *:last-child:not(ul):not(ol):not(blockquote):not(.CodeBlock)::after,
   :global .has-cursor > *:not(p):last-child > :last-child::after {
-    @apply font-mono;
+    @apply font-mono relative top-0.5;
     content: "";
     display: inline-block;
     background-color: #18d4f1;
     width: 3px;
     border-radius: 3px;
-    height: 1em;
+    height: 1.2em;
     transform: scaleY(1.2);
     transition: opacity 0.3s;
     /* box-shadow: 0 0 10px #18d4f1, 0 0 20px #18d4f1, 0 0 30px #18d4f1, 0 0 40px #18d4f1; */
