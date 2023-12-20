@@ -58,10 +58,10 @@
   }
 </script>
 
-<div class="CodeBlock content relative my-7">
+<div class="CodeBlock content relative my-7 first:mt-0">
   <div class="flex items-center justify-between bg-zinc-700 px-2 py-1 rounded-t-lg">
     <small class="text-sm block text-white/60">{language}</small>
-    <CopyButton {text} class="border-none text-xs">Copy Code</CopyButton>
+    <CopyButton size="18px" {text} class="border-none text-xs">Copy Code</CopyButton>
   </div>
   <pre class="language-{language}"><code bind:this={codeElement} class="language-{language}"
       >{@html highlighted}</code

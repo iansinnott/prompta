@@ -92,6 +92,9 @@ type RoleEnum = OpenAI.Chat.Completions.ChatCompletionMessage["role"];
 let _sqlite: SQLite3;
 let _db: DB;
 
+/** For use in debugging */
+export const _get_db_instance = () => _db;
+
 /**
  * A helper for testing purposes.
  */
@@ -240,7 +243,7 @@ export const initDb = async (dbName: string) => {
     // Warry of some edge case where a partial sync causes data corruption,
     // since there is no way (that I know of) to guarantee the window will not
     // close before the sync is complete.
-    syncStore.dispose();
+    syncStore.disconnect();
 
     if (_db) {
       console.debug("Closing db connection");
@@ -251,19 +254,6 @@ export const initDb = async (dbName: string) => {
       unsub();
     }
   };
-
-  // This used to be locked behind a dev flag but I find it useful to have access to it for debugging in the prod app.
-  for (const [k, v] of [
-    ["Thread", Thread],
-    ["ChatMessage", ChatMessage],
-    ["DatabaseMeta", DatabaseMeta],
-    ["Preferences", Preferences],
-    ["Fragment", Fragment],
-    ["db", _db],
-  ]) {
-    // @ts-expect-error Just for dev, and the error is not consequential
-    (window as any)[k] = v;
-  }
 
   return teardown;
 };

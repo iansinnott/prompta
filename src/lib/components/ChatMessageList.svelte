@@ -5,8 +5,7 @@
   import ChatMessageItem from "./ChatMessageItem.svelte";
   import IconBrainAiHybrid from "./IconBrainAiHybrid.svelte";
   import { onMount, afterUpdate, tick } from "svelte";
-  import { debounce, throttle } from "$lib/utils";
-  import { dev } from "$app/environment";
+  import { isMobile, throttle } from "$lib/utils";
 
   let _class: string = "";
   export { _class as class };
@@ -42,9 +41,20 @@
     tick().then(scrollToBottom);
   });
 
-  afterUpdate(() => {
+  // Scroll to bottom when the thread changes or when a new message is inserted
+  let lastThreadId = $currentThread.id;
+  let lastMessageCount = $currentChatThread?.messages.length || 0;
+  $: if (lastThreadId !== $currentThread.id) {
+    lastThreadId = $currentThread.id;
+    lastMessageCount = $currentChatThread?.messages.length || 0;
     tick().then(scrollToBottom);
-  });
+  } else if (lastMessageCount > $currentChatThread.messages.length) {
+    lastMessageCount = $currentChatThread.messages.length;
+    console.debug("same thread. not scrolling for deletion");
+  } else {
+    lastMessageCount = $currentChatThread.messages.length;
+    tick().then(scrollToBottom);
+  }
 
   const handleWheel = throttle(
     (e: WheelEvent) => {
@@ -60,12 +70,18 @@
       trailing: true,
     }
   );
+
+  const mobile = isMobile();
 </script>
 
 <div
   bind:this={scrollArea}
   on:wheel={handleWheel}
-  class={classNames("relative flex flex-col space-y-4 pt-2 pb-6", _class)}
+  class={classNames("relative flex flex-col space-y-4 pt-2 pb-6", _class, {
+    // I was seeing issues with a slight horizontal overflow where there shoudl
+    // have been none. This fixed it, but be wary of regressions.
+    "overflow-hidden": mobile,
+  })}
 >
   {#each messageList as x (x.id)}
     <ChatMessageItem item={x} />

@@ -58,22 +58,22 @@
   )}
 >
   <div
-    in:fly={{ duration: 500, delay: 150, y: -100, opacity: 0 }}
-    out:fly={{ duration: 500, y: 30, opacity: 0 }}
+    in:fly|global={{ duration: 500, delay: 150, y: -100, opacity: 0 }}
+    out:fly|global={{ duration: 500, y: 30, opacity: 0 }}
   >
     <img src="icon_256x256.png" alt="Prompta Icon" class="w-32 h-32" />
   </div>
   <h1
-    in:fly={{ duration: 300, delay: 200, y: 50, opacity: 0 }}
-    out:fly={{ duration: 300, delay: 0, y: 50, opacity: 0 }}
+    in:fly|global={{ duration: 300, delay: 200, y: 50, opacity: 0 }}
+    out:fly|global={{ duration: 300, delay: 0, y: 50, opacity: 0 }}
     class="text-transparent bg-clip-text bg-gradient-to-br via-sky-400 to-indigo-500 from-blue-100 text-3xl font-extrabold tracking-wider"
   >
     Quick setup
   </h1>
   <form
     on:submit|preventDefault={handleSubmit}
-    in:fly={{ duration: 300, delay: 200, y: 50, opacity: 0 }}
-    out:fly={{ duration: 300, delay: 0, y: 50, opacity: 0 }}
+    in:fly|global={{ duration: 300, delay: 200, y: 50, opacity: 0 }}
+    out:fly|global={{ duration: 300, delay: 0, y: 50, opacity: 0 }}
     class="mt-8 max-w-[400px] flex flex-col space-y-4"
   >
     <label for="sk"> OpenAI API Key </label>

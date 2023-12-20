@@ -1,6 +1,6 @@
 {
   "name": "prompta",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "private": true,
   "scripts": {
     "dev": "tauri dev",
@@ -37,9 +37,9 @@
     "postcss": "~8.4.14",
     "postcss-load-config": "~4.0.1",
     "posthog-js": "1.56.0",
-    "svelte": "^3.59.1",
+    "svelte": "^4.0.0",
     "svelte-check": "~3.4.6",
-    "svelte-preprocess": "~4.10.7",
+    "svelte-preprocess": "^5.0.3",
     "tailwindcss": "^3.1.5",
     "tslib": "~2.4.1",
     "tsx": "4.6.2",
@@ -70,7 +70,7 @@
     "openai": "^4.0.1",
     "prism-svelte": "0.5.0",
     "prismjs": "1.29.0",
-    "svelte-markdown": "0.2.3",
+    "svelte-markdown": "0.4.0",
     "tailwind-merge": "2.1.0",
     "tailwind-variants": "0.1.19",
     "uuid": "9.0.0"
