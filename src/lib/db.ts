@@ -15,7 +15,7 @@ import { dev } from "$app/environment";
 import { nanoid } from "nanoid";
 import type OpenAI from "openai";
 import { stringify as uuidStringify } from "uuid";
-import { basename, debounce, groupBy, sha1sum, toCamelCase, toSnakeCase } from "./utils";
+import { basename, debounce, groupBy, mapKeys, sha1sum, toCamelCase, toSnakeCase } from "./utils";
 import { extractFragments } from "./markdown";
 import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
 
@@ -237,6 +237,7 @@ export const initDb = async (dbName: string) => {
   const subs: (() => void)[] = [];
   subs.push(Thread.initRx(rx));
   subs.push(ChatMessage.initRx(rx));
+  subs.push(LLMProvider.initRx(rx));
 
   const teardown = async () => {
     // NOTE: We're not syncing here, assuming the data has already been synced.
@@ -267,6 +268,7 @@ export interface ChatMessageRow {
   thread_id: string;
   created_at: string;
 }
+
 export interface ChatMessage {
   id: string;
   content: string;
@@ -284,6 +286,16 @@ export interface ThreadRow {
   created_at: string;
 }
 export type Thread = Omit<ThreadRow, "created_at"> & { createdAt: Date };
+
+export interface LLMProviderRow {
+  id: string;
+  name: string;
+  baseUrl: string;
+  apiKey: string;
+  enabled: boolean;
+  created_at: string;
+}
+export type LLMProvider = Omit<LLMProviderRow, "created_at"> & { createdAt: Date };
 
 export interface FragmentRow {
   id: string;
@@ -601,6 +613,21 @@ const crud = <T extends { id: string }>({
 
     generateId,
   };
+};
+
+export const LLMProvider = {
+  ...crud<LLMProvider>({
+    tableName: "llm_provider",
+    rowToModel: ({ created_at, ...x }: LLMProviderRow): LLMProvider => {
+      const camelCaseX = mapKeys(x, toCamelCase);
+
+      // @ts-expect-error I had the transformer on db keys in crud but it's not implemented
+      return {
+        ...camelCaseX,
+        createdAt: dateFromSqlite(created_at),
+      };
+    },
+  }),
 };
 
 export const ChatMessage = {
@@ -926,8 +953,4 @@ export async function _clearDatabase() {
     // await Preferences._removeAll();
     window.location.reload();
   }
-}
-
-if (dev) {
-  (window as any)._clearDatabase = _clearDatabase;
 }

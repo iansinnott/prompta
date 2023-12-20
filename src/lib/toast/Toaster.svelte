@@ -8,7 +8,12 @@
   $: toasts = $toastStore.toasts;
 </script>
 
-<div class={classNames("fixed bottom-[68px] right-4 flex flex-col space-y-4 items-center", _class)}>
+<div
+  class={classNames(
+    "fixed bottom-[68px] right-4 z-50 flex flex-col space-y-4 items-center",
+    _class
+  )}
+>
   {#each toasts as toast}
     <Toast
       props={toast.props}

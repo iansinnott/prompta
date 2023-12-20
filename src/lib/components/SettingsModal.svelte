@@ -17,6 +17,7 @@
   import { env } from "$env/dynamic/public";
   import { toast } from "$lib/toast";
   import { Circle, HelpCircle } from "lucide-svelte";
+  import LlmProviderList from "./LLMProviderList.svelte";
 
   const versionString = env.PUBLIC_VERSION_STRING;
 
@@ -82,6 +83,14 @@
         <label class="label" for="b">Version</label>
         <div>
           Prompta {versionString}
+        </div>
+
+        <div class="Separator h-px bg-zinc-700 my-4" />
+
+        <div class="text-xl mb-4 sm:col-span-2">Providers</div>
+
+        <div class="col-span-2">
+          <LlmProviderList />
         </div>
 
         <div class="Separator h-px bg-zinc-700 my-4" />

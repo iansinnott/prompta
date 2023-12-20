@@ -10,6 +10,7 @@ import {
   Thread,
   type FragmentSearchResult,
   getCurrentSchema,
+  LLMProvider,
 } from "$lib/db";
 import { nanoid } from "nanoid";
 import { initOpenAi } from "$lib/llm/openai";
@@ -20,7 +21,8 @@ import { emit } from "$lib/capture";
 import { debounce } from "$lib/utils";
 import { toast } from "$lib/toast";
 import { createSyncer, getDefaultEndpoint, type Syncer } from "$lib/sync/vlcn";
-import { PENDING_THREAD_TITLE, hasThreadTitle, persistentStore } from "./storeUtils";
+import { PENDING_THREAD_TITLE, hasThreadTitle, persistentStore } from "../storeUtils";
+import { llmProviders } from "./llmProvider";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
@@ -75,6 +77,16 @@ export const openAiConfig = (() => {
 
       const siteId = await DatabaseMeta.getSiteId();
       set({ ...config, siteId });
+
+      // NOTE: this is a stopgap, since moving to the "providers" system this
+      // whole things should be refactored. However, we do want backwards compat
+      // for existing users.
+      if (config.apiKey) {
+        llmProviders.updateProvider("openai", { apiKey: config.apiKey });
+      }
+
+      // TODO: do we need this here?
+      llmProviders.invalidate();
     },
   };
 })();
@@ -302,53 +314,6 @@ export const currentThread = createThreadStore();
 export const threadMenu = writable({
   open: false,
 });
-
-type InvalidateOptions = {
-  onInvalidated?: () => void;
-
-  /**
-   * Optional name for debugging purposes. Should not affect runtime behavior.
-   */
-  name?: string;
-};
-
-/**
- * Create a readable store that can be manually invalidated, forcing the setter
- * function to be called again. I would have thought this would be built-in, maybe I missed it.
- */
-const invalidatable = <T>(
-  defaultValue: T,
-  cb: (set: (x: T) => void) => void,
-  options: InvalidateOptions = {}
-) => {
-  // Keep a reference to the setter function. This way, to invalidate we just
-  // call the callback with the setter. I.e. 'invalidate' just calls the callback on demand
-  let _set: Subscriber<T>;
-
-  const innerStore = readable<T>(defaultValue, (set) => {
-    _set = set;
-    cb(_set);
-  });
-
-  return {
-    subscribe: innerStore.subscribe,
-    invalidate: () => {
-      if (!_set) {
-        console.warn(
-          `WARN: Tried to invalidate store %c${
-            options.name || "<unnamed>"
-          }%c before it was subscribed. This is a %cno-op`,
-          "color:pink;",
-          "color:unset;",
-          "color:red;"
-        );
-        return;
-      }
-      cb(_set);
-      options.onInvalidated?.();
-    },
-  };
-};
 
 interface ThreadFilterStore {
   limit: number;
@@ -1021,6 +986,11 @@ export const syncStore = (() => {
     },
   };
 })();
+
+LLMProvider.onTableChange(() => {
+  console.debug("%cprovider table changed", "color:salmon;");
+  llmProviders.invalidate();
+});
 
 Thread.onTableChange(() => {
   console.debug("%cthread table changed", "color:salmon;");
