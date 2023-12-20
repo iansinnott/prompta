@@ -157,8 +157,6 @@
 
 <svelte:window on:click={handleExternalUrls} on:focus={handleSync} />
 
-<svelte:body class={classNames({ dark: isDarkMode })} />
-
 <svelte:head>
   <title>{siteMeta.title}</title>
   <meta name="description" content={siteMeta.description} />

@@ -16,6 +16,7 @@
   import CloseButton from "./CloseButton.svelte";
   import { env } from "$env/dynamic/public";
   import { toast } from "$lib/toast";
+  import { Circle, HelpCircle } from "lucide-svelte";
 
   const versionString = env.PUBLIC_VERSION_STRING;
 
@@ -32,46 +33,14 @@
 
   let modelsLoading = false;
 
-  const updateAvailableModels = async () => {
-    if ($chatModels.length) {
-      console.debug("Already have models, but refetching for latest");
-    }
-
-    modelsLoading = true;
-
-    try {
-      const openai = getOpenAi();
-      const xs = await openai.models.list();
-      let _chatModels = xs.data;
-
-      // For OpenAI API v1, we only want models relevant to chat. i.e. no whisper, embedding models, etc
-      if ($openAiConfig.baseURL?.startsWith("https://api.openai.com/v1")) {
-        _chatModels = _chatModels.filter((x) => x.id.startsWith("gpt"));
-      }
-
-      _chatModels.sort((a, b) => a.id.localeCompare(b.id));
-
-      $chatModels = _chatModels;
-    } catch (error) {
-      console.error("Error fetching models", error);
-      toast({
-        title: "Error fetching models",
-        message: error.message,
-        type: "error",
-      });
-    } finally {
-      modelsLoading = false;
-    }
-  };
-
   let showAdvanced = false;
 
   $: if ($showSettings) {
-    updateAvailableModels();
+    chatModels.refresh();
   }
 
   $: hasCustomModel =
-    $gptProfileStore.model && !$chatModels.some((x) => x.id == $gptProfileStore.model);
+    $gptProfileStore.model && !$chatModels.models.some((x) => x.id == $gptProfileStore.model);
 
   $: if (!$openAiConfig.baseURL) {
     $openAiConfig.baseURL = "https://api.openai.com/v1/";
@@ -88,7 +57,6 @@
 />
 
 {#if $showSettings}
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div class="backdrop z-20" on:click={() => ($showSettings = false)}>
     <!-- NOTE the use of svh units. SVH units in safari do not work with calc, it seems -->
     <form
@@ -131,7 +99,7 @@
             on:blur={(e) => {
               // Assume the API key was changed and refetch models
               if (e.currentTarget.value) {
-                updateAvailableModels();
+                chatModels.refresh();
               }
             }}
           />
@@ -168,7 +136,7 @@
             </div>
           {/if}
           <select id="a" class="input rounded w-full" bind:value={$gptProfileStore.model}>
-            {#each $chatModels as model}
+            {#each $chatModels.models as model}
               <option value={model.id}>{model.id}</option>
             {/each}
           </select>

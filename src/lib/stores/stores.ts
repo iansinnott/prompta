@@ -1032,4 +1032,49 @@ ChatMessage.onTableChange(() => {
   currentChatThread.invalidate();
 });
 
-export const chatModels = writable<OpenAI.Model[]>([]);
+export const chatModels = (() => {
+  const store = writable<{ loading: boolean; models: OpenAI.Model[] }>({
+    loading: false,
+    models: [],
+  });
+  const { subscribe, set, update } = store;
+
+  return {
+    subscribe,
+    set,
+    update,
+
+    refresh: async () => {
+      const models = get(store).models;
+      if (models.length) {
+        console.debug("Already have models, but refetching for latest");
+      }
+
+      update((x) => ({ ...x, loading: true }));
+
+      try {
+        const openai = getOpenAi();
+        const xs = await openai.models.list();
+        let _chatModels = xs.data;
+
+        // For OpenAI API v1, we only want models relevant to chat. i.e. no whisper, embedding models, etc
+        if (get(openAiConfig).baseURL?.startsWith("https://api.openai.com/v1")) {
+          _chatModels = _chatModels.filter((x) => x.id.startsWith("gpt"));
+        }
+
+        _chatModels.sort((a, b) => a.id.localeCompare(b.id));
+
+        update((x) => ({ ...x, models: _chatModels }));
+      } catch (error) {
+        console.error("Error fetching models", error);
+        toast({
+          title: "Error fetching models",
+          message: error.message,
+          type: "error",
+        });
+      } finally {
+        update((x) => ({ ...x, loading: false }));
+      }
+    },
+  };
+})();

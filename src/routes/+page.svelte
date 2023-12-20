@@ -25,6 +25,7 @@
   import InitScreen from "$lib/components/InitScreen.svelte";
   import { toast } from "$lib/toast";
   import SyncModal from "$lib/components/SyncModal.svelte";
+  import ModelPicker from "$lib/components/ModelPicker.svelte";
 
   const sys = getSystem();
   let textarea: HTMLTextAreaElement | null = null;
@@ -191,6 +192,8 @@
           />
         </button>
       {/if}
+
+      <ModelPicker />
 
       <!-- a "click outside" div -->
       {#if $syncStore.showSyncModal}
