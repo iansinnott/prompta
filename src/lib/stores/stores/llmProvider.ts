@@ -1,12 +1,13 @@
 import { LLMProvider } from "$lib/db";
 import { get, writable } from "svelte/store";
 import { invalidatable } from "../storeUtils";
+import { dev } from "$app/environment";
 
 const defaultProviders: LLMProvider[] = [
   {
     id: "prompta",
     name: "Prompta AI",
-    baseUrl: "https://chat.prompta.dev/",
+    baseUrl: dev ? "http://localhost:5173/api/v1/" : "https://chat.prompta.dev/",
     apiKey: "",
     enabled: true,
     createdAt: new Date(0),

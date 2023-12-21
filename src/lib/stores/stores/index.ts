@@ -1020,17 +1020,39 @@ export const chatModels = (() => {
         console.debug("Already have models, but refetching for latest");
       }
 
+      const providers = get(llmProviders).providers.filter((x) => x.enabled);
+
       update((x) => ({ ...x, loading: true }));
 
       try {
-        const openai = getOpenAi();
-        const xs = await openai.models.list();
-        let _chatModels = xs.data;
+        // Fetch models for all active providers
+        // TODO: we need a mapping of model to provider so that we can easily access the base URL and API key
+        const xss = await Promise.all(
+          providers.map((provider) => {
+            const openai = new OpenAI({
+              apiKey: provider.apiKey,
+              baseURL: provider.baseUrl,
+              dangerouslyAllowBrowser: true,
+            });
+            return openai.models
+              .list()
+              .then((x) => {
+                return provider.id === "openai"
+                  ? x.data.filter((x) => x.id.startsWith("gpt"))
+                  : x.data;
+              })
+              .catch((err) => {
+                toast({
+                  title: "Error fetching models for: " + provider.name,
+                  message: err.message,
+                  type: "error",
+                });
+                return [] as OpenAI.Model[];
+              });
+          })
+        );
 
-        // For OpenAI API v1, we only want models relevant to chat. i.e. no whisper, embedding models, etc
-        if (get(openAiConfig).baseURL?.startsWith("https://api.openai.com/v1")) {
-          _chatModels = _chatModels.filter((x) => x.id.startsWith("gpt"));
-        }
+        const _chatModels = xss.flat();
 
         _chatModels.sort((a, b) => a.id.localeCompare(b.id));
 
