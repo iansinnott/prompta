@@ -1002,8 +1002,10 @@ ChatMessage.onTableChange(() => {
   currentChatThread.invalidate();
 });
 
+type ModelWithProvider = OpenAI.Model & { provider: { id: string } };
+
 export const chatModels = (() => {
-  const store = writable<{ loading: boolean; models: OpenAI.Model[] }>({
+  const store = writable<{ loading: boolean; models: ModelWithProvider[] }>({
     loading: false,
     models: [],
   });
@@ -1037,9 +1039,9 @@ export const chatModels = (() => {
             return openai.models
               .list()
               .then((x) => {
-                return provider.id === "openai"
-                  ? x.data.filter((x) => x.id.startsWith("gpt"))
-                  : x.data;
+                return (
+                  provider.id === "openai" ? x.data.filter((x) => x.id.startsWith("gpt")) : x.data
+                ).map((x) => ({ ...x, provider: { id: provider.id } }));
               })
               .catch((err) => {
                 toast({
@@ -1047,7 +1049,7 @@ export const chatModels = (() => {
                   message: err.message,
                   type: "error",
                 });
-                return [] as OpenAI.Model[];
+                return [] as ModelWithProvider[];
               });
           })
         );

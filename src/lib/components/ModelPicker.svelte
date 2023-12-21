@@ -4,10 +4,12 @@
   import * as Popover from "$lib/components/ui/popover";
   import { Button } from "$lib/components/ui/button";
   import { cn } from "$lib/utils";
-  import { tick, type ComponentType } from "svelte";
+  import type { ComponentType } from "svelte";
   import IconBrain from "$lib/components/IconBrain.svelte";
   import { chatModels, gptProfileStore } from "$lib/stores/stores";
   import { onMount } from "svelte";
+  import { llmProviders } from "$lib/stores/stores/llmProvider";
+  import IconOpenAi from "./IconOpenAI.svelte";
   let _class: string = "";
   export { _class as class };
 
@@ -17,25 +19,26 @@
     icon?: ComponentType;
   };
 
-  $: options = $chatModels.models.map((x) => ({
-    value: x.id,
-    label: x.id,
-  })) as Status[];
+  $: options = $chatModels.models.map((x) => {
+    const provider = llmProviders.byId(x.provider.id);
+    return {
+      value: x.id,
+      label: x.id,
+      icon: provider?.id === "prompta" ? IconBrain : provider?.id === "openai" ? IconOpenAi : null,
+    };
+  }) as Status[];
 
   let value = "";
-  let onChange: (value: string) => void;
   let loading = false;
 
   let open = false;
 
   $: selectedStatus = options.find((s) => s.value === value) ?? null;
 
-  function handleChange(triggerId: string) {
+  function handleChange(x: string) {
     open = false;
-    onChange(value);
-    tick().then(() => {
-      document.getElementById(triggerId)?.focus();
-    });
+    value = x;
+    $gptProfileStore.model = x;
   }
 
   onMount(() => {
@@ -52,7 +55,9 @@
         size="sm"
         class="h-[42px] justify-start border border-zinc-700"
       >
-        {#if selectedStatus?.icon}
+        {#if typeof selectedStatus?.icon === "string"}
+          <img src={selectedStatus?.icon} class="h-4 w-4 shrink-0" alt="" />
+        {:else if selectedStatus?.icon}
           <svelte:component this={selectedStatus.icon} class="h-4 w-4 shrink-0" />
         {:else}
           <IconBrain class="w-5 h-5 text-[#30CEC0] scale-[1.2]" />
@@ -69,17 +74,27 @@
               <Command.Item
                 value={opt.value}
                 onSelect={(currentValue) => {
-                  value = currentValue;
-                  handleChange(ids.trigger);
+                  handleChange(currentValue);
                 }}
               >
-                <svelte:component
-                  this={opt.icon}
-                  class={cn(
-                    "mr-2 h-4 w-4",
-                    opt.value !== selectedStatus?.value && "text-foreground/40"
-                  )}
-                />
+                {#if typeof opt.icon === "string"}
+                  <img
+                    src={opt.icon}
+                    class={cn(
+                      "mr-2 h-4 w-4",
+                      opt.value !== selectedStatus?.value && "text-foreground/40"
+                    )}
+                    alt=""
+                  />
+                {:else}
+                  <svelte:component
+                    this={opt.icon}
+                    class={cn(
+                      "mr-2 h-4 w-4 ",
+                      opt.value !== selectedStatus?.value && "text-foreground/40"
+                    )}
+                  />
+                {/if}
 
                 <span>
                   {opt.label}

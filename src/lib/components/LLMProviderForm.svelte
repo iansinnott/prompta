@@ -11,6 +11,7 @@
   import { nanoid } from "nanoid";
   import { toast } from "$lib/toast";
   import { Trash } from "lucide-svelte";
+  import IconOpenAi from "./IconOpenAI.svelte";
   let _class: string = "";
   export { _class as class };
 
@@ -49,11 +50,7 @@
       {#if provider.id === "prompta"}
         <IconBrain class="w-6 h-6 text-[#30CEC0] scale-[1.2]" />
       {:else if provider.id === "openai"}
-        <img
-          class="w-6 h-6 rounded-full"
-          src={"https://www.google.com/s2/favicons?sz=64&domain_url=openai.com"}
-          alt=""
-        />
+        <IconOpenAi class="w-6 h-6 " />
       {/if}
       <span>
         {provider.name}

@@ -76,6 +76,10 @@ export const llmProviders = (() => {
       });
     },
 
+    byId: (id: string) => {
+      return get(store).providers.find((p) => p.id === id);
+    },
+
     updateProvider: (id: string, provider: Partial<LLMProvider>) => {
       if (isDefaultProvider({ id })) {
         update((state) => {
