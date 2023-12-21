@@ -36,6 +36,7 @@ export const POST: RequestHandler = async ({ url, request }) => {
   let { messages, stream = false, model = defaultModel, temperature = "0.2" } = body;
 
   if (!isModelWhitelisted(model)) {
+    console.error(`[chat] unknown model: ${model}`);
     return json({ error: `Unknown model: ${model}` }, { status: 400 });
   }
 
@@ -68,7 +69,9 @@ export const POST: RequestHandler = async ({ url, request }) => {
 
   // For non-streamed responses, there's nothing more to do
   if (!stream) {
-    return json(await res.json(), {
+    const x = await res.json();
+    console.error(`[chat] stream erreor: ${model}`, x);
+    return json(x, {
       headers: {
         ...headers,
         "Content-Type": "application/json",
@@ -77,6 +80,7 @@ export const POST: RequestHandler = async ({ url, request }) => {
   }
 
   if (!res.body) {
+    console.error(`[chat] no response stream: ${model}`);
     return json({ error: `No response stream` }, { status: 400 });
   }
 

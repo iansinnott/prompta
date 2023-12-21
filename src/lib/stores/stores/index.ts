@@ -140,17 +140,30 @@ export const gptProfileStore = (() => {
 })();
 
 export const getOpenAi = () => {
-  const { apiKey, baseURL } = get(openAiConfig);
+  const { model: modelId } = get(gptProfileStore);
+  const model = get(chatModels).models.find((x) => x.id === modelId);
 
-  if (!apiKey) {
-    throw new Error("No API key");
+  if (!model) {
+    throw new Error("No model found for: " + modelId);
   }
 
-  if (!baseURL) {
+  const provider = llmProviders.byId(model.provider.id);
+
+  if (!provider) {
+    throw new Error("No provider found for: " + model.provider.id);
+  }
+
+  const { apiKey, baseUrl } = provider;
+
+  if (!apiKey && provider.id === "openai") {
+    throw new Error("No API key for OpenAI");
+  }
+
+  if (!baseUrl) {
     throw new Error("No API URL");
   }
 
-  return initOpenAi({ apiKey, baseURL });
+  return initOpenAi({ apiKey, baseURL: baseUrl });
 };
 
 export const verifyOpenAiApiKey = async (apiKey: string) => {
@@ -184,9 +197,19 @@ export const generateThreadTitle = async ({ threadId }: { threadId: string }) =>
   const openAi = getOpenAi();
   const context = await ChatMessage.findThreadContext({ threadId });
   const messageContext = context.map((x) => ({ content: x.content, role: x.role }));
+  const modelName = get(gptProfileStore).model;
+
+  if (!modelName) {
+    toast({
+      type: "error",
+      title: "No model selected",
+      message: "Please select a model via the dropdown",
+    });
+    return;
+  }
 
   const prompt: OpenAI.Chat.CompletionCreateParamsNonStreaming = {
-    model: get(gptProfileStore)?.model || "gpt-3.5-turbo-1106", // Use custom model if present, else use turbo 3.5
+    model: modelName,
     temperature: 0.2, // Playing around with this value the lower value seems to be more accurate?
     messages: [
       ...messageContext,
@@ -225,6 +248,7 @@ Do not provide a word count or add quotation marks.
   currentThread.update((x) => {
     return { ...x, title: newTitle };
   });
+
   threadList.invalidate();
 };
 
@@ -535,19 +559,26 @@ export const currentChatThread = (() => {
   };
 
   const promptGpt = async ({ threadId }: { threadId: string }) => {
-    const conf = get(openAiConfig);
-
     if (get(pendingMessageStore)) {
       throw new Error("Already a message in progres");
     }
 
-    const profile = get(gptProfileStore);
-
-    if (!profile) {
-      throw new Error("No GPT profile found. activeProfile=" + get(activeProfileName));
+    const { model: modelId, systemMessage } = get(gptProfileStore);
+    if (!modelId) {
+      throw new Error("No model. activeProfile=" + get(activeProfileName));
     }
 
-    insertPendingMessage({ threadId, model: profile.model });
+    const model = get(chatModels).models.find((x) => x.id === modelId);
+    if (!model) {
+      throw new Error("No model found for: " + modelId);
+    }
+
+    const provider = llmProviders.byId(model.provider.id);
+    if (!provider) {
+      throw new Error("No provider found for: " + model.provider.id);
+    }
+
+    insertPendingMessage({ threadId, model: modelId });
 
     const context = await ChatMessage.findThreadContext({ threadId });
 
@@ -555,10 +586,10 @@ export const currentChatThread = (() => {
 
     let messageContext = context.map((x) => ({ content: x.content, role: x.role }));
 
-    if (profile.systemMessage) {
+    if (systemMessage.trim()) {
       messageContext = [
         {
-          content: profile.systemMessage,
+          content: systemMessage,
           role: "system",
         },
         ...messageContext,
@@ -567,7 +598,7 @@ export const currentChatThread = (() => {
 
     const prompt: OpenAI.Chat.CompletionCreateParamsStreaming = {
       messages: messageContext,
-      model: profile.model,
+      model: modelId,
       // max_tokens: 100, // just for testing
       stream: true,
     };
@@ -577,13 +608,13 @@ export const currentChatThread = (() => {
     abortController = new AbortController();
 
     // NOTE the lack of leading slash. Important for the URL to be relative to the base URL including its path
-    const endpoint = new URL("chat/completions", conf.baseURL);
+    const endpoint = new URL("chat/completions", provider.baseUrl);
 
     // @todo This could use the sdk now that the new version supports streaming
     await fetchEventSource(endpoint.href, {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${conf.apiKey}`,
+        Authorization: `Bearer ${provider.apiKey}`, // This could be empty, but we assume that in such a case the server will ignore this header
       },
       method: "POST",
       body: JSON.stringify(prompt),
