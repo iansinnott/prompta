@@ -22,7 +22,7 @@ import { debounce } from "$lib/utils";
 import { toast } from "$lib/toast";
 import { createSyncer, getDefaultEndpoint, type Syncer } from "$lib/sync/vlcn";
 import { PENDING_THREAD_TITLE, hasThreadTitle, persistentStore } from "../storeUtils";
-import { llmProviders } from "./llmProvider";
+import { chatModels, llmProviders } from "./llmProvider";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
@@ -411,7 +411,7 @@ const createThreadListStore = () => {
 
 export const threadList = createThreadListStore();
 
-const pendingMessageStore = writable<ChatMessage | null>(null);
+export const pendingMessageStore = writable<ChatMessage | null>(null);
 
 /**
  * Initially created for debugging.
@@ -1045,74 +1045,3 @@ ChatMessage.onTableChange(() => {
   console.debug("%cmessage table changed", "color:salmon;");
   currentChatThread.invalidate();
 });
-
-type ModelWithProvider = OpenAI.Model & { provider: { id: string } };
-
-export const chatModels = (() => {
-  const store = writable<{ loading: boolean; models: ModelWithProvider[] }>({
-    loading: false,
-    models: [],
-  });
-  const { subscribe, set, update } = store;
-
-  return {
-    subscribe,
-    set,
-    update,
-
-    refresh: async () => {
-      const models = get(store).models;
-      if (models.length) {
-        console.debug("Already have models, but refetching for latest");
-      }
-
-      const providers = get(llmProviders).providers.filter((x) => x.enabled);
-
-      update((x) => ({ ...x, loading: true }));
-
-      try {
-        // Fetch models for all active providers
-        // TODO: we need a mapping of model to provider so that we can easily access the base URL and API key
-        const xss = await Promise.all(
-          providers.map((provider) => {
-            const openai = new OpenAI({
-              apiKey: provider.apiKey,
-              baseURL: provider.baseUrl,
-              dangerouslyAllowBrowser: true,
-            });
-            return openai.models
-              .list()
-              .then((x) => {
-                return (
-                  provider.id === "openai" ? x.data.filter((x) => x.id.startsWith("gpt")) : x.data
-                ).map((x) => ({ ...x, provider: { id: provider.id } }));
-              })
-              .catch((err) => {
-                toast({
-                  title: "Error fetching models for: " + provider.name,
-                  message: err.message,
-                  type: "error",
-                });
-                return [] as ModelWithProvider[];
-              });
-          })
-        );
-
-        const _chatModels = xss.flat();
-
-        _chatModels.sort((a, b) => a.id.localeCompare(b.id));
-
-        update((x) => ({ ...x, models: _chatModels }));
-      } catch (error) {
-        console.error("Error fetching models", error);
-        toast({
-          title: "Error fetching models",
-          message: error.message,
-          type: "error",
-        });
-      } finally {
-        update((x) => ({ ...x, loading: false }));
-      }
-    },
-  };
-})();

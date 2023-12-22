@@ -6,8 +6,8 @@
     DEFAULT_SYSTEM_MESSAGE,
     db,
     getOpenAi,
-    chatModels,
   } from "$lib/stores/stores";
+  import { chatModels } from "$lib/stores/stores/llmProvider";
   import AutosizeTextarea from "./AutosizeTextarea.svelte";
   import { getSystem } from "$lib/gui";
   import { onMount } from "svelte";
