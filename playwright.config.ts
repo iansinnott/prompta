@@ -14,14 +14,14 @@ const config: PlaywrightTestConfig = {
     baseURL: "http://localhost:5173",
   },
   projects: [
-    {
-      name: "setup",
-      testMatch: /.*\.setup\.ts/,
-      use: { ...devices["iPhone 13 Mini"] },
-    },
+    // {
+    //   name: "setup",
+    //   testMatch: /.*\.setup\.ts/,
+    //   use: { ...devices["iPhone 13 Mini"] },
+    // },
     {
       name: "mobile",
-      dependencies: ["setup"], // Depend on setup code
+      // dependencies: ["setup"], // Depend on setup code
       use: {
         ...devices["iPhone 13 Mini"],
         storageState: "playwright/.auth/user.json", // Use auth state prepared by setup
@@ -29,14 +29,9 @@ const config: PlaywrightTestConfig = {
     },
     {
       name: "desktop",
-      dependencies: ["setup"],
       use: {
         ...devices["Desktop Chrome"],
         storageState: "playwright/.auth/user.json",
-        launchOptions: {
-          slowMo: 1000,
-          devtools: true,
-        },
       },
     },
   ],

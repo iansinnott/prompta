@@ -759,6 +759,11 @@ export const currentChatThread = (() => {
 
       promptGpt({ threadId: lastMessage.threadId }).catch((err) => {
         console.error("[regenerateResponse]", err);
+        toast({
+          type: "error",
+          title: "Error regenerating response",
+          message: err.message,
+        });
         invalidate();
       });
     },
@@ -794,8 +799,14 @@ export const currentChatThread = (() => {
       const newMessage = await ChatMessage.create(msg);
       const backupText = get(messageText);
       messageText.set("");
+
       promptGpt({ threadId: msg.threadId as string }).catch((err) => {
         console.error("[sendMessage]", err);
+        toast({
+          type: "error",
+          title: "Error sending message",
+          message: err.message,
+        });
         messageText.set(backupText); // Restore backup text
         return ChatMessage.delete({ where: { id: newMessage.id } }); // Delete the message
       });
