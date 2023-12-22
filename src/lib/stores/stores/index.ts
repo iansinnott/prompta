@@ -22,74 +22,10 @@ import { debounce } from "$lib/utils";
 import { toast } from "$lib/toast";
 import { createSyncer, getDefaultEndpoint, type Syncer } from "$lib/sync/vlcn";
 import { PENDING_THREAD_TITLE, hasThreadTitle, persistentStore } from "../storeUtils";
-import { chatModels, llmProviders } from "./llmProvider";
+import { chatModels, llmProviders, openAiConfig } from "./llmProvider";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
-
-type OpenAiAppConfig = Partial<ClientOptions> & {
-  replicationHost: string;
-  siteId: string;
-  lastSyncChain: string;
-};
-
-export const openAiConfig = (() => {
-  const defaultConfig: OpenAiAppConfig = {
-    apiKey: "",
-    baseURL: "https://api.openai.com/v1/",
-
-    // NOTE: since these are not infact OpenAI options some separation might be less prone to confusion.
-    replicationHost: "",
-    siteId: "",
-    lastSyncChain: "",
-  };
-
-  const { subscribe, set, update } = writable<OpenAiAppConfig>(defaultConfig);
-
-  const localStorageSet = (x: OpenAiAppConfig) => {
-    const s = JSON.stringify(x);
-    localStorage.setItem("openai-config", s);
-    set(x);
-  };
-
-  const localStorageUpdate = (fn: (config: OpenAiAppConfig) => OpenAiAppConfig) => {
-    update((x) => {
-      const v = fn(x);
-      const s = JSON.stringify(v);
-      localStorage.setItem("openai-config", s);
-      return v;
-    });
-  };
-
-  return {
-    subscribe,
-    set: localStorageSet,
-    update: localStorageUpdate,
-    init: async () => {
-      const s = localStorage.getItem("openai-config");
-      let config: OpenAiAppConfig;
-      if (!s) {
-        console.debug("No config found. Likely first time running the app. Using default config.");
-        config = defaultConfig;
-      } else {
-        config = JSON.parse(s) as OpenAiAppConfig;
-      }
-
-      const siteId = await DatabaseMeta.getSiteId();
-      set({ ...config, siteId });
-
-      // NOTE: this is a stopgap, since moving to the "providers" system this
-      // whole things should be refactored. However, we do want backwards compat
-      // for existing users.
-      if (config.apiKey) {
-        llmProviders.updateProvider("openai", { apiKey: config.apiKey });
-      }
-
-      // TODO: do we need this here?
-      llmProviders.invalidate();
-    },
-  };
-})();
 
 interface GPTProfile {
   name: string;

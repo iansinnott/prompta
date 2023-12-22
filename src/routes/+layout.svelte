@@ -1,6 +1,6 @@
 <script lang="ts">
   import "../app.postcss";
-  import { openAiConfig, syncStore, showInitScreen } from "../lib/stores/stores";
+  import { syncStore, showInitScreen } from "../lib/stores/stores";
   import { onDestroy, onMount } from "svelte";
   import { DatabaseMeta, getLatestDbName, incrementDbName, initDb } from "$lib/db";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
@@ -12,6 +12,7 @@
   import FullScreenError from "$lib/components/FullScreenError.svelte";
   import { debounce, wrapError } from "$lib/utils";
   import DevTooling from "$lib/components/DevTooling.svelte";
+  import { openAiConfig } from "$lib/stores/stores/llmProvider";
 
   const sys = getSystem();
   let startupError: Error | null = null;

@@ -1,13 +1,12 @@
 <script lang="ts">
   import {
     gptProfileStore,
-    openAiConfig,
     showSettings,
     DEFAULT_SYSTEM_MESSAGE,
     db,
     getOpenAi,
   } from "$lib/stores/stores";
-  import { chatModels } from "$lib/stores/stores/llmProvider";
+  import { chatModels, openAiConfig } from "$lib/stores/stores/llmProvider";
   import AutosizeTextarea from "./AutosizeTextarea.svelte";
   import { getSystem } from "$lib/gui";
   import { onMount } from "svelte";
@@ -42,10 +41,6 @@
 
   $: hasCustomModel =
     $gptProfileStore.model && !$chatModels.models.some((x) => x.id == $gptProfileStore.model);
-
-  $: if (!$openAiConfig.baseURL) {
-    $openAiConfig.baseURL = "https://api.openai.com/v1/";
-  }
 </script>
 
 <!-- Hide on escape -->
@@ -95,68 +90,7 @@
 
         <div class="Separator h-px bg-zinc-700 my-4" />
 
-        <h3 class="text-xl mb-4 sm:col-span-2">OpenAI</h3>
-
-        <label class="label" for="b"> API Key: </label>
-        <div class:warning={!$openAiConfig.apiKey}>
-          <input
-            id="b"
-            class="input rounded w-full"
-            type="password"
-            placeholder="sk-abc..."
-            bind:value={$openAiConfig.apiKey}
-            on:blur={(e) => {
-              // Assume the API key was changed and refetch models
-              if (e.currentTarget.value) {
-                chatModels.refresh();
-              }
-            }}
-          />
-          <p class="leading-tight">
-            <small>
-              A valid API is required for the app to work. You can find or regenerate your API key
-              in the OpenAI dashboard.
-            </small>
-            <small>
-              See:
-              <a
-                class="text-blue-200 hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-                href="https://platform.openai.com/account/api-keys"
-              >
-                https://platform.openai.com/account/api-keys
-              </a>
-            </small>
-          </p>
-          <p class="leading-tight">
-            <small>
-              Your API key is stored locally on your computer. It is not sent to any server. If you
-              ever wish to remove it from local storage simply delete the value above.
-            </small>
-          </p>
-        </div>
-
-        <label for="a" class="label"> Model: </label>
-        <div class="relative">
-          {#if modelsLoading}
-            <div class="absolute bg-gray-600 text-white top-2 inset-x-2 rounded px-2">
-              Loading...
-            </div>
-          {/if}
-          <select id="a" class="input rounded w-full" bind:value={$gptProfileStore.model}>
-            {#each $chatModels.models as model}
-              <option value={model.id}>{model.id}</option>
-            {/each}
-          </select>
-          {#if hasCustomModel}
-            <p class="border border-yellow-400 mt-2 rounded bg-yellow-500/20">
-              <small
-                ><strong>WARNING:</strong> Using custom model. See "Advanced" settings below.</small
-              >
-            </p>
-          {/if}
-        </div>
+        <h3 class="text-xl mb-4 sm:col-span-2">LLM Settings</h3>
 
         <label for="d" class="label">System Message:</label>
         <div>
@@ -207,55 +141,6 @@
         </button>
         {#if showAdvanced}
           <!-- separator -->
-
-          <h3 class="text-xl mb-4 sm:col-span-2">Custom OpenAI Settings</h3>
-
-          <label class="label" for="baseUrl"> Base URL: </label>
-          <div>
-            <input
-              id="baseUrl"
-              class="input rounded w-full"
-              type="text"
-              placeholder="https://api.openai.com/v1/"
-              bind:value={$openAiConfig.baseURL}
-            />
-            <p class="leading-tight">
-              <small>
-                You can set a custom OpenAI base url to use Prompta with 3rd party tools such as
-                helicone or local LLMs that expose OpenAI compatible APIs like <a
-                  href="https://github.com/mudler/LocalAI"
-                  class="text-blue-200 hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer">LocalAI</a
-                >
-                or
-                <a
-                  href="https://github.com/BerriAI/litellm"
-                  class="text-blue-200 hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer">LiteLLM</a
-                >.
-              </small>
-            </p>
-          </div>
-
-          <label class="label" for="customModel"> Custom Model: </label>
-          <div>
-            <input
-              id="customModel"
-              class="input rounded w-full"
-              type="text"
-              placeholder="Enter custom model name"
-              bind:value={$gptProfileStore.model}
-            />
-            <p class="leading-tight">
-              <small>
-                You can set a custom OpenAI model to use with Prompta. This will override the model
-                choice above.
-              </small>
-            </p>
-          </div>
-
           <h3 class="text-xl mb-4 sm:col-span-2">Database</h3>
 
           <label for="export" class="label">Export:</label>
@@ -366,7 +251,7 @@
             </p>
           </div>
 
-          <label for="c" class="label">Database:</label>
+          <label for="c" class="label">Info:</label>
           <div class="overflow-auto max-w-full">
             <pre
               class="py-1 px-2 rounded text-slate-300 text-sm border border-zinc-700 table whitespace-pre-wrap overflow-auto w-full">

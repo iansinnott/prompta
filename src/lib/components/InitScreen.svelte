@@ -1,6 +1,7 @@
 <script lang="ts">
   import { dev } from "$app/environment";
-  import { openAiConfig, showInitScreen, verifyOpenAiApiKey } from "$lib/stores/stores";
+  import { showInitScreen, verifyOpenAiApiKey } from "$lib/stores/stores";
+  import { openAiConfig } from "$lib/stores/stores/llmProvider";
   import classNames from "classnames";
   import { onMount } from "svelte";
   import { fly } from "svelte/transition";

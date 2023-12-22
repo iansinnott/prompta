@@ -106,8 +106,8 @@
 
           <p class="leading-tight">
             <small>
-              Your API key is stored locally on your computer. It is not sent to any server. If you
-              ever wish to remove it from local storage simply delete the value above.
+              Your API key is stored locally on your computer. If you ever wish to remove it from
+              local storage simply delete the value above.
             </small>
           </p>
         </div>

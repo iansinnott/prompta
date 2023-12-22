@@ -3,7 +3,6 @@
   import {
     currentThread,
     currentChatThread,
-    openAiConfig,
     showSettings,
     syncStore,
     devStore,

@@ -1,8 +1,8 @@
-import { LLMProvider } from "$lib/db";
+import { DatabaseMeta, LLMProvider } from "$lib/db";
 import { get, writable } from "svelte/store";
 import { invalidatable } from "../storeUtils";
 import { dev } from "$app/environment";
-import { OpenAI } from "openai";
+import { OpenAI, type ClientOptions } from "openai";
 import { toast } from "$lib/toast";
 
 const defaultProviders: LLMProvider[] = [
@@ -23,6 +23,85 @@ const defaultProviders: LLMProvider[] = [
     createdAt: new Date(0),
   },
 ];
+
+type OpenAiAppConfig = Partial<ClientOptions> & {
+  siteId: string;
+  lastSyncChain: string;
+};
+
+/**
+ * This is the legacy store for openai data. I'm still using it in order to
+ * preserve backwards compat. Existing users, including myself, shouldn't have to
+ * reconfigure when this major update ships.
+ *
+ * @deprecated
+ * Use llmProviders instead. This is only here for backwards compatibility.
+ */
+export const openAiConfig = (() => {
+  const defaultConfig: OpenAiAppConfig = {
+    apiKey: "",
+    siteId: "",
+    lastSyncChain: "",
+  };
+
+  const { subscribe, set, update } = writable<OpenAiAppConfig>(defaultConfig);
+
+  const localStorageSet = (x: OpenAiAppConfig) => {
+    const s = JSON.stringify(x);
+    localStorage.setItem("openai-config", s);
+    set(x);
+
+    // NOTE: this is a stopgap, since moving to the "providers" system this
+    // whole things should be refactored. However, we do want backwards compat
+    // for existing users.
+    if (x.apiKey) {
+      llmProviders.updateProvider("openai", { apiKey: x.apiKey });
+    }
+  };
+
+  const localStorageUpdate = (fn: (config: OpenAiAppConfig) => OpenAiAppConfig) => {
+    update((x) => {
+      const v = fn(x);
+      const s = JSON.stringify(v);
+      localStorage.setItem("openai-config", s);
+
+      // NOTE: this is a stopgap, since moving to the "providers" system this
+      // whole things should be refactored. However, we do want backwards compat
+      // for existing users.
+      if (v.apiKey) {
+        llmProviders.updateProvider("openai", { apiKey: v.apiKey });
+      }
+
+      return v;
+    });
+  };
+
+  return {
+    subscribe,
+    set: localStorageSet,
+    update: localStorageUpdate,
+    init: async () => {
+      const s = localStorage.getItem("openai-config");
+      let config: OpenAiAppConfig;
+      if (!s) {
+        console.debug("No config found. Likely first time running the app. Using default config.");
+        config = defaultConfig;
+      } else {
+        config = JSON.parse(s) as OpenAiAppConfig;
+      }
+
+      const siteId = await DatabaseMeta.getSiteId();
+      set({ ...config, siteId });
+
+      // NOTE: this is a stopgap, since moving to the "providers" system this
+      // whole things should be refactored. However, we do want backwards compat
+      // for existing users.
+      if (config.apiKey) {
+        llmProviders.updateProvider("openai", { apiKey: config.apiKey });
+      }
+    },
+  };
+})();
 
 export const isDefaultProvider = ({ id }: { id: string }) => {
   return defaultProviders.some((p) => p.id === id);

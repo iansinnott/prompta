@@ -5,7 +5,6 @@ import {
   db,
   sqlite,
   currentThread,
-  openAiConfig,
   profilesStore,
   syncStore,
   isNewThread,
@@ -24,6 +23,7 @@ import schemaUrl from "$lib/migrations/prompta_schema.sql?url";
 export { schemaUrl };
 
 import { getSystem } from "./gui";
+import { openAiConfig } from "./stores/stores/llmProvider";
 
 const legacyDbNames = [
   "chat_db-v1",
