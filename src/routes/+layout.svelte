@@ -1,6 +1,6 @@
 <script lang="ts">
   import "../app.postcss";
-  import { syncStore, showInitScreen } from "../lib/stores/stores";
+  import { syncStore } from "../lib/stores/stores";
   import { onDestroy, onMount } from "svelte";
   import { DatabaseMeta, getLatestDbName, incrementDbName, initDb } from "$lib/db";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
@@ -55,11 +55,6 @@
       throw wrapError(err, `There was an error initializing the database.`);
     } finally {
       clearTimeout(_timeout);
-    }
-
-    if (!$openAiConfig.apiKey) {
-      $showInitScreen = true;
-      console.warn(`No API key found. Please enter one in the settings.`);
     }
 
     appReady = true;

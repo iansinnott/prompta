@@ -10,6 +10,7 @@
   import { llmProviders, chatModels } from "$lib/stores/stores/llmProvider";
   import IconOpenAi from "./IconOpenAI.svelte";
   import { gptProfileStore } from "$lib/stores/stores/llmProfile";
+  import { showInitScreen } from "$lib/stores/stores";
   let _class: string = "";
   export { _class as class };
 
@@ -24,22 +25,34 @@
     icon?: IconSource;
   };
 
-  $: options = $chatModels.models.map((x) => {
-    const provider = llmProviders.byId(x.provider.id);
-    let icon: IconSource | undefined = undefined;
+  $: options = $chatModels.models
+    .map((x) => {
+      const provider = llmProviders.byId(x.provider.id);
+      let icon: IconSource | undefined = undefined;
 
-    if (provider?.id === "prompta") {
-      icon = { component: IconBrain, class: "w-5 h-5" };
-    } else if (provider?.id === "openai") {
-      icon = { component: IconOpenAi };
-    }
+      if (provider?.id === "prompta") {
+        icon = { component: IconBrain, class: "w-5 h-5" };
+      } else if (provider?.id === "openai") {
+        icon = { component: IconOpenAi };
+      }
 
-    return {
-      value: x.id,
-      label: x.id,
-      icon,
-    };
-  }) as Status[];
+      return {
+        value: x.id,
+        label: x.id,
+        icon,
+      };
+    })
+    .concat(
+      llmProviders.getOpenAi().apiKey || !llmProviders.getOpenAi().enabled // reactive
+        ? []
+        : [
+            {
+              value: "openai",
+              label: "OpenAI (gpt-4, gpt-3.5, ...)",
+              icon: { component: IconOpenAi },
+            },
+          ]
+    ) as Status[];
 
   let value = $gptProfileStore.model || "";
   let loading = false;
@@ -50,6 +63,12 @@
 
   function handleChange(x: string) {
     open = false;
+
+    if (x === "openai") {
+      showInitScreen.set(true);
+      return;
+    }
+
     value = x;
     $gptProfileStore.model = x;
   }
