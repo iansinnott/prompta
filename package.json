@@ -22,7 +22,7 @@
     "test:unit": "vitest"
   },
   "devDependencies": {
-    "@playwright/test": "^1.36.1",
+    "@playwright/test": "^1.40.1",
     "@sveltejs/adapter-auto": "2.1.1",
     "@sveltejs/adapter-static": "~2.0.2",
     "@sveltejs/kit": "^1.22.3",

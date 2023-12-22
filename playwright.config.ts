@@ -27,6 +27,18 @@ const config: PlaywrightTestConfig = {
         storageState: "playwright/.auth/user.json", // Use auth state prepared by setup
       },
     },
+    {
+      name: "desktop",
+      dependencies: ["setup"],
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "playwright/.auth/user.json",
+        launchOptions: {
+          slowMo: 1000,
+          devtools: true,
+        },
+      },
+    },
   ],
   webServer: {
     command: "npm run ui:dev",
