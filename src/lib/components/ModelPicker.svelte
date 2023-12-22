@@ -13,22 +13,35 @@
   let _class: string = "";
   export { _class as class };
 
+  type IconSource =
+    | { char: string }
+    | { component: ComponentType; class?: string }
+    | { src: string };
+
   type Status = {
     value: string;
     label: string;
-    icon?: ComponentType;
+    icon?: IconSource;
   };
 
   $: options = $chatModels.models.map((x) => {
     const provider = llmProviders.byId(x.provider.id);
+    let icon: IconSource | undefined = undefined;
+
+    if (provider?.id === "prompta") {
+      icon = { component: IconBrain, class: "w-5 h-5" };
+    } else if (provider?.id === "openai") {
+      icon = { component: IconOpenAi };
+    }
+
     return {
       value: x.id,
       label: x.id,
-      icon: provider?.id === "prompta" ? IconBrain : provider?.id === "openai" ? IconOpenAi : null,
+      icon,
     };
   }) as Status[];
 
-  let value = "";
+  let value = $gptProfileStore.model || "";
   let loading = false;
 
   let open = false;
@@ -55,10 +68,16 @@
         size="sm"
         class="h-[42px] justify-start border border-zinc-700"
       >
-        {#if typeof selectedStatus?.icon === "string"}
-          <img src={selectedStatus?.icon} class="h-4 w-4 shrink-0" alt="" />
-        {:else if selectedStatus?.icon}
-          <svelte:component this={selectedStatus.icon} class="h-4 w-4 shrink-0" />
+        <!--  NOTE: Svelte is very anoyingly wrong about these TS errors. It cannot seem to discriminate types -->
+        {#if selectedStatus?.icon?.src}
+          <img src={selectedStatus.icon.src} class="h-4 w-4 shrink-0" alt="" />
+        {:else if selectedStatus?.icon?.component}
+          <svelte:component
+            this={selectedStatus.icon.component}
+            class={cn("h-4 w-4 shrink-0", selectedStatus.icon.class)}
+          />
+        {:else if selectedStatus?.icon?.char}
+          <code class="text-xl inline-block">{selectedStatus.icon.char}</code>
         {:else}
           <IconBrain class="w-5 h-5 text-[#30CEC0] scale-[1.2]" />
         {/if}
@@ -77,20 +96,23 @@
                   handleChange(currentValue);
                 }}
               >
-                {#if typeof opt.icon === "string"}
+                {#if opt.icon?.char}
+                  <code class="text-xl inline-block">{opt.icon.char}</code>
+                {:else if opt.icon?.src}
                   <img
-                    src={opt.icon}
+                    src={opt.icon.src}
                     class={cn(
                       "mr-2 h-4 w-4",
                       opt.value !== selectedStatus?.value && "text-foreground/40"
                     )}
                     alt=""
                   />
-                {:else}
+                {:else if opt.icon?.component}
                   <svelte:component
-                    this={opt.icon}
+                    this={opt.icon.component}
                     class={cn(
-                      "mr-2 h-4 w-4 ",
+                      "mr-2 h-4 w-4",
+                      opt.icon.class,
                       opt.value !== selectedStatus?.value && "text-foreground/40"
                     )}
                   />
