@@ -50,13 +50,6 @@ export const openAiConfig = (() => {
     const s = JSON.stringify(x);
     localStorage.setItem("openai-config", s);
     set(x);
-
-    // NOTE: this is a stopgap, since moving to the "providers" system this
-    // whole things should be refactored. However, we do want backwards compat
-    // for existing users.
-    if (x.apiKey) {
-      llmProviders.updateProvider("openai", { apiKey: x.apiKey });
-    }
   };
 
   const localStorageUpdate = (fn: (config: OpenAiAppConfig) => OpenAiAppConfig) => {
@@ -64,14 +57,6 @@ export const openAiConfig = (() => {
       const v = fn(x);
       const s = JSON.stringify(v);
       localStorage.setItem("openai-config", s);
-
-      // NOTE: this is a stopgap, since moving to the "providers" system this
-      // whole things should be refactored. However, we do want backwards compat
-      // for existing users.
-      if (v.apiKey) {
-        llmProviders.updateProvider("openai", { apiKey: v.apiKey });
-      }
-
       return v;
     });
   };
@@ -161,6 +146,10 @@ export const llmProviders = (() => {
       return get(store).providers.find((p) => p.id === id);
     },
 
+    getOpenAi: () => {
+      return get(store).providers.find((p) => p.id === "openai");
+    },
+
     updateProvider: (id: string, provider: Partial<LLMProvider>) => {
       if (isDefaultProvider({ id })) {
         update((state) => {
@@ -170,6 +159,11 @@ export const llmProviders = (() => {
             state.providers[index] = { ...state.providers[index], ...provider };
           } else {
             console.error(`Provider with id ${id} not found`);
+          }
+
+          // Keep the other openai store in sync for now
+          if (id === "openai") {
+            openAiConfig.update((x) => ({ ...x, apiKey: provider.apiKey }));
           }
 
           return state;
@@ -242,7 +236,16 @@ export const chatModels = (() => {
         console.debug("Already have models, but refetching for latest");
       }
 
-      const providers = get(llmProviders).providers.filter((x) => x.enabled);
+      const providers = get(llmProviders)
+        .providers.filter((x) => x.enabled)
+        .filter((x) => {
+          if (x.id === "openai" && !x.apiKey) {
+            console.debug("OpenAI filter out of providers because no API key. Implicitly disabled");
+            return false;
+          }
+
+          return true;
+        });
 
       update((x) => ({ ...x, loadingState: "loading", error: null }));
 
