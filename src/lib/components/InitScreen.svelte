@@ -21,11 +21,13 @@
   });
 
   let loading = false;
+  let buttonText = "Start Chatting";
 
   const handleSubmit = async () => {
     try {
       error = "";
       loading = true;
+      buttonText = "Loading...";
       if (!apiKey) {
         error = "No API key provided";
         console.log("API", apiKey, input.value);
@@ -39,6 +41,7 @@
           apiKey: apiKey as string,
           enabled: true,
         });
+        buttonText = "Enabling OpenAI...";
         await chatModels.refresh();
         $gptProfileStore.model = "gpt-3.5-turbo-1106"; // The cheapest openai model
         $showInitScreen = false;
@@ -55,14 +58,13 @@
       });
     } finally {
       loading = false;
+      buttonText = "Start Chatting";
     }
   };
 
   const skipInitScreen = () => {
     $showInitScreen = false;
   };
-
-  $: buttonText = loading ? "Loading..." : "Start Chatting";
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
