@@ -143,7 +143,7 @@
           <h3 class="text-xl mb-4 sm:col-span-2">Database</h3>
 
           <label for="export" class="label">Export:</label>
-          <div>
+          <fieldset>
             <button
               on:click={async (e) => {
                 e.preventDefault();
@@ -172,10 +172,10 @@
             <p>
               <small>Will download multiple files.</small>
             </p>
-          </div>
+          </fieldset>
 
           <label for="import" class="label">Import:</label>
-          <div>
+          <fieldset>
             <button
               on:click={async (e) => {
                 e.preventDefault();
@@ -248,10 +248,10 @@
                 the later one will overwrite.</small
               >
             </p>
-          </div>
+          </fieldset>
 
           <label for="c" class="label">Info:</label>
-          <div class="overflow-auto max-w-full">
+          <fieldset class="overflow-auto max-w-full">
             <pre
               class="py-1 px-2 rounded text-slate-300 text-sm border border-zinc-700 table whitespace-pre-wrap overflow-auto w-full">
            {dbName}<span class="text-blue-300 opacity-50">/{$openAiConfig.siteId}</span> 
@@ -259,7 +259,7 @@
             <p class="opacity-60">
               <small> Database identifier used locally for persistent storage. </small>
             </p>
-          </div>
+          </fieldset>
 
           <span class="ScrollBottom" />
         {/if}
@@ -269,6 +269,12 @@
 {/if}
 
 <style>
+  .label {
+    @apply block mb-3 sm:mb-0;
+  }
+  fieldset {
+    @apply mb-4 border-b border-zinc-700 pb-4;
+  }
   .Separator {
     @apply sm:col-span-2;
   }
@@ -280,8 +286,7 @@
     justify-content: center;
   }
   .content {
-    @apply rounded-2xl p-4 gap-x-4 gap-y-4 grid-cols-1 sm:grid-cols-[auto_1fr];
-    display: grid;
+    @apply rounded-2xl p-4 block sm:grid gap-x-4 gap-y-4 grid-cols-1 sm:grid-cols-[auto_1fr];
     /* content will have two columns, and as many rows as needed for the content */
     align-items: start;
   }
