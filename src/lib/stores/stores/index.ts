@@ -23,31 +23,10 @@ import { toast } from "$lib/toast";
 import { createSyncer, getDefaultEndpoint, type Syncer } from "$lib/sync/vlcn";
 import { PENDING_THREAD_TITLE, hasThreadTitle, persistentStore } from "../storeUtils";
 import { chatModels, llmProviders, openAiConfig } from "./llmProvider";
+import { activeProfileName, getOpenAi, gptProfileStore } from "./llmProfile";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
-
-interface GPTProfile {
-  name: string;
-  model: string;
-  systemMessage: string;
-}
-
-export const DEFAULT_SYSTEM_MESSAGE = `
-You are a helpful assistant. Respond to user messages as accurately as possible. Do not repeat the prompt.
-Be concise, unless the user asks for more detail.
-Assume the user has a technical background and understands software programming, although they may ask about any topic.
-When producing code, insert the language identifier after opening fences.
-    `.trim();
-
-export const activeProfileName = writable("default");
-export const profilesStore = persistentStore<{ [key: string]: GPTProfile }>("profile", {
-  default: {
-    name: "default",
-    model: "gpt-3.5-turbo",
-    systemMessage: DEFAULT_SYSTEM_MESSAGE,
-  },
-});
 
 /**
  * A store for _RUNTIME_ dev stuff. For build-time, use the `dev` variable.
@@ -55,79 +34,6 @@ export const profilesStore = persistentStore<{ [key: string]: GPTProfile }>("pro
 export const devStore = persistentStore<{ showDebug: boolean }>("dev", {
   showDebug: dev,
 });
-
-// @todo Persist
-export const gptProfileStore = (() => {
-  const activeProfileStore = derived([profilesStore, activeProfileName], ([profiles, name]) => {
-    return profiles[name];
-  });
-
-  return {
-    subscribe: activeProfileStore.subscribe,
-    set: (profile: GPTProfile) => {
-      profilesStore.update((x) => {
-        return { ...x, [profile.name]: profile };
-      });
-    },
-    selectProfile: (name: string) => {
-      activeProfileName.set(name);
-    },
-  };
-})();
-
-export const getOpenAi = () => {
-  const { model: modelId } = get(gptProfileStore);
-  const model = get(chatModels).models.find((x) => x.id === modelId);
-
-  if (!model) {
-    throw new Error("No model found for: " + modelId);
-  }
-
-  const provider = llmProviders.byId(model.provider.id);
-
-  if (!provider) {
-    throw new Error("No provider found for: " + model.provider.id);
-  }
-
-  const { apiKey, baseUrl } = provider;
-
-  if (!apiKey && provider.id === "openai") {
-    throw new Error("No API key for OpenAI");
-  }
-
-  if (!baseUrl) {
-    throw new Error("No API URL");
-  }
-
-  return initOpenAi({ apiKey, baseURL: baseUrl });
-};
-
-export const verifyOpenAiApiKey = async (apiKey: string) => {
-  const conf = get(openAiConfig);
-  const baseURL = conf.baseURL as string;
-
-  // Skip verification if the base url is not the standard openai base url
-  // because we aren't sure custom URL supports it. The base URL is assumed to
-  // suppor the OpenAI API, but the models endpoint may be overlooked in favor
-  // of merely supporting chat-related endpoints.
-  if (baseURL && baseURL !== "https://api.openai.com/v1/") {
-    return true;
-  }
-
-  // Ping the models endpoint to verify the api key
-  try {
-    await fetch("https://api.openai.com/v1/models", {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-    }).then((x) => (x.ok ? x.json() : Promise.reject(x)));
-    return true;
-  } catch (err) {
-    console.error("Could not verify api key. Likely invalid", err);
-    return false;
-  }
-};
 
 export const generateThreadTitle = async ({ threadId }: { threadId: string }) => {
   const openAi = getOpenAi();

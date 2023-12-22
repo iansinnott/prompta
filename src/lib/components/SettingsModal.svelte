@@ -1,11 +1,10 @@
 <script lang="ts">
+  import { showSettings, db } from "$lib/stores/stores";
   import {
     gptProfileStore,
-    showSettings,
     DEFAULT_SYSTEM_MESSAGE,
-    db,
     getOpenAi,
-  } from "$lib/stores/stores";
+  } from "$lib/stores/stores/llmProfile";
   import { chatModels, openAiConfig } from "$lib/stores/stores/llmProvider";
   import AutosizeTextarea from "./AutosizeTextarea.svelte";
   import { getSystem } from "$lib/gui";

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { dev } from "$app/environment";
-  import { showInitScreen, verifyOpenAiApiKey } from "$lib/stores/stores";
+  import { showInitScreen } from "$lib/stores/stores";
+  import { verifyOpenAiApiKey } from "$lib/stores/stores/llmProfile";
   import { openAiConfig } from "$lib/stores/stores/llmProvider";
   import classNames from "classnames";
   import { onMount } from "svelte";
@@ -69,7 +70,7 @@
     out:fly|global={{ duration: 300, delay: 0, y: 50, opacity: 0 }}
     class="text-transparent bg-clip-text bg-gradient-to-br via-sky-400 to-indigo-500 from-blue-100 text-3xl font-extrabold tracking-wider"
   >
-    Quick setup
+    OpenAI Setup
   </h1>
   <form
     on:submit|preventDefault={handleSubmit}
@@ -77,7 +78,7 @@
     out:fly|global={{ duration: 300, delay: 0, y: 50, opacity: 0 }}
     class="mt-8 max-w-[400px] flex flex-col space-y-4"
   >
-    <label for="sk"> OpenAI API Key </label>
+    <label for="sk"> To use OpenAI, enter an API key: </label>
     <div
       class={classNames("rounded p-px gradient-border", {
         error: error,
@@ -127,13 +128,8 @@
       class="w-full text-center px-2 py-[6px] rounded text-white font-semibold tracking-wide border border-white/30 hover:bg-white/10"
       on:click={skipInitScreen}
     >
-      Skip
+      Cancel
     </button>
-    <p class="leading-tight">
-      <small>
-        Skip this step if you want to use local models or use an API other than OpenAI official.
-      </small>
-    </p>
   </form>
 </div>
 

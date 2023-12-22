@@ -1,15 +1,7 @@
 import initWasm, { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import type { TXAsync, Schema, DBAsync } from "@vlcn.io/xplat-api";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
-import {
-  db,
-  sqlite,
-  currentThread,
-  profilesStore,
-  syncStore,
-  isNewThread,
-  newThread,
-} from "../lib/stores/stores";
+import { db, sqlite, currentThread, syncStore, isNewThread, newThread } from "../lib/stores/stores";
 import { dev } from "$app/environment";
 import { nanoid } from "nanoid";
 import type OpenAI from "openai";
@@ -24,6 +16,7 @@ export { schemaUrl };
 
 import { getSystem } from "./gui";
 import { openAiConfig } from "./stores/stores/llmProvider";
+import { profilesStore } from "./stores/stores/llmProfile";
 
 const legacyDbNames = [
   "chat_db-v1",

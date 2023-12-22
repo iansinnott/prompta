@@ -6,10 +6,10 @@
   import { cn } from "$lib/utils";
   import type { ComponentType } from "svelte";
   import IconBrain from "$lib/components/IconBrain.svelte";
-  import { gptProfileStore } from "$lib/stores/stores";
   import { onMount } from "svelte";
   import { llmProviders, chatModels } from "$lib/stores/stores/llmProvider";
   import IconOpenAi from "./IconOpenAI.svelte";
+  import { gptProfileStore } from "$lib/stores/stores/llmProfile";
   let _class: string = "";
   export { _class as class };
 

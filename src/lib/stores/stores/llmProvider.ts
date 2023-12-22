@@ -4,6 +4,7 @@ import { invalidatable } from "../storeUtils";
 import { dev } from "$app/environment";
 import { OpenAI, type ClientOptions } from "openai";
 import { toast } from "$lib/toast";
+import { gptProfileStore } from "./llmProfile";
 
 const defaultProviders: LLMProvider[] = [
   {
@@ -147,7 +148,7 @@ export const llmProviders = (() => {
     },
 
     getOpenAi: () => {
-      return get(store).providers.find((p) => p.id === "openai");
+      return get(store).providers.find((p) => p.id === "openai")!;
     },
 
     updateProvider: (id: string, provider: Partial<LLMProvider>) => {
@@ -266,6 +267,7 @@ export const chatModels = (() => {
                 ).map((x) => ({ ...x, provider: { id: provider.id } }));
               })
               .catch((err) => {
+                console.error("Error fetching models", err);
                 toast({
                   title: "Error fetching models for: " + provider.name,
                   message: err.message,
@@ -281,6 +283,20 @@ export const chatModels = (() => {
         _chatModels.sort((a, b) => a.id.localeCompare(b.id));
 
         update((x) => ({ ...x, models: _chatModels, loadingState: "loaded", error: null }));
+
+        // Handle the edge case where the user removes the provider of a model they were using
+        const currentProfile = get(gptProfileStore);
+        if (!_chatModels.some((x) => x.id === currentProfile.model)) {
+          toast({
+            title: "Model not found",
+            message: `The model you were using (${currentProfile.model}) was not found. Defaulting to the next available model (${_chatModels[0].id}).`,
+            type: "info",
+          });
+          console.warn(
+            `Model not found: ${currentProfile.model}. Defaulting to ${_chatModels[0].id}`
+          );
+          gptProfileStore.set({ ...currentProfile, model: _chatModels[0].id });
+        }
 
         localStorage.setItem(lsKey, JSON.stringify(_chatModels));
       } catch (e) {
