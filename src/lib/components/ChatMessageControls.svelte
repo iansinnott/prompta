@@ -2,13 +2,16 @@
   import classNames from "classnames";
   import CopyButton from "./CopyButton.svelte";
   import type { ChatMessage } from "$lib/db";
-  import { ThumbsUp, ThumbsDown, Pencil, Trash, Check, X } from "lucide-svelte";
+  import { ThumbsUp, ThumbsDown, Info, Pencil, Trash, Check, X } from "lucide-svelte";
   import { currentChatThread, currentlyEditingMessage } from "$lib/stores/stores";
   import { toast } from "$lib/toast";
+  import { slide } from "svelte/transition";
+  import { chatModels, llmProviders } from "$lib/stores/stores/llmProvider";
   let _class: string = "";
   export { _class as class };
   export let item: ChatMessage;
 
+  let showMeta = false;
   $: isEditing = $currentlyEditingMessage?.id === item.id;
 </script>
 
@@ -64,6 +67,21 @@
       </button>
     {/if}
 
+    <div class="px-2 !text-white/10 pointer-events-none">{"|"}</div>
+
+    <button
+      on:click={async () => {
+        showMeta = !showMeta;
+      }}
+    >
+      <Info
+        class={classNames("w-[18px] h-[18px] ", {
+          "text-white/40 hover:text-white": !isEditing,
+          "text-white": isEditing || showMeta,
+        })}
+      />
+    </button>
+
     <!--   Hopefully this makes it harder to accidentally click delete. Currently no confirmation     -->
     <div class="px-2 !text-white/10 pointer-events-none">{"|"}</div>
 
@@ -84,3 +102,21 @@
     </button>
   </div>
 </div>
+
+{#if showMeta}
+  <div transition:slide={{ duration: 150 }}>
+    <dl class="rounded overflow-hidden">
+      {#if item.model}
+        {@const model = $chatModels.models.find((m) => m.id === item.model)}
+        <div class="px-2 text-sm odd:bg-white/10 even:bg-white/5">
+          <dt class="inline-block">model</dt>
+          <dd class="inline-block ml-2 font-mono">{item.model} ({model?.provider?.id})</dd>
+        </div>
+      {/if}
+      <div class="px-2 text-sm odd:bg-white/10 even:bg-white/5">
+        <dt class="inline-block">createdAt</dt>
+        <dd class="inline-block ml-2 font-mono">{item.createdAt}</dd>
+      </div>
+    </dl>
+  </div>
+{/if}
