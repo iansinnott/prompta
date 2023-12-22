@@ -758,7 +758,7 @@ export const currentChatThread = (() => {
       }
 
       promptGpt({ threadId: lastMessage.threadId }).catch((err) => {
-        console.error("[gpt]", err);
+        console.error("[regenerateResponse]", err);
         invalidate();
       });
     },
@@ -777,6 +777,8 @@ export const currentChatThread = (() => {
         role: cmd.command,
         content: cmd.args.join(" "),
       });
+
+      messageText.set("");
     },
 
     sendMessage: async (...args: Parameters<typeof ChatMessage.create>) => {
@@ -793,7 +795,7 @@ export const currentChatThread = (() => {
       const backupText = get(messageText);
       messageText.set("");
       promptGpt({ threadId: msg.threadId as string }).catch((err) => {
-        console.error("[gpt]", err);
+        console.error("[sendMessage]", err);
         messageText.set(backupText); // Restore backup text
         return ChatMessage.delete({ where: { id: newMessage.id } }); // Delete the message
       });
