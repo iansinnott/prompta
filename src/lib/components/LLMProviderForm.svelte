@@ -3,7 +3,7 @@
   import * as Card from "$lib/components/ui/card";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
-  import { isDefaultProvider, llmProviders } from "$lib/stores/stores/llmProvider";
+  import { chatModels, isDefaultProvider, llmProviders } from "$lib/stores/stores/llmProvider";
   import classNames from "classnames";
   import IconBrain from "./IconBrain.svelte";
   import { slide } from "svelte/transition";
@@ -12,6 +12,8 @@
   import { toast } from "$lib/toast";
   import { Trash } from "lucide-svelte";
   import IconOpenAi from "./IconOpenAI.svelte";
+  import { verifyOpenAICompatibileProvider } from "$lib/stores/stores/llmProfile";
+  import SmallSpinner from "./SmallSpinner.svelte";
   let _class: string = "";
   export { _class as class };
 
@@ -20,7 +22,7 @@
   const descriptions = {
     prompta:
       "Home-grown Prompta AI! Free until the cost becomes prohibitive. Use this if you don't want to bring your own API key.",
-    openai: "The most accurate LLMs thus far. Use this if you have an OpenAI API key.",
+    openai: "The most accurate LLMs thus far. Use this if you want to use your own OpenAI API key.",
   };
 
   let { name, baseUrl, apiKey } = provider;
@@ -36,6 +38,8 @@
   };
 
   const isNewProvider = (x: LLMProvider) => x.id === "new";
+
+  let loading = false;
 
   $: isDirty =
     isNewProvider(provider) ||
@@ -84,7 +88,7 @@
           {/if}
 
           <div class="flex flex-col space-y-1.5">
-            <Input bind:value={apiKey} placeholder="API Key" type="password" />
+            <Input bind:value={apiKey} placeholder="API Key (Optional)" type="password" />
           </div>
 
           {#if provider.id === "openai"}
@@ -118,7 +122,7 @@
         <Card.Footer class="flex justify-between">
           <Button on:click={cancelEdit} variant="outline">Cancel</Button>
           <Button
-            on:click={() => {
+            on:click={async () => {
               if (!name) {
                 toast({
                   title: "Name is required",
@@ -135,6 +139,44 @@
                 });
                 return;
               }
+              try {
+                new URL(baseUrl);
+              } catch (e) {
+                toast({
+                  title: "Invalid URL",
+                  message: "Please enter a valid URL.",
+                  type: "error",
+                });
+                return;
+              }
+
+              if (!baseUrl.endsWith("/")) {
+                baseUrl += "/"; // Should probably handle this at the calling code, but the trailing slash is required
+              }
+
+              try {
+                loading = true;
+                const isCompatible = await verifyOpenAICompatibileProvider({
+                  baseUrl,
+                  apiKey,
+                });
+                if (!isCompatible) {
+                  toast({
+                    title: "Incompatible API",
+                    message:
+                      "The provided API key is not compatible with the selected provider. Prompta requires ",
+                    type: "error",
+                  });
+                  return;
+                }
+              } catch (e) {
+                toast({
+                  title: "Error",
+                  message: e.message,
+                  type: "error",
+                });
+                return;
+              }
 
               if (isNewProvider(provider)) {
                 llmProviders.createProvider({
@@ -144,6 +186,8 @@
                   apiKey,
                 });
                 llmProviders.removeProvider("new");
+                loading = false;
+                // chatModels.refresh();
               } else {
                 llmProviders.updateProvider(provider.id, {
                   name,
@@ -151,8 +195,14 @@
                   apiKey,
                 });
               }
-            }}>Save</Button
+            }}
           >
+            {#if loading}
+              <SmallSpinner class="w-5 h-5 mr-2 border-black" />
+            {:else}
+              Save
+            {/if}
+          </Button>
         </Card.Footer>
       </div>
     {/if}

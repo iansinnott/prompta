@@ -6,17 +6,6 @@
   let _class: string = "";
   export { _class as class };
 
-  const handleNewProvider = () => {
-    llmProviders.addProvider({
-      id: "new",
-      name: "New Provider",
-      baseUrl: "",
-      apiKey: "",
-      enabled: false,
-      createdAt: new Date(),
-    });
-  };
-
   $: showNewProviderButton = $llmProviders.providers.at(-1)?.id !== "new";
 </script>
 
@@ -26,7 +15,7 @@
   {/each}
 
   {#if showNewProviderButton}
-    <Button on:click={handleNewProvider} variant="outline" class="border border-zinc-700"
+    <Button on:click={llmProviders.addNewProvider} variant="outline" class="border border-zinc-700"
       >Add custom LLM provider</Button
     >
     <p class="leading-tight">

@@ -115,30 +115,41 @@ export const llmProviders = (() => {
   };
 
   return {
+    // Not tiggered above because it must wait for database to be initialized
+    init: async () => invalidate(),
     set,
     update,
     subscribe,
     invalidate,
 
-    addProvider: (provider: LLMProvider) => {
+    addNewProvider: () => {
+      const provider = {
+        id: "new",
+        name: "New Provider",
+        baseUrl: "",
+        apiKey: "",
+        enabled: false,
+        createdAt: new Date(),
+      };
       update((state) => {
         state.providers.push(provider);
         return state;
       });
     },
 
-    removeProvider: (id: string) => {
+    removeProvider: async (id: string) => {
       update((state) => {
         state.providers = state.providers.filter((p) => p.id !== id);
         return state;
       });
-      LLMProvider.delete({ where: { id } }).catch((err) => {
+      await LLMProvider.delete({ where: { id } }).catch((err) => {
         console.error(err);
       });
+      await chatModels.refresh();
     },
 
     createProvider: (provider: Partial<LLMProvider>) => {
-      LLMProvider.create(provider).catch((err) => {
+      return LLMProvider.create(provider).catch((err) => {
         console.error(err);
       });
     },

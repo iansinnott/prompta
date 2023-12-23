@@ -15,7 +15,7 @@ import schemaUrl from "$lib/migrations/prompta_schema.sql?url";
 export { schemaUrl };
 
 import { getSystem } from "./gui";
-import { openAiConfig } from "./stores/stores/llmProvider";
+import { llmProviders, openAiConfig } from "./stores/stores/llmProvider";
 import { profilesStore } from "./stores/stores/llmProfile";
 
 const legacyDbNames = [
@@ -220,7 +220,7 @@ export const initDb = async (dbName: string) => {
   await migrateDb(_db, schema);
 
   // Initialize stores
-  for (const s of [currentThread, profilesStore, openAiConfig]) {
+  for (const s of [currentThread, profilesStore, openAiConfig, llmProviders]) {
     await s.init();
   }
 

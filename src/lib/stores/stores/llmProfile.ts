@@ -82,16 +82,21 @@ export const getOpenAi = () => {
   return initOpenAi({ apiKey, baseURL: baseUrl });
 };
 
-export const verifyOpenAiApiKey = async (apiKey: string) => {
-  const conf = llmProviders.getOpenAi();
-  const baseURL = conf.baseUrl;
+export const verifyOpenAICompatibileProvider = async ({
+  apiKey,
+  baseUrl,
+}: {
+  apiKey?: string;
+  baseUrl: string;
+}) => {
+  const authHeaders: Record<string, string> = apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
 
   // Ping the models endpoint to verify the api key
   try {
-    await fetch(new URL("models", baseURL).href, {
+    await fetch(new URL("models", baseUrl).href, {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        ...authHeaders,
       },
     }).then((x) => (x.ok ? x.json() : Promise.reject(x)));
     return true;
@@ -99,4 +104,14 @@ export const verifyOpenAiApiKey = async (apiKey: string) => {
     console.error("Could not verify api key. Likely invalid", err);
     return false;
   }
+};
+
+/**
+ * This is something of a legacy function. Initially it was for openai only, but
+ * i genericized it to check other endpoints.
+ */
+export const verifyOpenAiApiKey = async (apiKey: string) => {
+  const conf = llmProviders.getOpenAi();
+  const baseUrl = conf.baseUrl;
+  return verifyOpenAICompatibileProvider({ apiKey, baseUrl });
 };
