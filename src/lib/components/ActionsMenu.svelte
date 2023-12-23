@@ -30,6 +30,7 @@
   import classNames from "classnames";
   import IconTrash from "./IconTrash.svelte";
   import { toast } from "$lib/toast";
+  import { chatModels } from "$lib/stores/stores/llmProvider";
   let _class: string = "";
   export { _class as class };
 
@@ -102,6 +103,11 @@
       execute: () => {
         $showSettings = true;
       },
+    },
+    {
+      name: "Refresh Models List",
+      icon: IconRefreshOutline,
+      execute: chatModels.refresh,
     },
     {
       when: () => {

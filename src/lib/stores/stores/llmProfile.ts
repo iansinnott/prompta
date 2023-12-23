@@ -94,6 +94,7 @@ export const verifyOpenAICompatibileProvider = async ({
   // Ping the models endpoint to verify the api key
   try {
     await fetch(new URL("models", baseUrl).href, {
+      mode: "cors",
       headers: {
         "Content-Type": "application/json",
         ...authHeaders,
