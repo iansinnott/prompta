@@ -10,7 +10,7 @@ const defaultProviders: LLMProvider[] = [
   {
     id: "prompta",
     name: "Prompta AI",
-    baseUrl: dev ? "http://localhost:5173/api/v1/" : "https://chat.prompta.dev/",
+    baseUrl: "https://api.prompta.dev/v1/",
     apiKey: "",
     enabled: true,
     createdAt: new Date(0),
