@@ -9,7 +9,7 @@ import { gptProfileStore } from "./llmProfile";
 const defaultProviders: LLMProvider[] = [
   {
     id: "prompta",
-    name: "Prompta AI",
+    name: "Prompta",
     baseUrl: "https://api.prompta.dev/v1/",
     apiKey: "",
     enabled: true,

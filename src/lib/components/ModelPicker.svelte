@@ -3,7 +3,7 @@
   import * as Command from "$lib/components/ui/command";
   import * as Popover from "$lib/components/ui/popover";
   import { Button } from "$lib/components/ui/button";
-  import { cn } from "$lib/utils";
+  import { cn, groupBy } from "$lib/utils";
   import type { ComponentType } from "svelte";
   import IconBrain from "$lib/components/IconBrain.svelte";
   import { onMount } from "svelte";
@@ -40,6 +40,7 @@
         value: x.id,
         label: x.id,
         icon,
+        provider,
       };
     })
     .concat(
@@ -50,9 +51,11 @@
               value: "openai",
               label: "OpenAI (gpt-4, gpt-3.5, ...)",
               icon: { component: IconOpenAi },
+              provider: llmProviders.getOpenAi(),
             },
           ]
-    ) as Status[];
+    );
+  $: optionGroups = groupBy(options, (x) => x.provider?.name ?? "Other");
 
   let value = $gptProfileStore.model || "";
   let loading = false;
@@ -107,42 +110,44 @@
         <Command.Input placeholder={loading ? "Loading..." : "Model..."} />
         <Command.List>
           <Command.Empty>No results found.</Command.Empty>
-          <Command.Group>
-            {#each options as opt}
-              <Command.Item
-                value={opt.value}
-                onSelect={(currentValue) => {
-                  handleChange(currentValue);
-                }}
-              >
-                {#if opt.icon?.char}
-                  <code class="text-xl inline-block">{opt.icon.char}</code>
-                {:else if opt.icon?.src}
-                  <img
-                    src={opt.icon.src}
-                    class={cn(
-                      "mr-2 h-4 w-4",
-                      opt.value !== selectedStatus?.value && "text-foreground/40"
-                    )}
-                    alt=""
-                  />
-                {:else if opt.icon?.component}
-                  <svelte:component
-                    this={opt.icon.component}
-                    class={cn(
-                      "mr-2 h-4 w-4",
-                      opt.icon.class,
-                      opt.value !== selectedStatus?.value && "text-foreground/40"
-                    )}
-                  />
-                {/if}
+          {#each Object.entries(optionGroups) as [name, models]}
+            <Command.Group heading={name}>
+              {#each models as opt}
+                <Command.Item
+                  value={opt.value}
+                  onSelect={(currentValue) => {
+                    handleChange(currentValue);
+                  }}
+                >
+                  {#if opt.icon?.char}
+                    <code class="text-xl inline-block">{opt.icon.char}</code>
+                  {:else if opt.icon?.src}
+                    <img
+                      src={opt.icon.src}
+                      class={cn(
+                        "mr-2 h-4 w-4",
+                        opt.value !== selectedStatus?.value && "text-foreground/40"
+                      )}
+                      alt=""
+                    />
+                  {:else if opt.icon?.component}
+                    <svelte:component
+                      this={opt.icon.component}
+                      class={cn(
+                        "mr-2 h-4 w-4",
+                        opt.icon.class,
+                        opt.value !== selectedStatus?.value && "text-foreground/40"
+                      )}
+                    />
+                  {/if}
 
-                <span>
-                  {opt.label}
-                </span>
-              </Command.Item>
-            {/each}
-          </Command.Group>
+                  <span>
+                    {opt.label}
+                  </span>
+                </Command.Item>
+              {/each}
+            </Command.Group>
+          {/each}
         </Command.List>
       </Command.Root>
     </Popover.Content>

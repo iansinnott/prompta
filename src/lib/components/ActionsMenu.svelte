@@ -5,6 +5,7 @@
     devStore,
     generateThreadTitle,
     isNewThread,
+    showInitScreen,
     showSettings,
     syncStore,
     threadMenu,
@@ -30,7 +31,8 @@
   import classNames from "classnames";
   import IconTrash from "./IconTrash.svelte";
   import { toast } from "$lib/toast";
-  import { chatModels } from "$lib/stores/stores/llmProvider";
+  import { chatModels, llmProviders } from "$lib/stores/stores/llmProvider";
+  import IconOpenAi from "./IconOpenAI.svelte";
   let _class: string = "";
   export { _class as class };
 
@@ -54,6 +56,17 @@
       name: "Regenerate Response",
       icon: IconRefreshOutline,
       execute: currentChatThread.regenerateResponse,
+    },
+    {
+      name: "Enable OpenAI",
+      when: () => {
+        const oai = llmProviders.getOpenAi();
+        return !oai.apiKey && oai.enabled;
+      },
+      icon: IconOpenAi,
+      execute: () => {
+        showInitScreen.set(true);
+      },
     },
     {
       when: () => !sys.isBrowser,
