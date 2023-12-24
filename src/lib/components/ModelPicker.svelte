@@ -12,6 +12,7 @@
   import { gptProfileStore } from "$lib/stores/stores/llmProfile";
   import { showInitScreen } from "$lib/stores/stores";
   import { writable } from "svelte/store";
+  import { toast } from "$lib/toast";
   let _class: string = "";
   export { _class as class };
 
@@ -44,18 +45,7 @@
         provider,
       };
     })
-    .concat(
-      llmProviders.getOpenAi().apiKey || !llmProviders.getOpenAi().enabled // reactive
-        ? []
-        : [
-            {
-              value: "openai",
-              label: "OpenAI (gpt-4, gpt-3.5, ...)",
-              icon: { component: IconOpenAi },
-              provider: llmProviders.getOpenAi(),
-            },
-          ]
-    );
+    .concat(llmProviders.getSpecialProviders());
   $: optionGroups = groupBy(options, (x) => x.provider?.name ?? "Other");
 
   let value = $gptProfileStore.model || "";
@@ -75,6 +65,14 @@
     if (x === "openai") {
       showInitScreen.set(true);
       return;
+    } else if (x === "prompta") {
+      llmProviders.updateProvider("prompta", {
+        enabled: true,
+      });
+      toast({ title: "Enabling Prompta...", type: "success" });
+      chatModels.refresh().then(() => {
+        toast({ title: "Prompta Enabled", type: "success" });
+      });
     }
 
     value = x;

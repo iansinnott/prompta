@@ -2,7 +2,7 @@
   import { Button } from "$lib/components/ui/button";
   import * as Card from "$lib/components/ui/card";
   import { Input } from "$lib/components/ui/input";
-  import { Label } from "$lib/components/ui/label";
+  import { Switch } from "$lib/components/ui/switch";
   import { chatModels, isDefaultProvider, llmProviders } from "$lib/stores/stores/llmProvider";
   import classNames from "classnames";
   import IconBrain from "./IconBrain.svelte";
@@ -25,7 +25,7 @@
     openai: "The most accurate LLMs thus far. Use this if you want to use your own OpenAI API key.",
   };
 
-  let { name, baseUrl, apiKey } = provider;
+  let { name, baseUrl, apiKey, enabled } = provider;
 
   const cancelEdit = () => {
     name = provider.name;
@@ -68,6 +68,31 @@
         >
           <Trash class="w-5 h-5" />
         </button>
+      {/if}
+      {#if !isNewProvider(provider)}
+        <Switch
+          class="!ml-auto"
+          disabled={provider.id === "openai" && !provider.apiKey}
+          checked={provider.id === "openai" ? Boolean(provider.apiKey && enabled) : enabled}
+          onCheckedChange={(checked) => {
+            if (provider.id === "openai" && !provider.apiKey) {
+              toast({
+                title: "API Key required",
+                message: "Please enter an API key to enable.",
+                type: "error",
+              });
+              return;
+            }
+
+            llmProviders.updateProvider(provider.id, { enabled: checked });
+            chatModels.refresh();
+            toast({
+              title: "Provider updated",
+              message: `${provider.name} ${checked ? "enabled" : "disabled"}`,
+              type: "success",
+            });
+          }}
+        />
       {/if}
     </Card.Title>
     {#if descriptions[provider.id]}
@@ -194,6 +219,7 @@
                   name,
                   baseUrl,
                   apiKey,
+                  enabled: true,
                 });
               }
 

@@ -5,6 +5,9 @@ import { dev } from "$app/environment";
 import { OpenAI, type ClientOptions } from "openai";
 import { toast } from "$lib/toast";
 import { gptProfileStore } from "./llmProfile";
+import { showSettings } from ".";
+import IconOpenAi from "$lib/components/IconOpenAI.svelte";
+import IconBrain from "$lib/components/IconBrain.svelte";
 
 const defaultProviders: LLMProvider[] = [
   {
@@ -94,7 +97,15 @@ export const isDefaultProvider = ({ id }: { id: string }) => {
 };
 
 export const llmProviders = (() => {
-  const store = writable<{ providers: LLMProvider[] }>({ providers: defaultProviders });
+  const initialProviders = defaultProviders.map((x) => {
+    console.log("Checking if provider is enabled", x);
+    return {
+      ...x,
+      enabled: localStorage.getItem(`llm-provider-${x.id}-enabled`) !== "false",
+    };
+  });
+
+  const store = writable<{ providers: LLMProvider[] }>({ providers: initialProviders });
   const { set, update, subscribe } = store;
 
   const invalidate = () => {
@@ -162,13 +173,43 @@ export const llmProviders = (() => {
       return get(store).providers.find((p) => p.id === "openai")!;
     },
 
+    getSpecialProviders: () => {
+      const models = get(chatModels).models;
+      const providers = [
+        ...(models.length
+          ? []
+          : [
+              {
+                value: "prompta",
+                label: "Enable Prompta",
+                icon: { component: IconBrain },
+                provider: llmProviders.byId("prompta")!,
+              },
+            ]),
+        ...(llmProviders.getOpenAi().apiKey || !llmProviders.getOpenAi().enabled
+          ? []
+          : [
+              {
+                value: "openai",
+                label: "OpenAI (gpt-4, gpt-3.5, ...)",
+                icon: { component: IconOpenAi },
+                provider: llmProviders.getOpenAi(),
+              },
+            ]),
+      ];
+
+      return providers;
+    },
+
     updateProvider: (id: string, provider: Partial<LLMProvider>) => {
       if (isDefaultProvider({ id })) {
         update((state) => {
           const index = state.providers.findIndex((p) => p.id === id);
 
           if (index !== -1) {
-            state.providers[index] = { ...state.providers[index], ...provider };
+            const nextVal = { ...state.providers[index], ...provider };
+            state.providers[index] = nextVal;
+            localStorage.setItem(`llm-provider-${id}-enabled`, nextVal.enabled ? "true" : "false");
           } else {
             console.error(`Provider with id ${id} not found`);
           }
@@ -298,15 +339,25 @@ export const chatModels = (() => {
         // Handle the edge case where the user removes the provider of a model they were using
         const currentProfile = get(gptProfileStore);
         if (!_chatModels.some((x) => x.id === currentProfile.model)) {
-          toast({
-            title: "Model not found",
-            message: `The model you were using (${currentProfile.model}) was not found. Defaulting to the next available model (${_chatModels[0].id}).`,
-            type: "info",
-          });
-          console.warn(
-            `Model not found: ${currentProfile.model}. Defaulting to ${_chatModels[0].id}`
-          );
-          gptProfileStore.set({ ...currentProfile, model: _chatModels[0].id });
+          const nextModel = _chatModels[0];
+          if (nextModel) {
+            toast({
+              title: "Model not found",
+              message: `The model you were using (${currentProfile.model}) was not found. Defaulting to the next available model (${nextModel}).`,
+              type: "info",
+            });
+            console.warn(
+              `Model not found: ${currentProfile.model}. Defaulting to ${_chatModels[0].id}`
+            );
+            gptProfileStore.set({ ...currentProfile, model: _chatModels[0].id });
+          } else {
+            toast({
+              title: "No active LLM providers",
+              message: `Please enable at least one LLM provider in the settings to use the app.`,
+              type: "error",
+            });
+            showSettings.set(true);
+          }
         }
 
         localStorage.setItem(lsKey, JSON.stringify(_chatModels));
