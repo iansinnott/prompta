@@ -115,7 +115,7 @@
       keyboard: { shortcut: "meta+l" }, // NOTE Meta key with N only works in the Tauri app. In a browser this opens a new window
       altFilterText: "thread",
       execute: () => {
-        $modelPickerOpen = true;
+        $modelPickerOpen = !$modelPickerOpen;
       },
     },
     {
@@ -125,7 +125,7 @@
       keyboard: { shortcut: "ctrl+l" },
       altFilterText: "thread",
       execute: () => {
-        $modelPickerOpen = true;
+        $modelPickerOpen = !$modelPickerOpen;
       },
     },
 
