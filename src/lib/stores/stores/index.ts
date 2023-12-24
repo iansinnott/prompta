@@ -500,6 +500,7 @@ export const currentChatThread = (() => {
     if (!hasThreadTitle(get(currentThread))) {
       console.log("Generating thread title...");
       try {
+        await generateThreadTitle({ threadId: botMessage.threadId });
       } catch (error) {
         if (error instanceof OpenAI.APIError) {
           console.error({
@@ -522,7 +523,6 @@ export const currentChatThread = (() => {
           });
         }
       }
-      await generateThreadTitle({ threadId: botMessage.threadId });
     }
   };
 

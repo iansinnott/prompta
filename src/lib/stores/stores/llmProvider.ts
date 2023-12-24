@@ -9,11 +9,19 @@ import { showSettings } from ".";
 import IconOpenAi from "$lib/components/IconOpenAI.svelte";
 import IconBrain from "$lib/components/IconBrain.svelte";
 
+import { env } from "$env/dynamic/public";
+
+const promptaBaseUrl = env.PUBLIC_PROMPTA_API_URL || "https://api.prompta.dev/v1/";
+
+if (env.PUBLIC_PROMPTA_API_URL) {
+  console.log("Using Prompta API URL via env var", promptaBaseUrl);
+}
+
 const defaultProviders: LLMProvider[] = [
   {
     id: "prompta",
     name: "Prompta",
-    baseUrl: "https://api.prompta.dev/v1/",
+    baseUrl: promptaBaseUrl,
     apiKey: "",
     enabled: true,
     createdAt: new Date(0),

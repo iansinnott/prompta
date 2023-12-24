@@ -51,7 +51,13 @@
       name: "Generate Title...",
       icon: IconThreadTitle,
       execute: () => {
-        generateThreadTitle({ threadId: $currentThread.id });
+        generateThreadTitle({ threadId: $currentThread.id }).catch((error) => {
+          toast({
+            type: "error",
+            title: "Error generating title",
+            message: error.message,
+          });
+        });
       },
     },
     {
