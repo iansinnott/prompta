@@ -43,7 +43,7 @@
 
 <style>
   .Toast {
-    @apply gap-x-2;
+    @apply gap-x-2 border;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-rows:
@@ -51,12 +51,12 @@
       auto;
   }
   .Toast:global(.info) {
-    @apply bg-blue-500;
+    @apply border-blue-500;
   }
   .Toast:global(.success) {
-    @apply bg-green-500;
+    @apply border-emerald-500;
   }
   .Toast:global(.error) {
-    @apply bg-red-500;
+    @apply border-red-500;
   }
 </style>

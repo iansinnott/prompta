@@ -9,6 +9,7 @@
     showInitScreen,
     messageText,
     pendingMessageStore,
+    isNewThread,
   } from "../lib/stores/stores";
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
   import SmallSpinner from "$lib/components/SmallSpinner.svelte";
@@ -225,7 +226,10 @@
       <button
         class="text-white/50 pr-2 sm:px-2 py-1 hover:text-white"
         on:click={() => {
-          currentThread.reset();
+          if (!isNewThread({ id: $currentThread.id })) {
+            currentThread.reset();
+            toast({ type: "success", title: "Started new thread" });
+          }
         }}
       >
         <IconPlus class="w-5 h-5" />
