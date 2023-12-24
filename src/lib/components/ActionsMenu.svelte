@@ -463,7 +463,7 @@
           >
             {#if action.icon}
               <span class="w-6 h-6 mr-2 inline-flex items-center">
-                <svelte:component this={action.icon} />
+                <svelte:component this={action.icon} class="w-5 h-5" />
               </span>
             {/if}
             <span class="flex-1 flex">
