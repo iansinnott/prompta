@@ -26,7 +26,6 @@
       ["Fragment", Fragment],
       ["LLMProvider", LLMProvider],
       ["db", _get_db_instance()],
-      ["db", _clearDatabase],
       [
         "insertPendingMessage",
         ({ content = "" }) => {
@@ -43,7 +42,7 @@
     }
 
     // Dev only
-    for (const [k, v] of [["db", _clearDatabase]]) {
+    for (const [k, v] of [["_clearDatabase", _clearDatabase]]) {
       // @ts-expect-error Just for dev, and the error is not consequential
       (window as any)[k] = v;
     }

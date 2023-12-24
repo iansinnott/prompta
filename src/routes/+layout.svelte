@@ -2,7 +2,13 @@
   import "../app.postcss";
   import { syncStore } from "../lib/stores/stores";
   import { onDestroy, onMount } from "svelte";
-  import { DatabaseMeta, getLatestDbName, incrementDbName, initDb } from "$lib/db";
+  import {
+    DatabaseMeta,
+    getLatestDbName,
+    importFromDatabase,
+    incrementDbName,
+    initDb,
+  } from "$lib/db";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
   import { getSystem } from "$lib/gui";
   import classNames from "classnames";
@@ -18,10 +24,12 @@
   let startupError: Error | null = null;
   let appReady = false;
 
-  const handleHardReset = async () => {
-    const confirmed = await sys.confirm(
-      "Are you sure you want to reset your database? This will delete all your chat history."
-    );
+  const handleHardReset = async ({ confirm = true } = {}) => {
+    const confirmed = confirm
+      ? await sys.confirm(
+          "Are you sure you want to reset your database? This will delete all your chat history."
+        )
+      : true;
 
     if (!confirmed) return;
 
@@ -42,15 +50,20 @@
     // throw up after a time if the app is hanging
     let _timeout = setTimeout(() => {
       throw new Error("Timed out trying to initialize");
-    }, 15000);
+    }, 20_000);
 
+    const dbName = getLatestDbName();
     // @note The whole app assumes the db exists and is ready. Do not render before that
     try {
       const start = performance.now();
-      const dbName = getLatestDbName();
       console.debug("Initializing database");
       teardown = await initDb(dbName || "");
       console.debug(`Database initialized in ${performance.now() - start}ms :: ${dbName}`);
+      const pendingImport = localStorage.getItem("pendingImport");
+      if (pendingImport) {
+        await importFromDatabase(undefined, pendingImport);
+        localStorage.removeItem("pendingImport");
+      }
     } catch (err: any) {
       throw wrapError(err, `There was an error initializing the database.`);
     } finally {
@@ -74,12 +87,16 @@
     }
   };
 
+  let isPendingImport = false;
+
   onMount(async () => {
     try {
       await handleStartup();
     } catch (error: any) {
       console.error("startup error", error);
       startupError = error;
+      isPendingImport = true;
+      localStorage.setItem("pendingImport", getLatestDbName() as string);
     }
   });
 
@@ -186,45 +203,66 @@
   })}
 >
   {#if startupError}
-    <FullScreenError title="The app could not be initialized" error={startupError}>
+    <FullScreenError
+      title={isPendingImport ? "Manual migration required" : "The app could not be initialized"}
+      error={startupError}
+    >
       <div class="prose prose-invert">
         <div class="prose prose-invert mt-3">
           <p>
             Database Path: <code>{getLatestDbName()}</code>
           </p>
         </div>
-        <h3>
-          <em>What can you do?</em>
-        </h3>
-        <ul>
-          <li>
-            <strong> Reset your database </strong>. This will delete all your data, but it might
-            resolve the startup issue. This way you can continue using the app immediately.
-          </li>
-          <li>
-            <strong
-              >Check the{" "}
-              <a class="" target="_blank" href="https://github.com/iansinnott/prompta/issues">
-                Github Issues
-              </a></strong
-            > to see if someone has solved this problem.
-          </li>
-        </ul>
-        <div class="flex flex-col space-y-2 sm:flex-row sm:space-x-6 sm:space-y-0">
-          <button
-            on:click={handleHardReset}
-            class="block bg-red-600 rounded px-4 py-2 cursor-pointer"
-          >
-            Reset Database
-          </button>
-          <a
-            class="text-center block bg-gray-600 rounded px-4 py-2"
-            target="_blank"
-            href="https://github.com/iansinnott/prompta/issues/10"
-          >
-            Check the Github Issues
-          </a>
-        </div>
+        {#if isPendingImport}
+          <h3>
+            <em>Manual migration</em>
+          </h3>
+          <p>
+            Use the button below to begin migration. Please do not close the app while a migration
+            is in progress.
+          </p>
+          <div class="flex flex-col space-y-2 sm:flex-row sm:space-x-6 sm:space-y-0">
+            <button
+              on:click={() => handleHardReset({ confirm: false })}
+              class="block bg-red-600 rounded px-4 py-2 cursor-pointer"
+            >
+              Begin Migration
+            </button>
+          </div>
+        {:else}
+          <h3>
+            <em>What can you do?</em>
+          </h3>
+          <ul>
+            <li>
+              <strong> Reset your database </strong>. This will delete all your data, but it might
+              resolve the startup issue. This way you can continue using the app immediately.
+            </li>
+            <li>
+              <strong
+                >Check the{" "}
+                <a class="" target="_blank" href="https://github.com/iansinnott/prompta/issues">
+                  Github Issues
+                </a></strong
+              > to see if someone has solved this problem.
+            </li>
+          </ul>
+          <div class="flex flex-col space-y-2 sm:flex-row sm:space-x-6 sm:space-y-0">
+            <button
+              on:click={() => handleHardReset()}
+              class="block bg-red-600 rounded px-4 py-2 cursor-pointer"
+            >
+              Reset Database
+            </button>
+            <a
+              class="text-center block bg-gray-600 rounded px-4 py-2"
+              target="_blank"
+              href="https://github.com/iansinnott/prompta/issues/10"
+            >
+              Check the Github Issues
+            </a>
+          </div>
+        {/if}
       </div>
     </FullScreenError>
   {:else if appReady}

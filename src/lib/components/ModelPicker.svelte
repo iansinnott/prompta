@@ -73,6 +73,7 @@
       chatModels.refresh().then(() => {
         toast({ title: "Prompta Enabled", type: "success" });
       });
+      return;
     }
 
     value = x;

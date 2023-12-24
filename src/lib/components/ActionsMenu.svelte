@@ -15,7 +15,7 @@
   import IconGear from "./IconGear.svelte";
   import IconHistoryClock from "./IconHistoryClock.svelte";
   import { dev } from "$app/environment";
-  import { _clearDatabase, reinstateLegacyData } from "$lib/db";
+  import { _clearDatabase, reinstatePriorData } from "$lib/db";
   import IconThreadTitle from "./IconThreadTitle.svelte";
   import IconRefreshOutline from "./IconRefreshOutline.svelte";
   import {
@@ -165,7 +165,7 @@
       icon: IconTerminalPrompt,
       execute: async () => {
         try {
-          await reinstateLegacyData();
+          await reinstatePriorData();
           toast({
             type: "success",
             title: "Database restored",

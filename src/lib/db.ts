@@ -135,38 +135,35 @@ const migrateDb = async (db: DBAsync, schema: Schema) => {
   }
 };
 
-export const reinstateLegacyData = async (
+export const importFromDatabase = async (
   database: DBAsync = _db as DBAsync,
-  currentDbName = getLatestDbName()
+  databaseName: string
 ) => {
-  if (!currentDbName) {
-    throw new Error("No current db name found");
-  }
-
-  const legacyDbNames = getDbNames();
-  const i = legacyDbNames.indexOf(currentDbName);
-  const legacyDbName = legacyDbNames[i - 1];
-
-  if (!legacyDbName) {
-    throw new Error("No legacy db found");
-  }
-
   if (!_sqlite) {
     throw new Error("No sqlite instance found");
   }
 
-  let legacyDb;
+  let fromDb: DBAsync;
   try {
-    legacyDb = await _sqlite.open(legacyDbName);
+    fromDb = await _sqlite.open(databaseName);
   } catch (error) {
     console.error("opening legacy db", error);
-    throw new Error("Could not open legacy db: " + legacyDbName);
+    throw new Error("Could not open legacy db: " + databaseName);
   }
 
-  const tables = ["thread", "message", "fragment"];
+  const tables = ["thread", "message", "fragment", "llm_provider"];
 
   for (const table of tables) {
-    const rows = await legacyDb.execO(`select * from "${table}"`);
+    const hasTable = (
+      await fromDb.execA(`SELECT name FROM sqlite_master WHERE type='table' AND name='${table}'`)
+    ).length;
+
+    if (!hasTable) {
+      console.log("legacy db does not have table", table);
+      continue;
+    }
+
+    const rows = await fromDb.execO(`select * from "${table}"`);
     console.log("legacy rows", rows.length);
     for (const row of rows) {
       const keys = Object.keys(row);
@@ -179,6 +176,23 @@ export const reinstateLegacyData = async (
       await database.exec(query, values);
     }
   }
+};
+
+export const reinstatePriorData = async (database: DBAsync = _db as DBAsync) => {
+  const currentDbName = getLatestDbName();
+  if (!currentDbName) {
+    throw new Error("No current db name found");
+  }
+
+  const legacyDbNames = getDbNames();
+  const i = legacyDbNames.indexOf(currentDbName);
+  const legacyDbName = legacyDbNames[i - 1];
+
+  if (!legacyDbName) {
+    throw new Error("No legacy db found");
+  }
+
+  return importFromDatabase(database, legacyDbName);
 };
 
 export const getCurrentSchema = async () => {
