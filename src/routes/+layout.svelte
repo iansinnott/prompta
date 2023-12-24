@@ -224,7 +224,7 @@
           <div class="flex flex-col space-y-2 sm:flex-row sm:space-x-6 sm:space-y-0">
             <button
               on:click={() => handleHardReset({ confirm: false })}
-              class="block bg-red-600 rounded px-4 py-2 cursor-pointer"
+              class="block bg-yellow-600 rounded px-4 py-2 cursor-pointer"
             >
               Begin Migration
             </button>
