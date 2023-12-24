@@ -34,6 +34,7 @@
   import { chatModels, llmProviders, modelPickerOpen } from "$lib/stores/stores/llmProvider";
   import IconOpenAi from "./IconOpenAI.svelte";
   import { Brain } from "lucide-svelte";
+  import IconBrain from "./IconBrain.svelte";
   let _class: string = "";
   export { _class as class };
 
@@ -104,7 +105,7 @@
     {
       when: () => !sys.isBrowser,
       name: "Choose LLM Model",
-      icon: Brain,
+      icon: IconBrain,
       keyboard: { shortcut: "meta+l" }, // NOTE Meta key with N only works in the Tauri app. In a browser this opens a new window
       altFilterText: "thread",
       execute: () => {
@@ -114,7 +115,7 @@
     {
       when: () => sys.isBrowser,
       name: "Choose LLM Model",
-      icon: Brain,
+      icon: IconBrain,
       keyboard: { shortcut: "ctrl+l" },
       altFilterText: "thread",
       execute: () => {

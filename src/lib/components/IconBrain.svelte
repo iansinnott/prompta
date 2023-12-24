@@ -7,7 +7,7 @@
 <svg
   xmlns="http://www.w3.org/2000/svg"
   viewBox="0 0 32 32"
-  class={classNames("!text-[#30CEC0] scale-[1.2]", _class)}
+  class={classNames("scale-[1.2]", _class)}
 >
   <path
     fill="currentcolor"

@@ -33,7 +33,7 @@
       let icon: IconSource | undefined = undefined;
 
       if (provider?.id === "prompta") {
-        icon = { component: IconBrain, class: "w-5 h-5" };
+        icon = { component: IconBrain, class: "w-5 h-5 text-[#30CEC0] " };
       } else if (provider?.id === "openai") {
         icon = { component: IconOpenAi };
       }
@@ -107,7 +107,7 @@
         {:else if selectedStatus?.icon?.char}
           <code class="text-xl inline-block">{selectedStatus.icon.char}</code>
         {:else}
-          <IconBrain class="w-5 h-5 text-[#30CEC0] scale-[1.2]" />
+          <IconBrain class="w-5 h-5 !text-[#30CEC0] scale-[1.2]" />
         {/if}
         <span class="hidden sm:inline-block ml-2">
           {selectedStatus?.label?.split("/").at(-1) ?? "Model"}
