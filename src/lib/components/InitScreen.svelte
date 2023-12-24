@@ -69,6 +69,11 @@
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
+  on:keydown={($event) => {
+    if ($event.key === "Escape") {
+      skipInitScreen();
+    }
+  }}
   class={classNames(
     "InitScreen bg-gradient-to-b from-[#1B1B1B] to-transparent flex flex-col items-center p-12 pt-20",
     _class

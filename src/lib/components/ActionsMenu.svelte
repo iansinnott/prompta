@@ -31,8 +31,9 @@
   import classNames from "classnames";
   import IconTrash from "./IconTrash.svelte";
   import { toast } from "$lib/toast";
-  import { chatModels, llmProviders } from "$lib/stores/stores/llmProvider";
+  import { chatModels, llmProviders, modelPickerOpen } from "$lib/stores/stores/llmProvider";
   import IconOpenAi from "./IconOpenAI.svelte";
+  import { Brain } from "lucide-svelte";
   let _class: string = "";
   export { _class as class };
 
@@ -82,6 +83,7 @@
       keyboard: { shortcut: "ctrl+p" },
       execute: () => ($threadMenu.open = !$threadMenu.open),
     },
+
     {
       when: () => !sys.isBrowser,
       name: "New Chat",
@@ -98,6 +100,28 @@
       altFilterText: "thread",
       execute: currentThread.reset,
     },
+
+    {
+      when: () => !sys.isBrowser,
+      name: "Choose LLM Model",
+      icon: Brain,
+      keyboard: { shortcut: "meta+l" }, // NOTE Meta key with N only works in the Tauri app. In a browser this opens a new window
+      altFilterText: "thread",
+      execute: () => {
+        $modelPickerOpen = true;
+      },
+    },
+    {
+      when: () => sys.isBrowser,
+      name: "Choose LLM Model",
+      icon: Brain,
+      keyboard: { shortcut: "ctrl+l" },
+      altFilterText: "thread",
+      execute: () => {
+        $modelPickerOpen = true;
+      },
+    },
+
     {
       name: "Archive Chat",
       icon: IconArchiveIn,

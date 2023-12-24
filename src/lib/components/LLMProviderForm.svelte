@@ -154,28 +154,30 @@
                 baseUrl += "/"; // Should probably handle this at the calling code, but the trailing slash is required
               }
 
-              try {
-                loading = true;
-                const isCompatible = await verifyOpenAICompatibileProvider({
-                  baseUrl,
-                  apiKey,
-                });
-                if (!isCompatible) {
+              if (provider.id !== "openai") {
+                try {
+                  loading = true;
+                  const isCompatible = await verifyOpenAICompatibileProvider({
+                    baseUrl,
+                    apiKey,
+                  });
+                  if (!isCompatible) {
+                    toast({
+                      title: "Incompatible API",
+                      message:
+                        "The provided API key is not compatible with the selected provider. Prompta requires ",
+                      type: "error",
+                    });
+                    return;
+                  }
+                } catch (e) {
                   toast({
-                    title: "Incompatible API",
-                    message:
-                      "The provided API key is not compatible with the selected provider. Prompta requires ",
+                    title: "Error",
+                    message: e.message,
                     type: "error",
                   });
                   return;
                 }
-              } catch (e) {
-                toast({
-                  title: "Error",
-                  message: e.message,
-                  type: "error",
-                });
-                return;
               }
 
               if (isNewProvider(provider)) {
@@ -187,7 +189,6 @@
                 });
                 llmProviders.removeProvider("new");
                 loading = false;
-                // chatModels.refresh();
               } else {
                 llmProviders.updateProvider(provider.id, {
                   name,
@@ -195,6 +196,8 @@
                   apiKey,
                 });
               }
+
+              chatModels.refresh();
             }}
           >
             {#if loading}

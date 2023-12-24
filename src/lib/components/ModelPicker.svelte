@@ -7,10 +7,11 @@
   import type { ComponentType } from "svelte";
   import IconBrain from "$lib/components/IconBrain.svelte";
   import { onMount } from "svelte";
-  import { llmProviders, chatModels } from "$lib/stores/stores/llmProvider";
+  import { llmProviders, chatModels, modelPickerOpen } from "$lib/stores/stores/llmProvider";
   import IconOpenAi from "./IconOpenAI.svelte";
   import { gptProfileStore } from "$lib/stores/stores/llmProfile";
   import { showInitScreen } from "$lib/stores/stores";
+  import { writable } from "svelte/store";
   let _class: string = "";
   export { _class as class };
 
@@ -58,14 +59,18 @@
   $: optionGroups = groupBy(options, (x) => x.provider?.name ?? "Other");
 
   let value = $gptProfileStore.model || "";
-  let loading = false;
+  $: {
+    if ($gptProfileStore.model !== value) {
+      value = $gptProfileStore.model;
+    }
+  }
 
-  let open = false;
+  let loading = false;
 
   $: selectedStatus = options.find((s) => s.value === value) ?? null;
 
   function handleChange(x: string) {
-    open = false;
+    $modelPickerOpen = false;
 
     if (x === "openai") {
       showInitScreen.set(true);
@@ -82,13 +87,15 @@
 </script>
 
 <div class={classNames("", _class)}>
-  <Popover.Root bind:open let:ids>
+  <Popover.Root bind:open={$modelPickerOpen} let:ids>
     <Popover.Trigger asChild let:builder>
       <Button
         builders={[builder]}
         variant="outline"
         size="sm"
-        class="h-[42px] justify-start border border-zinc-700"
+        class={classNames("h-[42px] justify-start border border-zinc-700", {
+          "bg-zinc-700": $modelPickerOpen,
+        })}
       >
         <!--  NOTE: Svelte is very anoyingly wrong about these TS errors. It cannot seem to discriminate types -->
         {#if selectedStatus?.icon?.src}
@@ -103,9 +110,12 @@
         {:else}
           <IconBrain class="w-5 h-5 text-[#30CEC0] scale-[1.2]" />
         {/if}
+        <span class="hidden sm:inline-block ml-2">
+          {selectedStatus?.label?.split("/").at(-1) ?? "Model"}
+        </span>
       </Button>
     </Popover.Trigger>
-    <Popover.Content class="w-[300px] p-0 mt-2" side="bottom" align="start">
+    <Popover.Content class="max-w-[500px] w-[90%] p-0 mt-2" side="bottom" align="start">
       <Command.Root>
         <Command.Input placeholder={loading ? "Loading..." : "Model..."} />
         <Command.List>

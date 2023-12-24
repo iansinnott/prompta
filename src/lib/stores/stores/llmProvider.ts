@@ -322,3 +322,5 @@ export const chatModels = (() => {
     },
   };
 })();
+
+export const modelPickerOpen = writable(false);
