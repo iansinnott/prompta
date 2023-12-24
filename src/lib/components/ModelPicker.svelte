@@ -91,6 +91,7 @@
       <Button
         builders={[builder]}
         variant="outline"
+        data-testid="ModelPickerButton"
         size="sm"
         class={classNames("h-[42px] justify-start border border-zinc-700", {
           "bg-zinc-700": $modelPickerOpen,
@@ -114,7 +115,12 @@
         </span>
       </Button>
     </Popover.Trigger>
-    <Popover.Content class="max-w-[500px] w-[90%] p-0 mt-2" side="bottom" align="start">
+    <Popover.Content
+      data-testid="ModelPickerList"
+      class="max-w-[500px] w-[90%] p-0 mt-2"
+      side="bottom"
+      align="start"
+    >
       <Command.Root>
         <Command.Input placeholder={loading ? "Loading..." : "Model..."} />
         <Command.List>

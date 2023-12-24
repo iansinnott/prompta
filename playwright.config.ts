@@ -21,17 +21,14 @@ const config: PlaywrightTestConfig = {
     // },
     {
       name: "mobile",
-      // dependencies: ["setup"], // Depend on setup code
       use: {
         ...devices["iPhone 13 Mini"],
-        storageState: "playwright/.auth/user.json", // Use auth state prepared by setup
       },
     },
     {
       name: "desktop",
       use: {
         ...devices["Desktop Chrome"],
-        storageState: "playwright/.auth/user.json",
       },
     },
   ],
