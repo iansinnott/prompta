@@ -58,7 +58,7 @@
     "@vlcn.io/ws-common": "0.1.2",
     "@vlcn.io/xplat-api": "0.14.1",
     "better-sqlite3": "9.2.2",
-    "bits-ui": "0.11.8",
+    "bits-ui": "^0.11.8",
     "classnames": "2.3.2",
     "clsx": "2.0.0",
     "cmdk-sv": "0.0.12",

@@ -36,7 +36,7 @@ dependencies:
     specifier: 9.2.2
     version: 9.2.2
   bits-ui:
-    specifier: 0.11.8
+    specifier: ^0.11.8
     version: 0.11.8(svelte@4.0.0)
   classnames:
     specifier: 2.3.2
