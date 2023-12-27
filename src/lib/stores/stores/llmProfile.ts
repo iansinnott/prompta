@@ -20,7 +20,7 @@ export const activeProfileName = writable("default");
 export const profilesStore = persistentStore<{ [key: string]: GPTProfile }>("profile", {
   default: {
     name: "default",
-    model: "gpt-3.5-turbo",
+    model: "prompta/nous-capybara-7b", // Default for new users. Existing users should retain persisted choice of openai gpt-*
     systemMessage: DEFAULT_SYSTEM_MESSAGE,
   },
 });
