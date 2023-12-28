@@ -1,27 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
+import { sendMessageAndWaitForResponse } from "./test-helpers";
 
 const apiKey = process.env.TEST_OPENAI_API_KEY as string;
-
-/**
- * Sends a message to the AI, does not wait for response
- */
-const sendMessage = async (page: Page, { content }: { content: string }) => {
-  const chatBox = page.getByPlaceholder("Ask Prompta...");
-  const submitButton = page.getByTestId("ChatInputSubmit");
-  await chatBox.fill(content);
-  await expect(submitButton).toBeVisible();
-  await submitButton.click();
-};
-
-const sendMessageAndWaitForResponse = async (page: Page, { content }: { content: string }) => {
-  await sendMessage(page, { content });
-  const n = await page.locator(".ChatMessage").count();
-  await page
-    .locator(".ChatMessage")
-    .nth(n + 1)
-    .waitFor();
-  await page.locator(".has-cursor").waitFor({ state: "detached" });
-};
 
 test("has chat input", async ({ page }) => {
   await page.goto("/");
@@ -32,7 +12,7 @@ test("has chat input", async ({ page }) => {
 test("can send a message and get a response", async ({ page }) => {
   await page.goto("/");
   const testMessage = `this is a test message. Please respond with the text "pong" to verify we're connected.`;
-  await sendMessage(page, { content: testMessage });
+  await sendMessageAndWaitForResponse(page, { content: testMessage });
   await expect(page.locator(".ChatMessage")).toHaveCount(2);
 });
 
