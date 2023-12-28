@@ -116,15 +116,20 @@ export const llmProviders = (() => {
   const store = writable<{ providers: LLMProvider[] }>({ providers: initialProviders });
   const { set, update, subscribe } = store;
 
-  const invalidate = () => {
-    LLMProvider.findMany({
+  const invalidate = async () => {
+    await LLMProvider.findMany({
       orderBy: { createdAt: "ASC" },
     })
       .then((providers) => {
         update((state) => {
           return {
             ...state,
-            providers: [...state.providers, ...providers],
+            // NOTE: When updating state we don't want to add database providers
+            // multiple times to the same array. Probably should not separate
+            // out the default providers from the database providers as i did.
+            // Adds complexity like this where we need to merge them rather than
+            // just using one source of truth.
+            providers: [...state.providers.filter(isDefaultProvider), ...providers],
           };
         });
       })
@@ -299,6 +304,9 @@ export const chatModels = (() => {
         console.debug("Already have models, but refetching for latest");
       }
 
+      // Make sure providers are up to date
+      await llmProviders.invalidate();
+
       const providers = get(llmProviders)
         .providers.filter((x) => x.enabled)
         .filter((x) => {
@@ -309,6 +317,8 @@ export const chatModels = (() => {
 
           return true;
         });
+
+      console.debug("providers", providers);
 
       update((x) => ({ ...x, loadingState: "loading", error: null }));
 
