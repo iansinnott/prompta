@@ -9,20 +9,26 @@ const openSettings = async (page: Page) => {
   await expect(page.getByText("Settings", { exact: true })).toBeVisible();
 };
 
-test("custom provider", async ({ page }) => {
-  test.skip(!OPENROUTER_API_KEY, "OPENROUTER_API_KEY is not set");
-
+test("prompta enabled by default", async ({ page }) => {
   await page.goto("/");
   await openSettings(page);
   await expect(
     page.getByRole("heading", { name: "Prompta", exact: true }).getByRole("switch")
   ).toHaveAttribute("aria-checked", "true");
+});
+
+test("custom provider", async ({ page }) => {
+  test.skip(!OPENROUTER_API_KEY, "OPENROUTER_API_KEY is not set");
 
   const customProvider = {
     name: "OpenRouter",
     baseUrl: "https://openrouter.ai/api/v1",
     apiKey: OPENROUTER_API_KEY as string,
   };
+
+  // Go to the settings
+  await page.goto("/");
+  await openSettings(page);
 
   // Add custom provider
   await page.getByRole("button", { name: "Add custom" }).click();
