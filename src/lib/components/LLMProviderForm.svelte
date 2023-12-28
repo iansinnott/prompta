@@ -206,16 +206,15 @@
               }
 
               if (isNewProvider(provider)) {
-                llmProviders.createProvider({
+                await llmProviders.createProvider({
                   id: nanoid(),
                   name,
                   baseUrl,
                   apiKey,
                 });
-                llmProviders.removeProvider("new");
                 loading = false;
               } else {
-                llmProviders.updateProvider(provider.id, {
+                await llmProviders.updateProvider(provider.id, {
                   name,
                   baseUrl,
                   apiKey,

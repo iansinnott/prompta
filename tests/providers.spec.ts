@@ -40,20 +40,21 @@ test("custom provider", async ({ page }) => {
   await page.keyboard.press("Escape");
   await expect(page.getByText("Settings", { exact: true })).not.toBeVisible();
 
-  // Check that the models of the provider were loaded
+  // Check that the models of the provider were loaded and select one
   await page.getByTestId("ModelPickerButton").click();
   await expect(page.getByTestId("ModelPickerList")).toBeVisible();
-  await page.getByPlaceholder("Model...").fill("zephyr");
+  await page.getByPlaceholder("Model...").fill("zeph");
   await page
     .getByRole("option", { name: "huggingfaceh4/zephyr-7b-beta" })
     .click({ timeout: 6_000 });
   await expect(page.getByTestId("ModelPickerList")).not.toBeVisible();
 
-  // Select one of the models
-
-  // Reload the page
-
-  // Check the model is still selected as the default
-
-  await page.pause();
+  // Reload the page and check the model is still selected as the default
+  await page.reload();
+  await page.getByTestId("ModelPickerButton").click();
+  await page.getByPlaceholder("Model...").fill("zeph");
+  await expect(page.getByRole("option", { name: "huggingfaceh4/zephyr-7b-beta" })).toHaveAttribute(
+    "aria-selected",
+    "true"
+  );
 });

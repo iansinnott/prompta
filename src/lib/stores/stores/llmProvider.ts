@@ -162,15 +162,17 @@ export const llmProviders = (() => {
         return state;
       });
       await LLMProvider.delete({ where: { id } }).catch((err) => {
-        console.error(err);
+        console.error("delete llm provider", err);
       });
       await chatModels.refresh();
     },
 
-    createProvider: (provider: Partial<LLMProvider>) => {
-      return LLMProvider.create(provider).catch((err) => {
+    createProvider: async (provider: Partial<LLMProvider>) => {
+      const result = await LLMProvider.create(provider).catch((err) => {
         console.error(err);
       });
+      await llmProviders.removeProvider("new");
+      return result;
     },
 
     byId: (id: string) => {
@@ -209,7 +211,7 @@ export const llmProviders = (() => {
       return providers;
     },
 
-    updateProvider: (id: string, provider: Partial<LLMProvider>) => {
+    updateProvider: async (id: string, provider: Partial<LLMProvider>) => {
       if (isDefaultProvider({ id })) {
         update((state) => {
           const index = state.providers.findIndex((p) => p.id === id);
@@ -230,7 +232,7 @@ export const llmProviders = (() => {
           return state;
         });
       } else {
-        LLMProvider.update({
+        await LLMProvider.update({
           where: { id },
           data: provider,
         }).catch((err) => {
