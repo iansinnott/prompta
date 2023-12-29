@@ -42,6 +42,11 @@ test("custom provider", async ({ page }) => {
     page.getByRole("heading", { name: customProvider.name }).getByRole("button")
   ).toBeVisible();
 
+  // Check that it's enabled by default
+  await expect(
+    page.getByRole("heading", { name: customProvider.name, exact: true }).getByRole("switch")
+  ).toHaveAttribute("aria-checked", "true", { timeout: 6_000 });
+
   // Close the settinsg panel
   await page.keyboard.press("Escape");
   await expect(page.getByText("Settings", { exact: true })).not.toBeVisible();

@@ -211,6 +211,7 @@
                   name,
                   baseUrl,
                   apiKey,
+                  enabled: true,
                 });
                 loading = false;
               } else {
