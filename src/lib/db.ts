@@ -10,11 +10,10 @@ import { basename, debounce, groupBy, mapKeys, sha1sum, toCamelCase, toSnakeCase
 import { extractFragments } from "./markdown";
 import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
 
-import schemaUrl from "$lib/migrations/prompta_schema.sql?url";
+import schemaUrl from "$lib/migrations/0002_schema.sql?url";
 
 export { schemaUrl };
 
-import { getSystem } from "./gui";
 import { llmProviders, openAiConfig } from "./stores/stores/llmProvider";
 import { profilesStore } from "./stores/stores/llmProfile";
 
@@ -119,19 +118,8 @@ const migrateDb = async (db: DBAsync, schema: Schema) => {
       console.log("%cmigrate op=apply", "color:orange;");
     }
   } catch (error) {
-    if (error) {
-      // NOTE This will generate two alert messages most likely, if the base
-      // level error handler also alerts. However the additional context is
-      // useful.
-      //
-      // There's an open question about what to do here. We could roll back the
-      // db, but the rest of the app will expect it to be migrated. May or may
-      // not cause brakage.
-      await getSystem().alert(
-        "Could not migrate database. Failed on " + schema.name + "." + (error?.message || "")
-      );
-      throw error;
-    }
+    // Not sure what, if anything, should be done here. For now we expect calling code to handle this
+    throw error;
   }
 };
 
@@ -154,12 +142,18 @@ export const importFromDatabase = async (
   const tables = ["thread", "message", "fragment", "llm_provider"];
 
   for (const table of tables) {
-    const hasTable = (
+    const aHasTable = (
       await fromDb.execA(`SELECT name FROM sqlite_master WHERE type='table' AND name='${table}'`)
     ).length;
+    const bHasTable = (
+      await database.execA(`SELECT name FROM sqlite_master WHERE type='table' AND name='${table}'`)
+    ).length;
 
-    if (!hasTable) {
+    if (!aHasTable) {
       console.log("legacy db does not have table", table);
+      continue;
+    } else if (!bHasTable) {
+      console.log("current db does not have table", table);
       continue;
     }
 

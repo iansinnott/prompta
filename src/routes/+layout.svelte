@@ -204,8 +204,9 @@
 >
   {#if startupError}
     <FullScreenError
-      title={isPendingImport ? "Manual migration required" : "The app could not be initialized"}
-      error={startupError}
+      title={isPendingImport ? "Database migration required" : "The app could not be initialized"}
+      error={isPendingImport ? undefined : startupError}
+      level={isPendingImport ? "info" : "error"}
     >
       <div class="prose prose-invert">
         <div class="prose prose-invert mt-3">

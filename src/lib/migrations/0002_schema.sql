@@ -1,5 +1,7 @@
 --
--- The unified schema. Modify this schema as needed. The auto migration will be run by VLCN.
+-- The unified schema. To modify the schema copy it to a new file, modify,
+-- reference in db.ts. Keeping the old-yet-cumulative schemas around is for the
+-- sync functionality. Schema name should not be duplicated.
 --
 
 CREATE TABLE
@@ -151,3 +153,15 @@ VALUES
   );
 
 END;
+
+CREATE TABLE
+  if NOT EXISTS "llm_provider" (
+    "id" VARCHAR(255) PRIMARY KEY NOT NULL,
+    "name" VARCHAR(255),
+    "base_url" VARCHAR(2000),
+    "api_key" TEXT,
+    "enabled" BOOLEAN DEFAULT TRUE,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+SELECT crsql_as_crr ('llm_provider');
