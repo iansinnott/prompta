@@ -114,7 +114,7 @@ export async function createDb(
   requestedSchemaName: string,
   requestedVersion: bigint
 ) {
-  const dbpath = getDbPath(room);
+  const dbpath = getDbPath(room, requestedSchemaName);
   await fs.promises.mkdir(DB_FOLDER, { recursive: true });
   const db = new Database(dbpath);
   db.pragma("journal_mode = WAL");
@@ -184,12 +184,12 @@ function closeDb(db: Database.Database) {
   db.close();
 }
 
-function getDbPath(dbName: string) {
+function getDbPath(dbName: string, schemaName: string) {
   if (hasPathParts(dbName)) {
     throw new Error(`${dbName} must not include '..', '/', or '\\'`);
   }
 
-  return path.join(DB_FOLDER, dbName + ".db");
+  return path.join(DB_FOLDER, dbName + "." + schemaName + ".db");
 }
 
 function getSchemaPath(schemaName: string) {
