@@ -25,7 +25,8 @@
     openai: "The most accurate LLMs thus far. Use this if you want to use your own OpenAI API key.",
   };
 
-  let { name, baseUrl, apiKey, enabled } = provider;
+  // NOTE: Don't extract `enabled` from the provider object, it causes a bug where the switch doesn't update
+  let { name, baseUrl, apiKey } = provider;
 
   const cancelEdit = () => {
     name = provider.name;
@@ -73,8 +74,10 @@
         <Switch
           class="!ml-auto"
           disabled={provider.id === "openai" && !provider.apiKey}
-          checked={provider.id === "openai" ? Boolean(provider.apiKey && enabled) : enabled}
-          onCheckedChange={(checked) => {
+          checked={provider.id === "openai"
+            ? Boolean(provider.apiKey && provider.enabled)
+            : provider.enabled}
+          onCheckedChange={async (checked) => {
             if (provider.id === "openai" && !provider.apiKey) {
               toast({
                 title: "API Key required",
@@ -84,8 +87,8 @@
               return;
             }
 
-            llmProviders.updateProvider(provider.id, { enabled: checked });
-            chatModels.refresh();
+            await llmProviders.updateProvider(provider.id, { enabled: checked });
+            await chatModels.refresh();
             toast({
               title: "Provider updated",
               message: `${provider.name} ${checked ? "enabled" : "disabled"}`,
@@ -219,7 +222,6 @@
                   name,
                   baseUrl,
                   apiKey,
-                  enabled: true,
                 });
               }
 
