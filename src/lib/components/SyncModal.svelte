@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { syncStore, openAiConfig } from "$lib/stores/stores";
+  import { syncStore } from "$lib/stores/stores";
   import classNames from "classnames";
   import { slide } from "svelte/transition";
   import CopyButton from "./CopyButton.svelte";
   import { onMount } from "svelte";
   import { Eye, EyeOff } from "lucide-svelte";
+  import { openAiConfig } from "$lib/stores/stores/llmProvider";
 
   let syncString = "";
   let showAdvanced = false;

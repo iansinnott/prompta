@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
-    "beforeBuildCommand": "npm run ui:build",
+    "beforeBuildCommand": "npm run ui:build-static",
     "beforeDevCommand": "npm run ui:dev",
     "devPath": "http://localhost:5173",
     "distDir": "../build"
@@ -20,9 +20,9 @@
       "category": "Productivity",
       "copyright": "© 2023 Ian Sinnott",
       "deb": {
-        "depends": []
+        "depends": [ ]
       },
-      "externalBin": [],
+      "externalBin": [ ],
       "icon": [
         "icons/icon_32x32.png",
         "icons/icon_128x128.png",
@@ -35,11 +35,11 @@
       "macOS": {
         "entitlements": null,
         "exceptionDomain": "",
-        "frameworks": [],
+        "frameworks": [ ],
         "providerShortName": null,
         "signingIdentity": null
       },
-      "resources": [],
+      "resources": [ ],
       "shortDescription": "",
       "targets": "all",
       "windows": {

@@ -123,7 +123,7 @@
 <div
   class={classNames(
     "z-20",
-    "absolute top-[calc(100%+10px)] w-[calc(100vw_-_30px)] sm:w-full sm:max-w-[520px] rounded bg-zinc-800 border border-zinc-700 p-2",
+    "fixed sm:absolute top-[70px] left-3 right-3 sm:left-auto sm:right-auto sm:top-[calc(100%+10px)] w-[calc(100vw_-_30px)] sm:w-full sm:max-w-[520px] rounded bg-zinc-800 border border-zinc-700 p-2",
     _class
   )}
   class:hidden={!$threadMenu.open}

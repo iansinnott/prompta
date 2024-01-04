@@ -1,6 +1,9 @@
 <script lang="ts">
   import { dev } from "$app/environment";
-  import { openAiConfig, showInitScreen, verifyOpenAiApiKey } from "$lib/stores/stores";
+  import { showInitScreen } from "$lib/stores/stores";
+  import { gptProfileStore, verifyOpenAiApiKey } from "$lib/stores/stores/llmProfile";
+  import { chatModels, llmProviders, openAiConfig } from "$lib/stores/stores/llmProvider";
+  import { toast } from "$lib/toast";
   import classNames from "classnames";
   import { onMount } from "svelte";
   import { fly } from "svelte/transition";
@@ -18,11 +21,13 @@
   });
 
   let loading = false;
+  let buttonText = "Start Chatting";
 
   const handleSubmit = async () => {
     try {
       error = "";
       loading = true;
+      buttonText = "Loading...";
       if (!apiKey) {
         error = "No API key provided";
         console.log("API", apiKey, input.value);
@@ -32,16 +37,28 @@
       const valid = await verifyOpenAiApiKey(apiKey as string);
 
       if (valid) {
+        llmProviders.updateProvider("openai", {
+          apiKey: apiKey as string,
+          enabled: true,
+        });
+        buttonText = "Enabling OpenAI...";
+        await chatModels.refresh();
+        $gptProfileStore.model = "gpt-3.5-turbo-1106"; // The cheapest openai model
         $showInitScreen = false;
-        $openAiConfig.apiKey = apiKey;
       } else {
         throw new Error("Invalid API key");
       }
     } catch (err: any) {
       error = err.message;
       console.warn("Error storing api key", err);
+      toast({
+        title: "Could not verify your API key",
+        message: err.message,
+        type: "error",
+      });
     } finally {
       loading = false;
+      buttonText = "Start Chatting";
     }
   };
 
@@ -52,6 +69,11 @@
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
+  on:keydown={($event) => {
+    if ($event.key === "Escape") {
+      skipInitScreen();
+    }
+  }}
   class={classNames(
     "InitScreen bg-gradient-to-b from-[#1B1B1B] to-transparent flex flex-col items-center p-12 pt-20",
     _class
@@ -68,7 +90,7 @@
     out:fly|global={{ duration: 300, delay: 0, y: 50, opacity: 0 }}
     class="text-transparent bg-clip-text bg-gradient-to-br via-sky-400 to-indigo-500 from-blue-100 text-3xl font-extrabold tracking-wider"
   >
-    Quick setup
+    OpenAI Setup
   </h1>
   <form
     on:submit|preventDefault={handleSubmit}
@@ -76,7 +98,7 @@
     out:fly|global={{ duration: 300, delay: 0, y: 50, opacity: 0 }}
     class="mt-8 max-w-[400px] flex flex-col space-y-4"
   >
-    <label for="sk"> OpenAI API Key </label>
+    <label for="sk"> To use OpenAI, enter an API key: </label>
     <div
       class={classNames("rounded p-px gradient-border", {
         error: error,
@@ -99,7 +121,7 @@
       data-testid="SaveAPIKeyButton"
       class="w-full text-center px-2 py-[6px] rounded bg-gradient-to-r to-indigo-800 from-blue-500 text-white font-semibold tracking-wide"
     >
-      {loading ? "Loading..." : "Start Chatting"}
+      {buttonText}
     </button>
     <p class="leading-light">
       <small>
@@ -126,13 +148,8 @@
       class="w-full text-center px-2 py-[6px] rounded text-white font-semibold tracking-wide border border-white/30 hover:bg-white/10"
       on:click={skipInitScreen}
     >
-      Skip
+      Cancel
     </button>
-    <p class="leading-tight">
-      <small>
-        Skip this step if you want to use local models or use an API other than OpenAI official.
-      </small>
-    </p>
   </form>
 </div>
 

@@ -1,29 +1,21 @@
 import initWasm, { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import type { TXAsync, Schema, DBAsync } from "@vlcn.io/xplat-api";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
-import {
-  db,
-  sqlite,
-  currentThread,
-  openAiConfig,
-  profilesStore,
-  syncStore,
-  isNewThread,
-  newThread,
-} from "../lib/stores/stores";
+import { db, sqlite, currentThread, syncStore, isNewThread, newThread } from "../lib/stores/stores";
 import { dev } from "$app/environment";
 import { nanoid } from "nanoid";
 import type OpenAI from "openai";
 import { stringify as uuidStringify } from "uuid";
-import { basename, debounce, groupBy, sha1sum, toCamelCase, toSnakeCase } from "./utils";
+import { basename, debounce, groupBy, mapKeys, sha1sum, toCamelCase, toSnakeCase } from "./utils";
 import { extractFragments } from "./markdown";
 import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
 
-import schemaUrl from "$lib/migrations/prompta_schema.sql?url";
+import schemaUrl from "$lib/migrations/0002_schema.sql?url";
 
 export { schemaUrl };
 
-import { getSystem } from "./gui";
+import { llmProviders, openAiConfig } from "./stores/stores/llmProvider";
+import { profilesStore } from "./stores/stores/llmProfile";
 
 const legacyDbNames = [
   "chat_db-v1",
@@ -126,54 +118,46 @@ const migrateDb = async (db: DBAsync, schema: Schema) => {
       console.log("%cmigrate op=apply", "color:orange;");
     }
   } catch (error) {
-    if (error) {
-      // NOTE This will generate two alert messages most likely, if the base
-      // level error handler also alerts. However the additional context is
-      // useful.
-      //
-      // There's an open question about what to do here. We could roll back the
-      // db, but the rest of the app will expect it to be migrated. May or may
-      // not cause brakage.
-      await getSystem().alert(
-        "Could not migrate database. Failed on " + schema.name + "." + (error?.message || "")
-      );
-      throw error;
-    }
+    // Not sure what, if anything, should be done here. For now we expect calling code to handle this
+    throw error;
   }
 };
 
-export const reinstateLegacyData = async (
+export const importFromDatabase = async (
   database: DBAsync = _db as DBAsync,
-  currentDbName = getLatestDbName()
+  databaseName: string
 ) => {
-  if (!currentDbName) {
-    throw new Error("No current db name found");
-  }
-
-  const legacyDbNames = getDbNames();
-  const i = legacyDbNames.indexOf(currentDbName);
-  const legacyDbName = legacyDbNames[i - 1];
-
-  if (!legacyDbName) {
-    throw new Error("No legacy db found");
-  }
-
   if (!_sqlite) {
     throw new Error("No sqlite instance found");
   }
 
-  let legacyDb;
+  let fromDb: DBAsync;
   try {
-    legacyDb = await _sqlite.open(legacyDbName);
+    fromDb = await _sqlite.open(databaseName);
   } catch (error) {
     console.error("opening legacy db", error);
-    throw new Error("Could not open legacy db: " + legacyDbName);
+    throw new Error("Could not open legacy db: " + databaseName);
   }
 
-  const tables = ["thread", "message", "fragment"];
+  const tables = ["thread", "message", "fragment", "llm_provider"];
 
   for (const table of tables) {
-    const rows = await legacyDb.execO(`select * from "${table}"`);
+    const aHasTable = (
+      await fromDb.execA(`SELECT name FROM sqlite_master WHERE type='table' AND name='${table}'`)
+    ).length;
+    const bHasTable = (
+      await database.execA(`SELECT name FROM sqlite_master WHERE type='table' AND name='${table}'`)
+    ).length;
+
+    if (!aHasTable) {
+      console.log("legacy db does not have table", table);
+      continue;
+    } else if (!bHasTable) {
+      console.log("current db does not have table", table);
+      continue;
+    }
+
+    const rows = await fromDb.execO(`select * from "${table}"`);
     console.log("legacy rows", rows.length);
     for (const row of rows) {
       const keys = Object.keys(row);
@@ -186,6 +170,23 @@ export const reinstateLegacyData = async (
       await database.exec(query, values);
     }
   }
+};
+
+export const reinstatePriorData = async (database: DBAsync = _db as DBAsync) => {
+  const currentDbName = getLatestDbName();
+  if (!currentDbName) {
+    throw new Error("No current db name found");
+  }
+
+  const legacyDbNames = getDbNames();
+  const i = legacyDbNames.indexOf(currentDbName);
+  const legacyDbName = legacyDbNames[i - 1];
+
+  if (!legacyDbName) {
+    throw new Error("No legacy db found");
+  }
+
+  return importFromDatabase(database, legacyDbName);
 };
 
 export const getCurrentSchema = async () => {
@@ -227,7 +228,7 @@ export const initDb = async (dbName: string) => {
   await migrateDb(_db, schema);
 
   // Initialize stores
-  for (const s of [currentThread, profilesStore, openAiConfig]) {
+  for (const s of [currentThread, profilesStore, openAiConfig, llmProviders]) {
     await s.init();
   }
 
@@ -237,6 +238,7 @@ export const initDb = async (dbName: string) => {
   const subs: (() => void)[] = [];
   subs.push(Thread.initRx(rx));
   subs.push(ChatMessage.initRx(rx));
+  subs.push(LLMProvider.initRx(rx));
 
   const teardown = async () => {
     // NOTE: We're not syncing here, assuming the data has already been synced.
@@ -267,6 +269,7 @@ export interface ChatMessageRow {
   thread_id: string;
   created_at: string;
 }
+
 export interface ChatMessage {
   id: string;
   content: string;
@@ -284,6 +287,16 @@ export interface ThreadRow {
   created_at: string;
 }
 export type Thread = Omit<ThreadRow, "created_at"> & { createdAt: Date };
+
+export interface LLMProviderRow {
+  id: string;
+  name: string;
+  baseUrl: string;
+  apiKey: string;
+  enabled: boolean;
+  created_at: string;
+}
+export type LLMProvider = Omit<LLMProviderRow, "created_at"> & { createdAt: Date };
 
 export interface FragmentRow {
   id: string;
@@ -601,6 +614,21 @@ const crud = <T extends { id: string }>({
 
     generateId,
   };
+};
+
+export const LLMProvider = {
+  ...crud<LLMProvider>({
+    tableName: "llm_provider",
+    rowToModel: ({ created_at, ...x }: LLMProviderRow): LLMProvider => {
+      const camelCaseX = mapKeys(x, toCamelCase);
+
+      // @ts-expect-error I had the transformer on db keys in crud but it's not implemented
+      return {
+        ...camelCaseX,
+        createdAt: dateFromSqlite(created_at),
+      };
+    },
+  }),
 };
 
 export const ChatMessage = {
@@ -926,8 +954,4 @@ export async function _clearDatabase() {
     // await Preferences._removeAll();
     window.location.reload();
   }
-}
-
-if (dev) {
-  (window as any)._clearDatabase = _clearDatabase;
 }

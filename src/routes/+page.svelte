@@ -3,14 +3,16 @@
   import {
     currentThread,
     currentChatThread,
-    openAiConfig,
     showSettings,
     syncStore,
     devStore,
     showInitScreen,
     messageText,
+    pendingMessageStore,
+    isNewThread,
   } from "../lib/stores/stores";
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
+  import SmallSpinner from "$lib/components/SmallSpinner.svelte";
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
   import ChatMessageList from "$lib/components/ChatMessageList.svelte";
   import ActionsMenu from "$lib/components/ActionsMenu.svelte";
@@ -25,6 +27,8 @@
   import InitScreen from "$lib/components/InitScreen.svelte";
   import { toast } from "$lib/toast";
   import SyncModal from "$lib/components/SyncModal.svelte";
+  import ModelPicker from "$lib/components/ModelPicker.svelte";
+  import { chatModels } from "$lib/stores/stores/llmProvider";
 
   const sys = getSystem();
   let textarea: HTMLTextAreaElement | null = null;
@@ -67,6 +71,7 @@
   };
 
   $: sending = $currentChatThread.status === "loading";
+  $: isPending = Boolean($pendingMessageStore?.content);
 
   function parseCommand(s: string) {
     if (!s.startsWith("/")) {
@@ -98,7 +103,7 @@
   }
 
   async function handleSubmit(s: string) {
-    if (sending) {
+    if (isPending) {
       console.debug("Cancelling");
       currentChatThread.cancel();
       return;
@@ -150,6 +155,9 @@
 
   $: if ($syncStore.error) console.log("sync store ERR", $syncStore.error);
 
+  $: hasModels = $chatModels.models.length > 0;
+  $: placeholder = !hasModels ? "Loading..." : sending ? "Enter to cancel" : "Ask Prompta...";
+
   const isSyncSupported = true;
 </script>
 
@@ -192,6 +200,8 @@
         </button>
       {/if}
 
+      <ModelPicker />
+
       <!-- a "click outside" div -->
       {#if $syncStore.showSyncModal}
         <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -216,7 +226,10 @@
       <button
         class="text-white/50 pr-2 sm:px-2 py-1 hover:text-white"
         on:click={() => {
-          currentThread.reset();
+          if (!isNewThread({ id: $currentThread.id })) {
+            currentThread.reset();
+            toast({ type: "success", title: "Started new thread" });
+          }
         }}
       >
         <IconPlus class="w-5 h-5" />
@@ -245,6 +258,7 @@
       <textarea
         data-chat-input
         data-testid="ChatInput"
+        disabled={!hasModels}
         on:keydown={(e) => {
           // send on enter
           if (e.key === "Enter" && !e.shiftKey) {
@@ -257,25 +271,31 @@
         on:input={(e) => {
           resizeChatInput();
         }}
-        placeholder={sending ? "Enter to cancel" : "Ask Prompta..."}
+        {placeholder}
         rows="1"
         class={classNames(
           "appearance-none flex-1 w-full px-4 py-2 bg-transparent outline-none resize-none max-h-[50svh]"
         )}
       />
-      <button
-        data-testid="ChatInputSubmit"
-        class="font-bold px-4 py-2 flex items-center text-xs uppercase leading-[22px]"
-        type="submit"
-      >
-        <span class="mr-2">
-          {sending ? "Cancel" : "Send"}
-        </span>
-        <span class="hidden sm:inline-flex items-center space-x-1 text-white/40">
-          <kbd style="font-family:system-ui, -apple-system;" class="text-xs">{"⮐"}</kbd>
-        </span>
-      </button>
-      <ActionsMenu class="text-xs uppercase leading-[22px]" />
+      {#if !hasModels}
+        <div data-testid="ModelsLoading" class="flex items-center justify-center px-4 py-2">
+          <SmallSpinner />
+        </div>
+      {:else}
+        <button
+          data-testid="ChatInputSubmit"
+          class="font-bold px-4 py-2 flex items-center text-xs uppercase leading-[22px]"
+          type="submit"
+        >
+          <span class="mr-2">
+            {isPending ? "Cancel" : "Send"}
+          </span>
+          <span class="hidden sm:inline-flex items-center space-x-1 text-white/40">
+            <kbd style="font-family:system-ui, -apple-system;" class="text-xs">{"⮐"}</kbd>
+          </span>
+        </button>
+        <ActionsMenu class="text-xs uppercase leading-[22px]" />
+      {/if}
     </form>
   </footer>
 

@@ -5,6 +5,7 @@
     devStore,
     generateThreadTitle,
     isNewThread,
+    showInitScreen,
     showSettings,
     syncStore,
     threadMenu,
@@ -14,7 +15,7 @@
   import IconGear from "./IconGear.svelte";
   import IconHistoryClock from "./IconHistoryClock.svelte";
   import { dev } from "$app/environment";
-  import { _clearDatabase, reinstateLegacyData } from "$lib/db";
+  import { _clearDatabase, reinstatePriorData } from "$lib/db";
   import IconThreadTitle from "./IconThreadTitle.svelte";
   import IconRefreshOutline from "./IconRefreshOutline.svelte";
   import {
@@ -30,6 +31,10 @@
   import classNames from "classnames";
   import IconTrash from "./IconTrash.svelte";
   import { toast } from "$lib/toast";
+  import { chatModels, llmProviders, modelPickerOpen } from "$lib/stores/stores/llmProvider";
+  import IconOpenAi from "./IconOpenAI.svelte";
+  import { Brain } from "lucide-svelte";
+  import IconBrain from "./IconBrain.svelte";
   let _class: string = "";
   export { _class as class };
 
@@ -46,13 +51,30 @@
       name: "Generate Title...",
       icon: IconThreadTitle,
       execute: () => {
-        generateThreadTitle({ threadId: $currentThread.id });
+        generateThreadTitle({ threadId: $currentThread.id }).catch((error) => {
+          toast({
+            type: "error",
+            title: "Error generating title",
+            message: error.message,
+          });
+        });
       },
     },
     {
       name: "Regenerate Response",
       icon: IconRefreshOutline,
       execute: currentChatThread.regenerateResponse,
+    },
+    {
+      name: "Enable OpenAI",
+      when: () => {
+        const oai = llmProviders.getOpenAi();
+        return !oai.apiKey && oai.enabled;
+      },
+      icon: IconOpenAi,
+      execute: () => {
+        showInitScreen.set(true);
+      },
     },
     {
       when: () => !sys.isBrowser,
@@ -68,6 +90,7 @@
       keyboard: { shortcut: "ctrl+p" },
       execute: () => ($threadMenu.open = !$threadMenu.open),
     },
+
     {
       when: () => !sys.isBrowser,
       name: "New Chat",
@@ -84,6 +107,28 @@
       altFilterText: "thread",
       execute: currentThread.reset,
     },
+
+    {
+      when: () => !sys.isBrowser,
+      name: "Choose LLM Model",
+      icon: IconBrain,
+      keyboard: { shortcut: "meta+l" }, // NOTE Meta key with N only works in the Tauri app. In a browser this opens a new window
+      altFilterText: "thread",
+      execute: () => {
+        $modelPickerOpen = !$modelPickerOpen;
+      },
+    },
+    {
+      when: () => sys.isBrowser,
+      name: "Choose LLM Model",
+      icon: IconBrain,
+      keyboard: { shortcut: "ctrl+l" },
+      altFilterText: "thread",
+      execute: () => {
+        $modelPickerOpen = !$modelPickerOpen;
+      },
+    },
+
     {
       name: "Archive Chat",
       icon: IconArchiveIn,
@@ -104,6 +149,11 @@
       },
     },
     {
+      name: "Refresh Models List",
+      icon: IconRefreshOutline,
+      execute: chatModels.refresh,
+    },
+    {
       when: () => {
         return !isNewThread($currentThread);
       },
@@ -122,7 +172,7 @@
       icon: IconTerminalPrompt,
       execute: async () => {
         try {
-          await reinstateLegacyData();
+          await reinstatePriorData();
           toast({
             type: "success",
             title: "Database restored",
@@ -419,7 +469,7 @@
           >
             {#if action.icon}
               <span class="w-6 h-6 mr-2 inline-flex items-center">
-                <svelte:component this={action.icon} />
+                <svelte:component this={action.icon} class="w-5 h-5" />
               </span>
             {/if}
             <span class="flex-1 flex">

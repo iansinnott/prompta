@@ -10,6 +10,7 @@ import {
   Thread,
   type FragmentSearchResult,
   getCurrentSchema,
+  LLMProvider,
 } from "$lib/db";
 import { nanoid } from "nanoid";
 import { initOpenAi } from "$lib/llm/openai";
@@ -20,86 +21,12 @@ import { emit } from "$lib/capture";
 import { debounce } from "$lib/utils";
 import { toast } from "$lib/toast";
 import { createSyncer, getDefaultEndpoint, type Syncer } from "$lib/sync/vlcn";
-import { PENDING_THREAD_TITLE, hasThreadTitle, persistentStore } from "./storeUtils";
+import { PENDING_THREAD_TITLE, hasThreadTitle, persistentStore } from "../storeUtils";
+import { chatModels, llmProviders, openAiConfig } from "./llmProvider";
+import { activeProfileName, getOpenAi, gptProfileStore } from "./llmProfile";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
-
-type OpenAiAppConfig = Partial<ClientOptions> & {
-  replicationHost: string;
-  siteId: string;
-  lastSyncChain: string;
-};
-
-export const openAiConfig = (() => {
-  const defaultConfig: OpenAiAppConfig = {
-    apiKey: "",
-    baseURL: "https://api.openai.com/v1/",
-
-    // NOTE: since these are not infact OpenAI options some separation might be less prone to confusion.
-    replicationHost: "",
-    siteId: "",
-    lastSyncChain: "",
-  };
-
-  const { subscribe, set, update } = writable<OpenAiAppConfig>(defaultConfig);
-
-  const localStorageSet = (x: OpenAiAppConfig) => {
-    const s = JSON.stringify(x);
-    localStorage.setItem("openai-config", s);
-    set(x);
-  };
-
-  const localStorageUpdate = (fn: (config: OpenAiAppConfig) => OpenAiAppConfig) => {
-    update((x) => {
-      const v = fn(x);
-      const s = JSON.stringify(v);
-      localStorage.setItem("openai-config", s);
-      return v;
-    });
-  };
-
-  return {
-    subscribe,
-    set: localStorageSet,
-    update: localStorageUpdate,
-    init: async () => {
-      const s = localStorage.getItem("openai-config");
-      let config: OpenAiAppConfig;
-      if (!s) {
-        console.debug("No config found. Likely first time running the app. Using default config.");
-        config = defaultConfig;
-      } else {
-        config = JSON.parse(s) as OpenAiAppConfig;
-      }
-
-      const siteId = await DatabaseMeta.getSiteId();
-      set({ ...config, siteId });
-    },
-  };
-})();
-
-interface GPTProfile {
-  name: string;
-  model: string;
-  systemMessage: string;
-}
-
-export const DEFAULT_SYSTEM_MESSAGE = `
-You are a helpful assistant. Respond to user messages as accurately as possible. Do not repeat the prompt.
-Be concise, unless the user asks for more detail.
-Assume the user has a technical background and understands software programming, although they may ask about any topic.
-When producing code, insert the language identifier after opening fences.
-    `.trim();
-
-export const activeProfileName = writable("default");
-export const profilesStore = persistentStore<{ [key: string]: GPTProfile }>("profile", {
-  default: {
-    name: "default",
-    model: "gpt-3.5-turbo",
-    systemMessage: DEFAULT_SYSTEM_MESSAGE,
-  },
-});
 
 /**
  * A store for _RUNTIME_ dev stuff. For build-time, use the `dev` variable.
@@ -108,73 +35,23 @@ export const devStore = persistentStore<{ showDebug: boolean }>("dev", {
   showDebug: dev,
 });
 
-// @todo Persist
-export const gptProfileStore = (() => {
-  const activeProfileStore = derived([profilesStore, activeProfileName], ([profiles, name]) => {
-    return profiles[name];
-  });
-
-  return {
-    subscribe: activeProfileStore.subscribe,
-    set: (profile: GPTProfile) => {
-      profilesStore.update((x) => {
-        return { ...x, [profile.name]: profile };
-      });
-    },
-    selectProfile: (name: string) => {
-      activeProfileName.set(name);
-    },
-  };
-})();
-
-export const getOpenAi = () => {
-  const { apiKey, baseURL } = get(openAiConfig);
-
-  if (!apiKey) {
-    throw new Error("No API key");
-  }
-
-  if (!baseURL) {
-    throw new Error("No API URL");
-  }
-
-  return initOpenAi({ apiKey, baseURL });
-};
-
-export const verifyOpenAiApiKey = async (apiKey: string) => {
-  const conf = get(openAiConfig);
-  const baseURL = conf.baseURL as string;
-
-  // Skip verification if the base url is not the standard openai base url
-  // because we aren't sure custom URL supports it. The base URL is assumed to
-  // suppor the OpenAI API, but the models endpoint may be overlooked in favor
-  // of merely supporting chat-related endpoints.
-  if (baseURL && baseURL !== "https://api.openai.com/v1/") {
-    return true;
-  }
-
-  // Ping the models endpoint to verify the api key
-  try {
-    await fetch("https://api.openai.com/v1/models", {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-    }).then((x) => (x.ok ? x.json() : Promise.reject(x)));
-    return true;
-  } catch (err) {
-    console.error("Could not verify api key. Likely invalid", err);
-    return false;
-  }
-};
-
 export const generateThreadTitle = async ({ threadId }: { threadId: string }) => {
   const openAi = getOpenAi();
   const context = await ChatMessage.findThreadContext({ threadId });
   const messageContext = context.map((x) => ({ content: x.content, role: x.role }));
+  const modelName = get(gptProfileStore).model;
+
+  if (!modelName) {
+    toast({
+      type: "error",
+      title: "No model selected",
+      message: "Please select a model via the dropdown",
+    });
+    return;
+  }
 
   const prompt: OpenAI.Chat.CompletionCreateParamsNonStreaming = {
-    model: get(gptProfileStore)?.model || "gpt-3.5-turbo-1106", // Use custom model if present, else use turbo 3.5
+    model: modelName,
     temperature: 0.2, // Playing around with this value the lower value seems to be more accurate?
     messages: [
       ...messageContext,
@@ -213,6 +90,7 @@ Do not provide a word count or add quotation marks.
   currentThread.update((x) => {
     return { ...x, title: newTitle };
   });
+
   threadList.invalidate();
 };
 
@@ -303,53 +181,6 @@ export const threadMenu = writable({
   open: false,
 });
 
-type InvalidateOptions = {
-  onInvalidated?: () => void;
-
-  /**
-   * Optional name for debugging purposes. Should not affect runtime behavior.
-   */
-  name?: string;
-};
-
-/**
- * Create a readable store that can be manually invalidated, forcing the setter
- * function to be called again. I would have thought this would be built-in, maybe I missed it.
- */
-const invalidatable = <T>(
-  defaultValue: T,
-  cb: (set: (x: T) => void) => void,
-  options: InvalidateOptions = {}
-) => {
-  // Keep a reference to the setter function. This way, to invalidate we just
-  // call the callback with the setter. I.e. 'invalidate' just calls the callback on demand
-  let _set: Subscriber<T>;
-
-  const innerStore = readable<T>(defaultValue, (set) => {
-    _set = set;
-    cb(_set);
-  });
-
-  return {
-    subscribe: innerStore.subscribe,
-    invalidate: () => {
-      if (!_set) {
-        console.warn(
-          `WARN: Tried to invalidate store %c${
-            options.name || "<unnamed>"
-          }%c before it was subscribed. This is a %cno-op`,
-          "color:pink;",
-          "color:unset;",
-          "color:red;"
-        );
-        return;
-      }
-      cb(_set);
-      options.onInvalidated?.();
-    },
-  };
-};
-
 interface ThreadFilterStore {
   limit: number;
   offset: number;
@@ -422,7 +253,7 @@ const createThreadListStore = () => {
 
 export const threadList = createThreadListStore();
 
-const pendingMessageStore = writable<ChatMessage | null>(null);
+export const pendingMessageStore = writable<ChatMessage | null>(null);
 
 /**
  * Initially created for debugging.
@@ -454,6 +285,8 @@ export const inProgressMessageId = derived(pendingMessageStore, (x) => x?.id);
  */
 const handleSSE = (ev: EventSourceMessage) => {
   const message = ev.data;
+
+  console.debug("[SSE]", message);
 
   if (message === "[DONE]") {
     return; // Stream finished
@@ -568,19 +401,26 @@ export const currentChatThread = (() => {
   };
 
   const promptGpt = async ({ threadId }: { threadId: string }) => {
-    const conf = get(openAiConfig);
-
     if (get(pendingMessageStore)) {
       throw new Error("Already a message in progres");
     }
 
-    const profile = get(gptProfileStore);
-
-    if (!profile) {
-      throw new Error("No GPT profile found. activeProfile=" + get(activeProfileName));
+    const { model: modelId, systemMessage } = get(gptProfileStore);
+    if (!modelId) {
+      throw new Error("No model. activeProfile=" + get(activeProfileName));
     }
 
-    insertPendingMessage({ threadId, model: profile.model });
+    const model = get(chatModels).models.find((x) => x.id === modelId);
+    if (!model) {
+      throw new Error("No model found for: " + modelId);
+    }
+
+    const provider = llmProviders.byId(model.provider.id);
+    if (!provider) {
+      throw new Error("No provider found for: " + model.provider.id);
+    }
+
+    insertPendingMessage({ threadId, model: modelId });
 
     const context = await ChatMessage.findThreadContext({ threadId });
 
@@ -588,10 +428,10 @@ export const currentChatThread = (() => {
 
     let messageContext = context.map((x) => ({ content: x.content, role: x.role }));
 
-    if (profile.systemMessage) {
+    if (systemMessage.trim()) {
       messageContext = [
         {
-          content: profile.systemMessage,
+          content: systemMessage,
           role: "system",
         },
         ...messageContext,
@@ -600,7 +440,7 @@ export const currentChatThread = (() => {
 
     const prompt: OpenAI.Chat.CompletionCreateParamsStreaming = {
       messages: messageContext,
-      model: profile.model,
+      model: modelId,
       // max_tokens: 100, // just for testing
       stream: true,
     };
@@ -610,13 +450,13 @@ export const currentChatThread = (() => {
     abortController = new AbortController();
 
     // NOTE the lack of leading slash. Important for the URL to be relative to the base URL including its path
-    const endpoint = new URL("chat/completions", conf.baseURL);
+    const endpoint = new URL("chat/completions", provider.baseUrl);
 
     // @todo This could use the sdk now that the new version supports streaming
     await fetchEventSource(endpoint.href, {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${conf.apiKey}`,
+        Authorization: `Bearer ${provider.apiKey}`, // This could be empty, but we assume that in such a case the server will ignore this header
       },
       method: "POST",
       body: JSON.stringify(prompt),
@@ -660,6 +500,7 @@ export const currentChatThread = (() => {
     if (!hasThreadTitle(get(currentThread))) {
       console.log("Generating thread title...");
       try {
+        await generateThreadTitle({ threadId: botMessage.threadId });
       } catch (error) {
         if (error instanceof OpenAI.APIError) {
           console.error({
@@ -682,7 +523,6 @@ export const currentChatThread = (() => {
           });
         }
       }
-      await generateThreadTitle({ threadId: botMessage.threadId });
     }
   };
 
@@ -760,7 +600,12 @@ export const currentChatThread = (() => {
       }
 
       promptGpt({ threadId: lastMessage.threadId }).catch((err) => {
-        console.error("[gpt]", err);
+        console.error("[regenerateResponse]", err);
+        toast({
+          type: "error",
+          title: "Error regenerating response",
+          message: err.message,
+        });
         invalidate();
       });
     },
@@ -779,6 +624,8 @@ export const currentChatThread = (() => {
         role: cmd.command,
         content: cmd.args.join(" "),
       });
+
+      messageText.set("");
     },
 
     sendMessage: async (...args: Parameters<typeof ChatMessage.create>) => {
@@ -794,8 +641,14 @@ export const currentChatThread = (() => {
       const newMessage = await ChatMessage.create(msg);
       const backupText = get(messageText);
       messageText.set("");
+
       promptGpt({ threadId: msg.threadId as string }).catch((err) => {
-        console.error("[gpt]", err);
+        console.error("[sendMessage]", err);
+        toast({
+          type: "error",
+          title: "Error sending message",
+          message: err.message,
+        });
         messageText.set(backupText); // Restore backup text
         return ChatMessage.delete({ where: { id: newMessage.id } }); // Delete the message
       });
@@ -1020,6 +873,11 @@ export const syncStore = (() => {
   };
 })();
 
+LLMProvider.onTableChange(() => {
+  console.debug("%cprovider table changed", "color:salmon;");
+  llmProviders.invalidate();
+});
+
 Thread.onTableChange(() => {
   console.debug("%cthread table changed", "color:salmon;");
   threadList.invalidate();
@@ -1029,5 +887,3 @@ ChatMessage.onTableChange(() => {
   console.debug("%cmessage table changed", "color:salmon;");
   currentChatThread.invalidate();
 });
-
-export const chatModels = writable<OpenAI.Model[]>([]);

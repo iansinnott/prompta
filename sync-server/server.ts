@@ -5,22 +5,9 @@ import cors from "@fastify/cors";
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 8081;
 
-const envToLogger: Record<string, any> = {
-  development: {
-    transport: {
-      target: "pino-pretty",
-      options: {
-        translateTime: "HH:MM:ss Z",
-        ignore: "pid,hostname",
-      },
-    },
-  },
-  production: true,
-};
-
 // Create our Fastify server
 const app = Fastify({
-  logger: envToLogger[process.env.NODE_ENV as string] ?? true,
+  logger: true,
 
   // Body limit is up from the default value because I ran into an issue trying
   // to sync where my full db was ~4mb. What we really should do here is either
