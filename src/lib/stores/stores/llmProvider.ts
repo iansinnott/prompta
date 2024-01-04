@@ -1,8 +1,7 @@
 import { DatabaseMeta, LLMProvider } from "$lib/db";
 import { get, writable } from "svelte/store";
-import { invalidatable } from "../storeUtils";
 import { dev } from "$app/environment";
-import { OpenAI, type ClientOptions } from "openai";
+import type { ClientOptions, OpenAI } from "openai";
 import { toast } from "$lib/toast";
 import { gptProfileStore } from "./llmProfile";
 import { showSettings } from ".";
@@ -10,6 +9,7 @@ import IconOpenAi from "$lib/components/IconOpenAI.svelte";
 import IconBrain from "$lib/components/IconBrain.svelte";
 
 import { env } from "$env/dynamic/public";
+import { initOpenAi } from "$lib/llm/openai";
 
 const promptaBaseUrl = env.PUBLIC_PROMPTA_API_URL || "https://api.prompta.dev/v1/";
 
@@ -237,6 +237,7 @@ export const llmProviders = (() => {
           return state;
         });
       } else {
+        console.log("Updating provider", id, provider);
         await LLMProvider.update({
           where: { id },
           data: provider,
@@ -318,7 +319,10 @@ export const chatModels = (() => {
           return true;
         });
 
-      console.debug("providers", providers);
+      console.debug(
+        "refreshing providers",
+        providers.map((x) => x.name)
+      );
 
       update((x) => ({ ...x, loadingState: "loading", error: null }));
 
@@ -326,11 +330,8 @@ export const chatModels = (() => {
         // Fetch models for all active providers
         const xss = await Promise.all(
           providers.map((provider) => {
-            const openai = new OpenAI({
-              apiKey: provider.apiKey,
-              baseURL: provider.baseUrl,
-              dangerouslyAllowBrowser: true,
-            });
+            const openai = initOpenAi({ apiKey: provider.apiKey, baseURL: provider.baseUrl });
+
             return openai.models
               .list()
               .then((x) => {

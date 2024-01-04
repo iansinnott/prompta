@@ -293,10 +293,13 @@ export interface LLMProviderRow {
   name: string;
   baseUrl: string;
   apiKey: string;
-  enabled: boolean;
+  enabled: 0 | 1;
   created_at: string;
 }
-export type LLMProvider = Omit<LLMProviderRow, "created_at"> & { createdAt: Date };
+export type LLMProvider = Omit<LLMProviderRow, "created_at" | "enabled"> & {
+  createdAt: Date;
+  enabled: boolean;
+};
 
 export interface FragmentRow {
   id: string;
@@ -625,6 +628,7 @@ export const LLMProvider = {
       // @ts-expect-error I had the transformer on db keys in crud but it's not implemented
       return {
         ...camelCaseX,
+        enabled: camelCaseX.enabled === 1,
         createdAt: dateFromSqlite(created_at),
       };
     },
