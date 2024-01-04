@@ -60,8 +60,8 @@ dependencies:
     specifier: 4.0.2
     version: 4.0.2
   openai:
-    specifier: ^4.0.1
-    version: 4.0.1
+    specifier: ^4.24.1
+    version: 4.24.1
   prism-svelte:
     specifier: 0.5.0
     version: 0.5.0
@@ -2292,8 +2292,8 @@ packages:
     dependencies:
       wrappy: 1.0.2
 
-  /openai@4.0.1:
-    resolution: {integrity: sha512-UanMv/kCD/ylgOdBrkkRgkoFXdfENrXYWNvYdvPttXZaEJmRVY9MZSknlkWYH7iPMX6tTcz6szbI2d3O04UFag==}
+  /openai@4.24.1:
+    resolution: {integrity: sha512-ezm/O3eiZMnyBqirUnWm9N6INJU1WhNtz+nK/Zj/2oyKvRz9pgpViDxa5wYOtyGYXPn1sIKBV0I/S4BDhtydqw==}
     hasBin: true
     dependencies:
       '@types/node': 18.15.11
@@ -2304,6 +2304,7 @@ packages:
       form-data-encoder: 1.7.2
       formdata-node: 4.4.1
       node-fetch: 2.6.13
+      web-streams-polyfill: 3.2.1
     transitivePeerDependencies:
       - encoding
     dev: false
@@ -3339,6 +3340,11 @@ packages:
       - supports-color
       - terser
     dev: true
+
+  /web-streams-polyfill@3.2.1:
+    resolution: {integrity: sha512-e0MO3wdXWKrLbL0DgGnUV7WHVuw9OUvL4hjgnPkIeEvESk74gAITi5G606JtZPp39cd8HA9VQzCIvA49LpPN5Q==}
+    engines: {node: '>= 8'}
+    dev: false
 
   /web-streams-polyfill@4.0.0-beta.3:
     resolution: {integrity: sha512-QW95TCTaHmsYfHDybGMwO5IJIM93I/6vTRk+daHTWFPhwh+C8Cg7j7XyKrwrj8Ib6vYXe0ocYNrmzY4xAAN6ug==}
