@@ -1,5 +1,7 @@
 import { OpenAI, type ClientOptions } from "openai";
 
+const headerWhitelist = new Set(["content-type", "authorization"]);
+
 /**
  * A fetch wrapper to strip certain custom headers. The custom headers caused
  * CORS issues with 3-rd party providers, despite being otherwise API compatible.
@@ -14,8 +16,9 @@ const openAiFetchWrapper = (url: RequestInfo, options?: RequestInit) => {
 
   // Filter keys. Lots of CORS servers DO NOT like the custom headers that openai SDK sets.
   // NOTE: This could be conditional on the URL being some non-openai endpoint, but this is simpler.
+  // NOTE: Safari also did not like the User-Agent header, so I've adopted as whitelist approach.
   for (const [k, v] of Object.entries(options?.headers || {})) {
-    if (k.toLowerCase().startsWith("x-")) {
+    if (!headerWhitelist.has(k.toLowerCase())) {
       continue;
     }
     hs[k] = v;
