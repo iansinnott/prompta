@@ -40,15 +40,18 @@ jobs:
         with:
           workspaces: "./src-tauri -> target"
 
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - name: Sync node version and setup cache
         uses: actions/setup-node@v3
         with:
           node-version: "lts/*"
-          cache: "npm" # Set this to npm, yarn or pnpm.
+          cache: "pnpm" # Set this to npm, yarn or pnpm.
 
       - name: Install frontend dependencies
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
-        run: npm install # Change this to npm, yarn or pnpm.
+        run: pnpm install # Change this to npm, yarn or pnpm.
 
       - name: Populate the verson string
         id: git_version # ID for the step, to be referred to later
@@ -68,4 +71,4 @@ jobs:
           releaseBody: "See the assets to download and install this version."
           releaseDraft: false
           prerelease: false
-          tauriScript: npm
+          tauriScript: pnpm
