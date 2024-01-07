@@ -57,6 +57,7 @@
     "@vlcn.io/rx-tbl": "0.15.0-next.0",
     "@vlcn.io/ws-common": "0.1.2",
     "@vlcn.io/xplat-api": "0.14.1",
+    "@xenova/transformers": "2.13.4",
     "better-sqlite3": "9.2.2",
     "bits-ui": "^0.11.8",
     "classnames": "2.3.2",
