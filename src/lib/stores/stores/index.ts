@@ -50,7 +50,7 @@ export const generateThreadTitle = async ({ threadId }: { threadId: string }) =>
     return;
   }
 
-  const prompt: OpenAI.Chat.CompletionCreateParamsNonStreaming = {
+  const prompt: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
     model: modelName,
     temperature: 0.2, // Playing around with this value the lower value seems to be more accurate?
     messages: [
@@ -62,7 +62,7 @@ Do not include any of the chat instructions or prompts in the summary.
 Do not prefix with "title" or "example" etc
 Do not provide a word count or add quotation marks.
           `.trim(),
-        role: "user",
+        role: "user" as const,
       },
     ],
   };
@@ -432,7 +432,7 @@ export const currentChatThread = (() => {
       messageContext = [
         {
           content: systemMessage,
-          role: "system",
+          role: "system" as const,
         },
         ...messageContext,
       ];

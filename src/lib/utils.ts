@@ -198,3 +198,11 @@ export const autosize = (node: HTMLElement) => {
     },
   };
 };
+
+export const batchPartition = <T>(xs: T[], batchSize: number): T[][] => {
+  const result: T[][] = [];
+  for (let i = 0; i < xs.length; i += batchSize) {
+    result.push(xs.slice(i, i + batchSize));
+  }
+  return result;
+};

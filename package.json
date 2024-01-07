@@ -44,6 +44,8 @@
     "tsx": "4.6.2",
     "typescript": "^5.0.2",
     "vite": "^4.3.5",
+    "vite-plugin-top-level-await": "1.4.1",
+    "vite-plugin-wasm": "3.3.0",
     "vitest": "~0.31.0"
   },
   "type": "module",
@@ -73,6 +75,7 @@
     "svelte-markdown": "0.4.0",
     "tailwind-merge": "2.1.0",
     "tailwind-variants": "0.1.19",
-    "uuid": "9.0.0"
+    "uuid": "9.0.0",
+    "victor-db": "0.1.3"
   }
 }

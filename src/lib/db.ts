@@ -79,7 +79,9 @@ export const incrementDbName = () => {
   return next;
 };
 
-type RoleEnum = OpenAI.Chat.Completions.ChatCompletionMessage["role"];
+// NOTE: Not all of thse are usable by openai. Some are custom
+type RoleEnum = "user" | "system" | "assistant" | "comment";
+type OpenAICompatibleRole = "user" | "system" | "assistant";
 
 let _sqlite: SQLite3;
 let _db: DB;
@@ -655,7 +657,7 @@ export const ChatMessage = {
     threadId,
   }: {
     threadId: string;
-  }): Promise<Array<Omit<ChatMessage, "role"> & { role: RoleEnum }>> {
+  }): Promise<Array<Omit<ChatMessage, "role"> & { role: OpenAICompatibleRole }>> {
     const context = await ChatMessage.findMany({
       where: {
         threadId,
@@ -665,7 +667,8 @@ export const ChatMessage = {
       },
       orderBy: { createdAt: "ASC" },
     });
-    return context as Array<Omit<ChatMessage, "role"> & { role: RoleEnum }>;
+
+    return context as Array<Omit<ChatMessage, "role"> & { role: OpenAICompatibleRole }>;
   },
 };
 
@@ -714,6 +717,13 @@ export type FullTextSearchFilter = {
   offset?: number;
 };
 
+interface SemanticFragment {
+  id: number;
+  role: RoleEnum | string;
+  value: string;
+  threadId: string;
+  parentCreatedAt: Date;
+}
 export const Fragment = {
   ...crud<Fragment>({
     generateId: async (x) => {
@@ -728,6 +738,52 @@ export const Fragment = {
       };
     },
   }),
+
+  /**
+   * Find fragments for use in semantic search. Fragments returned from this
+   * function are expected to be used for indexing in a vector store.
+   *
+   * @todo We may need to track whether something has been indexed here. not sure if the vec db can do it.
+   */
+  async findSemanticFragments({
+    where, // TODO: use the where clause
+    limit = 500,
+  }: {
+    where?: { threadId?: string; role?: RoleEnum; before?: Date };
+    limit?: number;
+  } = {}): Promise<Array<SemanticFragment>> {
+    const rows = await _db.execO<{
+      role: string;
+      thread_id: string;
+      created_at: string;
+      id: number;
+      value: string;
+    }>(
+      `
+      SELECT
+        m.role,
+        m.thread_id,
+        m.created_at,
+        f.id,
+        f.value
+      FROM
+        fragment f
+        INNER JOIN message m ON m.id = f.entity_id
+      ORDER BY
+        m.created_at ASC
+      LIMIT
+        ?;
+    `,
+      [limit]
+    );
+
+    return rows.map(({ created_at, thread_id, ...row }) => ({
+      ...row,
+      threadId: thread_id,
+      parentCreatedAt: dateFromSqlite(created_at),
+    }));
+  },
+
   async fullTextSearch(
     content: string,
     { archived = false, limit = 500, offset = 0 }: FullTextSearchFilter = {}
