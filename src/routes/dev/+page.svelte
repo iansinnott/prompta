@@ -1,4 +1,6 @@
 <script lang="ts">
+  import type { importFromDatabase } from "$lib/db";
+
   import { toast } from "$lib/toast";
   import classNames from "classnames";
   import type { FeatureExtractionPipeline } from "@xenova/transformers";
@@ -10,6 +12,16 @@
   let extractor: FeatureExtractionPipeline | null = null;
 
   import { Db } from "victor-db";
+  import { VecDB } from "./vecDb";
+
+  const batchPartition = <T,>(xs: T[], batchSize: number): T[][] => {
+    const result: T[][] = [];
+    for (let i = 0; i < xs.length; i += batchSize) {
+      result.push(xs.slice(i, i + batchSize));
+    }
+    return result;
+  };
+
   onMount(async () => {
     console.debug("loading transformers");
     const { pipeline } = await import("@xenova/transformers");
@@ -20,22 +32,6 @@
       "Xenova/all-MiniLM-L6-v2" // Not sure what works best here. Ideally would have multilingual, since gpt can speak multipel languages. Results in increased download size though
     );
     console.debug("done");
-
-    // NOTE: This IS NECESSARY! The constructor returns a promise. Probably
-    // something to do with being a Rust lib rather than a JS lib.
-    // prettier-ignore
-    const vecDb = await (new Db());
-
-    // write to victor
-    // await db.insert(content, embedding, tags);
-
-    // read the 10 closest results from victor that are tagged with "tags"
-    // (only 1 will be returned because we only inserted one embedding)
-    // const result = await db.search(embedding, ["tags"], 10);
-    // assert(result[0].content == content);
-
-    // clear database
-    // await db.clear();
 
     const createEmbedding = async (s: string | string[]) => {
       if (!extractor) return;
@@ -50,96 +46,42 @@
       };
     };
 
-    const vecSearch = async (
-      q: string,
-      { tags = [], limit = 10 }: { tags?: string[]; limit?: number } = {}
-    ) => {
-      if (!vecDb) {
-        throw new Error("Could not connect to database");
-      }
-
-      console.time("createEmbedding");
-      const tensor = await createEmbedding(q);
-      if (!tensor) {
-        throw new Error("Could not create embedding");
-      }
-      console.timeEnd("createEmbedding");
-
-      const xs = tensor.list;
-      console.time("search");
-      const result = await vecDb.search(xs[0], tags, limit);
-      console.timeEnd("search");
-      return result;
-    };
-
-    const vecInsertString = async (content: string | string[], tags?: string[]) => {
-      if (!vecDb) {
-        throw new Error("Could not connect to database");
-      }
-
-      if (!Array.isArray(content)) {
-        content = [content];
-      }
-
-      console.time("createEmbedding");
-      const es = await createEmbedding(content);
-      console.timeEnd("createEmbedding");
-
-      for (const [i, c] of content.entries()) {
-        const embedding = es?.list[i];
-        if (!embedding) {
-          console.warn("No embedding for", c);
-          continue;
+    // NOTE: This IS NECESSARY! The constructor returns a promise. Probably
+    // something to do with being a Rust lib rather than a JS lib.
+    // prettier-ignore
+    const vecDb = new VecDB({
+      embedString: async (s: string) => {
+        const tensor = await createEmbedding(s);
+        const x = tensor?.list[0];
+        if (!x) {
+          throw new Error("Could not create embedding");
         }
 
-        console.time("insert: " + c);
-        await vecDb.insert(c, embedding, tags);
-        console.timeEnd("insert: " + c);
-      }
-    };
+        return x;
+      },
+    });
 
-    const vecUpsertString = async (content: string | string[], tags?: string[]) => {
-      if (!vecDb) {
-        throw new Error("Could not connect to database");
-      }
-
-      if (!Array.isArray(content)) {
-        content = [content];
-      }
-
-      console.time("createEmbedding");
-      const es = await createEmbedding(content);
-      console.timeEnd("createEmbedding");
-
-      const toInsert: [string, Float64Array][] = [];
-
-      for (const [i, c] of content.entries()) {
-        const embedding = es?.list[i];
-        if (!embedding) {
-          console.warn("No embedding for", c);
-          continue;
+    const vecUpsertAll = async () => {
+      // Imported lazily to avoid circular dependency
+      const { Fragment } = await import("$lib/db");
+      const xs = await Fragment.findSemanticFragments();
+      const data = xs.map((x) => ({ content: x.value, tags: [x.role, x.threadId, "message"] }));
+      console.time("upsertAll");
+      for (const [i, batch] of batchPartition(data, 8).entries()) {
+        console.time("upsertAll: " + i);
+        for (const x of batch) {
+          await vecDb.upsert(x);
         }
-
-        const result = await vecDb.search(embedding, tags, 1);
-        if (result[0]?.content === c) {
-          console.log("Already exists", c);
-          continue;
-        }
-
-        toInsert.push([c, embedding]);
+        console.timeEnd("upsertAll: " + i);
       }
-
-      // Run the insertion with what's left
-      for (const [c, embedding] of toInsert) {
-        console.time("insert: " + c);
-        await vecDb.insert(c, embedding, tags);
-        console.timeEnd("insert: " + c);
-      }
+      console.timeEnd("upsertAll");
+      console.debug("done. upserted", data.length, "fragments");
     };
 
     (window as any).vecDb = vecDb;
-    (window as any).vecSearch = vecSearch;
-    (window as any).vecInsertString = vecInsertString;
+    (window as any).vecSearch = vecDb.search;
+    (window as any).vecUpsertString = vecDb.upsert;
+    (window as any).vecUpsertAll = vecUpsertAll;
     (window as any).createEmbedding = createEmbedding;
   });
 
