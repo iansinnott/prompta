@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Search } from "lucide-svelte";
   import { currentThread, threadMenu, threadList } from "$lib/stores/stores";
   import classNames from "classnames";
   import { tick } from "svelte";
@@ -128,15 +129,20 @@
   )}
   class:hidden={!$threadMenu.open}
 >
-  <input
-    bind:this={input}
-    bind:value={searchText}
-    autocomplete="off"
-    spellcheck={false}
-    placeholder={"Search Chats..."}
-    type="text"
-    class="FilterInput"
-  />
+  <div class="relative">
+    <div class="absolute top-0 left-0 flex items-center h-full pl-1">
+      <Search class="text-zinc-500" />
+    </div>
+    <input
+      bind:this={input}
+      bind:value={searchText}
+      autocomplete="off"
+      spellcheck={false}
+      placeholder={"Search Chats..."}
+      type="text"
+      class="FilterInput pl-8 focus:bg-zinc-700 focus:ring-1 focus:ring-zinc-500 focus:border-zinc-700 w-full rounded"
+    />
+  </div>
   <div class="Separator h-px bg-zinc-700 my-2 -mx-2" />
 
   <!-- Scroll area -->
