@@ -13,6 +13,7 @@
 
   import { Db } from "victor-db";
   import { VecDB } from "./vecDb";
+  import { Atom } from "lucide-svelte";
 
   const batchPartition = <T,>(xs: T[], batchSize: number): T[][] => {
     const result: T[][] = [];
@@ -119,8 +120,18 @@
 
 <div class={classNames("", _class)}>
   <div class="prose prose-invert">
-    <h1>Dev page</h1>
-    <p>A page for experimentation</p>
+    <h1 class="flex items-center">
+      <Atom size="24" class="inline-block mr-4" />
+      <span> Dev Experiments </span>
+    </h1>
+    <p>
+      A page for experimentation. If you're not sure what this page is about, sorry, there are no
+      instructions.
+    </p>
+    <p>
+      This page is used for implementing very experimental features and is not meant to be used
+      outside of developing Prompta.
+    </p>
     <hr class="mb-5" />
   </div>
 

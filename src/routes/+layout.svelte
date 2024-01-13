@@ -4,6 +4,7 @@
   import { onDestroy, onMount } from "svelte";
   import {
     DatabaseMeta,
+    getCurrentSchema,
     getLatestDbName,
     importFromDatabase,
     incrementDbName,
@@ -50,6 +51,18 @@
   let teardown: any;
 
   const handleStartup = async () => {
+    // Initialize feature flags. Feature flags may be used during app bootstrap,
+    // which is why they are initialized first.
+    if (env.PUBLIC_STATSIG_CLIENT_SDK_KEY) {
+      try {
+        await featureFlags.initialize(env.PUBLIC_STATSIG_CLIENT_SDK_KEY, {
+          appVersion: env.PUBLIC_VERSION_STRING,
+        });
+      } catch (error) {
+        console.error("featureFlags error", error);
+      }
+    }
+
     // throw up after a time if the app is hanging
     let _timeout = setTimeout(() => {
       throw new Error("Timed out trying to initialize");
@@ -71,17 +84,6 @@
       throw wrapError(err, `There was an error initializing the database.`);
     } finally {
       clearTimeout(_timeout);
-    }
-
-    // Initialize feature flags
-    if (env.PUBLIC_STATSIG_CLIENT_SDK_KEY) {
-      try {
-        await featureFlags.initialize(env.PUBLIC_STATSIG_CLIENT_SDK_KEY, {
-          appVersion: env.PUBLIC_VERSION_STRING,
-        });
-      } catch (error) {
-        console.error("featureFlags error", error);
-      }
     }
 
     appReady = true;
@@ -223,10 +225,13 @@
       level={isPendingImport ? "info" : "error"}
     >
       <div class="prose prose-invert">
-        <div class="prose prose-invert mt-3">
-          <p>
-            Database Path: <code>{getLatestDbName()}</code>
-          </p>
+        <div class="mt-3">
+          <p>Database Path: <code>{getLatestDbName()}</code></p>
+          {#await getCurrentSchema() then schema}
+            <p>Schema Name: <code>{schema.name}</code></p>
+          {:catch}
+            <p>Schema: <code>unknown</code></p>
+          {/await}
         </div>
         {#if isPendingImport}
           <h3>

@@ -5,6 +5,7 @@
   import { featureFlags } from "$lib/featureFlags";
   import { Button } from "$lib/components/ui/button";
   import { FlaskConical } from "lucide-svelte";
+  import { dev } from "$app/environment";
 
   let dirty = false;
 </script>
@@ -19,6 +20,11 @@
       Enable or disable these as you like. They are experimental and might cause breakage, but they
       are also pretty sweet.
     </p>
+    {#if dev}
+      <p>
+        <a href="https://console.statsig.com/5CZvr5iLwFVm2OSzgPCHAs/gates">Add more flags</a> in Statsig
+      </p>
+    {/if}
     <hr class="mb-5" />
   </div>
 
