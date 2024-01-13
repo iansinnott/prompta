@@ -11,7 +11,13 @@ Use semantic search to find similar messages when using the search feature. This
 is a prerequisite to semantic conversation history compression. 
     `.trim(),
   },
-  { id: "test flag" as const, name: "test flag" },
+  {
+    id: "dev_experiments" as const,
+    name: "Dev Experiments",
+    description: `
+Enables the dev experiments page. Access the page via the command menu once enabled.
+  `,
+  },
 ];
 
 type FeatureFlag = (typeof flagList)[number];
@@ -23,9 +29,31 @@ const user: Omit<StatsigUser, "custom"> & {
   custom: {},
 };
 
+/**
+ * Feature Flags API. Note that when reading feature flags (the `check` method),
+ * the value could be stale.
+ */
 export const featureFlags = {
-  check: (flag: FlagsEnum) => {
-    return statsig.checkGate(flag);
+  /**
+   * This is intentionally not implemented as a store
+   * because feature flags may be used during the app initialization phase, which
+   * requires a fresh start. After changing flags the app should be fully reloaded.
+   */
+  check: (flag: FlagsEnum): boolean => {
+    try {
+      return statsig.checkGate(flag);
+    } catch (error) {
+      // Ignore errors related to statsig not yet being initialized
+      if (error.message.includes("wait for initialize()")) {
+        console.warn(
+          `Statsig not initialized but feature flag checked '${flag}'. Error follow:`,
+          error
+        );
+        return Boolean(user.custom[flag] ?? false);
+      }
+
+      throw error;
+    }
   },
 
   flagList,
