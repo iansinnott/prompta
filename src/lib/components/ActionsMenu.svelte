@@ -33,8 +33,8 @@
   import { toast } from "$lib/toast";
   import { chatModels, llmProviders, modelPickerOpen } from "$lib/stores/stores/llmProvider";
   import IconOpenAi from "./IconOpenAI.svelte";
-  import { Brain } from "lucide-svelte";
   import IconBrain from "./IconBrain.svelte";
+  import { Command as CommandIcon } from "lucide-svelte";
   let _class: string = "";
   export { _class as class };
 
@@ -436,16 +436,21 @@
     data-testid="CommandMenuButton"
     type="button"
     on:click={toggleMenu}
-    class={classNames("font-bold px-4 py-2", _class, {})}
+    class={classNames(
+      "font-bold px-2 py-2 flex items-center justify-center border border-zinc-700 rounded-lg h-[42px] w-[42px]",
+      _class,
+      {
+        "bg-zinc-800": menuOpen,
+      }
+    )}
   >
-    Command
-    <span class="hidden sm:inline-flex items-center space-x-1 text-white/40">
-      <kbd
-        style="font-family:system-ui, -apple-system;"
+    <span class="inline-flex items-center space-x-1 text-white">
+      <CommandIcon
+        size={20}
         class={classNames("text-sm", {
           "text-teal-300": menuOpen,
-        })}>{mapKeysToMacSymbols("meta")}K</kbd
-      >
+        })}
+      />
     </span>
   </button>
   {#if menuOpen}

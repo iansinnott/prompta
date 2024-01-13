@@ -11,7 +11,7 @@
     pendingMessageStore,
     isNewThread,
   } from "../lib/stores/stores";
-  import { ArrowUpCircle } from "lucide-svelte";
+  import { ArrowUpCircle, XCircle } from "lucide-svelte";
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
   import SmallSpinner from "$lib/components/SmallSpinner.svelte";
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
@@ -242,7 +242,7 @@
   </div>
   <!-- No padding top in order to let chat messages appaer to scroll behind -->
   <footer
-    class={classNames("app-footer p-3 pt-0 relative -top-px", {
+    class={classNames("app-footer p-3 pt-0 relative -top-px flex w-full items-center space-x-3", {
       "pb-14": sys.isPWAInstalled,
     })}
   >
@@ -251,7 +251,7 @@
         e.preventDefault();
         handleSubmit($messageText);
       }}
-      class={classNames("flex items-end rounded-lg border border-zinc-700", {
+      class={classNames("flex flex-1 items-end rounded-lg border border-zinc-700", {
         "shadow-[0_0_0_2px_#5baba4] bg-teal-800/20 text-teal-200": isCommand,
         "bg-zinc-800": !isCommand,
       })}
@@ -288,16 +288,21 @@
           class="font-bold px-4 py-2 flex items-center text-xs uppercase leading-[22px]"
           type="submit"
         >
-          <span class="mr-2">
-            {isPending ? "Cancel" : "Send"}
-          </span>
-          <span class="hidden sm:inline-flex items-center space-x-1 text-white/40">
-            <ArrowUpCircle size={24} />
+          {#if isPending}
+            <span class="mr-2"> Cancel </span>
+          {/if}
+          <span class="inline-flex items-center space-x-1 text-white">
+            {#if isPending}
+              <XCircle size={24} />
+            {:else}
+              <ArrowUpCircle size={24} />
+            {/if}
           </span>
         </button>
-        <ActionsMenu class="text-xs uppercase leading-[22px]" />
       {/if}
     </form>
+    <!-- This is a placeholder for the actions menu, which is absolutely positioned at the layout level -->
+    <div class="w-[42px] h-[42px]"></div>
   </footer>
 
   <!-- Decided not to go with this for now -->

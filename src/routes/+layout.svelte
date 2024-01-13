@@ -21,6 +21,7 @@
   import { openAiConfig } from "$lib/stores/stores/llmProvider";
   import { env } from "$env/dynamic/public";
   import { featureFlags } from "$lib/featureFlags";
+  import ActionsMenu from "$lib/components/ActionsMenu.svelte";
 
   const sys = getSystem();
   let startupError: Error | null = null;
@@ -293,5 +294,8 @@
 <Toaster />
 
 {#if appReady}
+  <div class=" absolute bottom-4 right-4">
+    <ActionsMenu class="text-xs uppercase leading-[22px]" />
+  </div>
   <DevTooling />
 {/if}
