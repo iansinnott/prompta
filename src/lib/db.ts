@@ -10,12 +10,15 @@ import { basename, debounce, groupBy, mapKeys, sha1sum, toCamelCase, toSnakeCase
 import { extractFragments } from "./markdown";
 import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
 
-import schemaUrl from "$lib/migrations/0002_schema.sql?url";
+import schema_0002 from "$lib/migrations/0002_schema.sql?url";
+import schema_0003 from "$lib/migrations/0003_schema_vecdb.sql?url";
 
-export { schemaUrl };
+// Default schema. May be overwritten via feature flags (see references)
+let schemaUrl = schema_0002;
 
 import { llmProviders, openAiConfig } from "./stores/stores/llmProvider";
 import { profilesStore } from "./stores/stores/llmProfile";
+import { featureFlags } from "./featureFlags";
 
 const legacyDbNames = [
   "chat_db-v1",
@@ -192,6 +195,11 @@ export const reinstatePriorData = async (database: DBAsync = _db as DBAsync) => 
 };
 
 export const getCurrentSchema = async () => {
+  // Alternate schemas as needed
+  if (featureFlags.check("vector_search_features")) {
+    schemaUrl = schema_0003;
+  }
+
   const schemaRaw = await fetch(schemaUrl).then((r) => (r.ok ? r.text() : Promise.reject(r)));
   const u = new URL(schemaUrl, window.location.href);
   const schemaName = basename(u.pathname) as string;
