@@ -15,6 +15,7 @@
     _get_db_instance,
   } from "$lib/db";
   import { currentChatThread, currentThread, insertPendingMessage } from "$lib/stores/stores";
+  import { featureFlags } from "$lib/featureFlags";
 
   onMount(() => {
     // This used to be locked behind a dev flag but I find it useful to have access to it for debugging in the prod app.
@@ -26,6 +27,7 @@
       ["Fragment", Fragment],
       ["LLMProvider", LLMProvider],
       ["db", _get_db_instance()],
+      ["featureFlags", featureFlags],
       [
         "insertPendingMessage",
         ({ content = "" }) => {

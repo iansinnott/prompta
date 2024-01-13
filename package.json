@@ -73,6 +73,7 @@
     "openai": "^4.24.1",
     "prism-svelte": "0.5.0",
     "prismjs": "1.29.0",
+    "statsig-js": "4.45.1",
     "svelte-markdown": "0.4.0",
     "tailwind-merge": "2.1.0",
     "tailwind-variants": "0.1.19",

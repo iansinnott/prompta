@@ -19,6 +19,8 @@
   import { debounce, wrapError } from "$lib/utils";
   import DevTooling from "$lib/components/DevTooling.svelte";
   import { openAiConfig } from "$lib/stores/stores/llmProvider";
+  import { env } from "$env/dynamic/public";
+  import { featureFlags } from "$lib/featureFlags";
 
   const sys = getSystem();
   let startupError: Error | null = null;
@@ -68,6 +70,17 @@
       throw wrapError(err, `There was an error initializing the database.`);
     } finally {
       clearTimeout(_timeout);
+    }
+
+    // Initialize feature flags
+    if (env.PUBLIC_STATSIG_CLIENT_SDK_KEY) {
+      try {
+        await featureFlags.initialize(env.PUBLIC_STATSIG_CLIENT_SDK_KEY, {
+          appVersion: env.PUBLIC_VERSION_STRING,
+        });
+      } catch (error) {
+        console.error("featureFlags error", error);
+      }
     }
 
     appReady = true;
