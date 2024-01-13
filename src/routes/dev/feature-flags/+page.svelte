@@ -4,13 +4,17 @@
   export { _class as class };
   import { featureFlags } from "$lib/featureFlags";
   import { Button } from "$lib/components/ui/button";
+  import { FlaskConical } from "lucide-svelte";
 
   let dirty = false;
 </script>
 
 <div class={classNames("", _class)}>
   <div class="prose prose-invert">
-    <h1>Experimental Features</h1>
+    <h1 class="flex items-center">
+      <FlaskConical size="24" class="inline-block mr-4" />
+      <span> Experimental Features </span>
+    </h1>
     <p>
       Enable or disable these as you like. They are experimental and might cause breakage, but they
       are also pretty sweet.

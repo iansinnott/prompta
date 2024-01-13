@@ -34,7 +34,9 @@
   import { chatModels, llmProviders, modelPickerOpen } from "$lib/stores/stores/llmProvider";
   import IconOpenAi from "./IconOpenAI.svelte";
   import IconBrain from "./IconBrain.svelte";
-  import { Command as CommandIcon } from "lucide-svelte";
+  import { Command as CommandIcon, FlaskConical } from "lucide-svelte";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
   let _class: string = "";
   export { _class as class };
 
@@ -146,6 +148,23 @@
       icon: IconGear,
       execute: () => {
         $showSettings = true;
+      },
+    },
+    {
+      name: "Back to chat",
+      icon: IconBrain,
+      when: () => $page.url.pathname !== "/",
+      execute: () => {
+        goto("/");
+      },
+    },
+    {
+      name: "Beta Features",
+      icon: FlaskConical,
+      altFilterText: "flags experimental",
+      when: () => $page.url.pathname !== "/dev/feature-flags",
+      execute: () => {
+        goto("/dev/feature-flags");
       },
     },
     {
