@@ -34,9 +34,10 @@
   import { chatModels, llmProviders, modelPickerOpen } from "$lib/stores/stores/llmProvider";
   import IconOpenAi from "./IconOpenAI.svelte";
   import IconBrain from "./IconBrain.svelte";
-  import { Command as CommandIcon, FlaskConical } from "lucide-svelte";
+  import { Atom, Command as CommandIcon, FlaskConical } from "lucide-svelte";
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
+  import { featureFlags } from "$lib/featureFlags";
   let _class: string = "";
   export { _class as class };
 
@@ -165,6 +166,14 @@
       when: () => $page.url.pathname !== "/dev/feature-flags",
       execute: () => {
         goto("/dev/feature-flags");
+      },
+    },
+    {
+      name: "Dev Experiments",
+      icon: Atom,
+      when: () => $page.url.pathname !== "/dev" && featureFlags.check("dev_experiments"),
+      execute: () => {
+        goto("/dev");
       },
     },
     {
