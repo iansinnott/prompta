@@ -11,6 +11,7 @@
     pendingMessageStore,
     isNewThread,
   } from "../lib/stores/stores";
+  import { ArrowUpCircle } from "lucide-svelte";
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
   import SmallSpinner from "$lib/components/SmallSpinner.svelte";
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
@@ -291,7 +292,7 @@
             {isPending ? "Cancel" : "Send"}
           </span>
           <span class="hidden sm:inline-flex items-center space-x-1 text-white/40">
-            <kbd style="font-family:system-ui, -apple-system;" class="text-xs">{"⮐"}</kbd>
+            <ArrowUpCircle size={24} />
           </span>
         </button>
         <ActionsMenu class="text-xs uppercase leading-[22px]" />
