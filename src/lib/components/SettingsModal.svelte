@@ -9,13 +9,14 @@
   import AutosizeTextarea from "./AutosizeTextarea.svelte";
   import { getSystem } from "$lib/gui";
   import { onMount } from "svelte";
-  import { ChatMessage, Thread, getLatestDbName } from "$lib/db";
+  import { ChatMessage, LLMProvider, Thread, getLatestDbName } from "$lib/db";
   import { mapKeys, toCamelCase } from "$lib/utils";
   import CloseButton from "./CloseButton.svelte";
   import { env } from "$env/dynamic/public";
   import { toast } from "$lib/toast";
   import { Circle, HelpCircle } from "lucide-svelte";
   import LlmProviderList from "./LLMProviderList.svelte";
+  import { Button } from "./ui/button";
 
   const versionString = env.PUBLIC_VERSION_STRING;
 
@@ -30,16 +31,83 @@
     dbName = getLatestDbName() || "";
   });
 
-  let modelsLoading = false;
-
   let showAdvanced = false;
 
   $: if ($showSettings) {
     chatModels.refresh();
   }
 
-  $: hasCustomModel =
-    $gptProfileStore.model && !$chatModels.models.some((x) => x.id == $gptProfileStore.model);
+  // Note these are not all the tables, but some tables (fragment for instance) are derived.
+  const tables = ["thread", "message", "llm_provider"];
+
+  const handleExport = async () => {
+    if (!$db) {
+      console.error("No database");
+      throw new Error("No database");
+    }
+
+    const sys = getSystem();
+
+    const tableData: [tableName: string, tableData: any[]][] = [];
+    for (const table of tables) {
+      tableData.push([table, await $db.execO(`SELECT * FROM ${table}`)]);
+    }
+
+    const version = 2;
+
+    const data = {
+      tables: tableData,
+      exportDate: new Date().toISOString(),
+      version,
+    };
+
+    await sys.saveAs(`${Date.now()}_prompta.v${version}.json`, JSON.stringify(data));
+  };
+
+  const handleImportV2 = async (json: any) => {
+    if (!$db) {
+      console.error("No database");
+      throw new Error("No database");
+    }
+
+    const sys = getSystem();
+
+    const { tables } = json;
+
+    if (
+      !(await sys.confirm(
+        `Are you sure you want to import ${tables.length} tables? Although unlikely, this can cause data loss if you are importing two exports from the same database.`
+      ))
+    ) {
+      console.log("Cancelled");
+      return;
+    }
+
+    const rowCount = tables.reduce((acc, [_, tableData]) => acc + tableData.length, 0);
+    let i = 0;
+    let progress = i / rowCount || 1; /* avoid div by zero */
+
+    await $db.tx(async (tx) => {
+      for (const [tableName, tableData] of tables) {
+        for (const row of tableData) {
+          i += 1;
+          progress = i / rowCount;
+
+          console.log(`Importing ${tableName} ${i}/${rowCount} (${Math.round(progress * 100)}%)`);
+
+          const x = mapKeys(row, (x) => {
+            return toCamelCase(String(x));
+          });
+          if (tableName === "message") await ChatMessage.upsert(x, tx);
+          else if (tableName === "thread") await Thread.upsert(x, tx);
+          else if (tableName === "llm_provider") await LLMProvider.upsert(x, tx);
+          else throw new Error("Unknown table");
+        }
+      }
+    });
+
+    console.log("%c[import/v2] success", "color:salmon;", tables.length, "tables imported");
+  };
 </script>
 
 <!-- Hide on escape -->
@@ -144,39 +212,20 @@
 
           <label for="export" class="label">Export:</label>
           <fieldset>
-            <button
-              on:click={async (e) => {
+            <Button
+              on:click={(e) => {
                 e.preventDefault();
-                if (!$db) {
-                  console.error("No database");
-                  throw new Error("No database");
-                }
-                const sys = getSystem();
-                await sys.saveAs(
-                  `${Date.now()}_message.json`,
-                  JSON.stringify(await $db.execO(`SELECT * FROM message`))
-                );
-                await sys.saveAs(
-                  `${Date.now()}_thread.json`,
-                  JSON.stringify(await $db.execO(`SELECT * FROM thread`))
-                );
-                await sys.saveAs(
-                  `${Date.now()}_preferences.json`,
-                  JSON.stringify(await $db.execO(`SELECT * FROM preferences`))
-                );
-              }}
-              class="flex items-center bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                handleExport();
+              }}>Export All</Button
             >
-              Export All
-            </button>
-            <p>
-              <small>Will download multiple files.</small>
-            </p>
+            <div class="prose prose-invert prose-sm mt-2">
+              <p>Export your database so you can import it again somewhere else</p>
+            </div>
           </fieldset>
 
           <label for="import" class="label">Import:</label>
           <fieldset>
-            <button
+            <Button
               on:click={async (e) => {
                 e.preventDefault();
 
@@ -206,48 +255,58 @@
                   return;
                 }
 
-                // if file.name looks like $timestamp_$table.json
-                // then we can import it
-                if (file.name.match(/^\d+_(message|thread)\.json$/)) {
-                  console.log("%c[import/v1] legacy table export", "color:salmon;");
-                  const tableName = file.name.split("_")[1].split(".")[0];
+                switch (json.version) {
+                  case 2:
+                    await handleImportV2(json);
+                    break;
+                  default:
+                    // if file.name looks like $timestamp_$table.json
+                    // then we can import it
+                    if (file.name.match(/^\d+_(message|thread)\.json$/)) {
+                      console.log("%c[import/v1] legacy table export", "color:salmon;");
+                      const tableName = file.name.split("_")[1].split(".")[0];
 
-                  await $db.tx(async (tx) => {
-                    for (const row of json) {
-                      const x = mapKeys(row, (x) => {
-                        return toCamelCase(String(x));
+                      await $db.tx(async (tx) => {
+                        for (const row of json) {
+                          const x = mapKeys(row, (x) => {
+                            return toCamelCase(String(x));
+                          });
+                          if (tableName === "message") await ChatMessage.upsert(x, tx);
+                          else if (tableName === "thread") await Thread.upsert(x, tx);
+                          else throw new Error("Unknown table");
+                        }
                       });
-                      if (tableName === "message") await ChatMessage.upsert(x, tx);
-                      else if (tableName === "thread") await Thread.upsert(x, tx);
-                      else throw new Error("Unknown table");
+
+                      console.log(
+                        "%c[import/v1] success",
+                        "color:salmon;",
+                        json.length,
+                        tableName,
+                        "records imported"
+                      );
+
+                      return;
                     }
-                  });
 
-                  console.log(
-                    "%c[import/v1] success",
-                    "color:salmon;",
-                    json.length,
-                    tableName,
-                    "records imported"
-                  );
+                    console.error(
+                      "Unknown file record type. Was not 'message'|'thread'",
+                      file.name
+                    );
 
-                  return;
+                    sys.alert("Unknown file type. Could not import.");
+                    break;
                 }
-
-                console.error("Unknown file record type. Was not 'message'|'thread'", file.name);
-
-                sys.alert("Unknown file type. Could not import.");
               }}
-              class="flex items-center bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              class=""
             >
               Import
-            </button>
-            <p>
-              <small
-                >Run multiple times to import multiple prior exports. If records have the same ID,
-                the later one will overwrite.</small
-              >
-            </p>
+            </Button>
+            <div class="prose prose-invert prose-sm mt-2">
+              <p>
+                Run multiple times to import multiple prior exports. If records have the same ID,
+                the later one will overwrite.
+              </p>
+            </div>
           </fieldset>
 
           <label for="c" class="label">Info:</label>

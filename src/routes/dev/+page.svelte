@@ -6,7 +6,7 @@
   let _class: string = "";
   export { _class as class };
 
-  import { VecDB } from "./vecDb";
+  import type { VecDB } from "$lib/vecDb";
   import { Atom } from "lucide-svelte";
   import { autosize } from "$lib/utils";
   import { Button } from "$lib/components/ui/button";
@@ -24,47 +24,12 @@
 
   let vecDb: VecDB;
   let content = new URLSearchParams(location.search).get("content") ?? "";
-  let extractor: FeatureExtractionPipeline | null = null;
 
   onMount(async () => {
-    console.debug("loading transformers");
-    const { pipeline } = await import("@xenova/transformers");
-
-    console.debug("loading model");
-    extractor = await pipeline(
-      "feature-extraction",
-      "Xenova/all-MiniLM-L6-v2" // Not sure what works best here. Ideally would have multilingual, since gpt can speak multipel languages. Results in increased download size though
-    );
-    console.debug("done");
-
-    const createEmbedding = async (s: string | string[]) => {
-      if (!extractor) return;
-
-      const tensor = await extractor(s, { pooling: "mean", normalize: true });
-      return {
-        dims: tensor.dims,
-        data: tensor.data,
-        type: tensor.type,
-        list: tensor.tolist().map((x) => new Float64Array(x)),
-        size: tensor.size,
-      };
-    };
-
     // For now, this avoids circular dependency issues
-    const { _get_db_instance } = await import("$lib/db");
+    const { _get_vecDb_instance } = await import("$lib/db");
 
-    vecDb = await VecDB.create({
-      db: _get_db_instance(),
-      embedString: async (s: string) => {
-        const tensor = await createEmbedding(s);
-        const x = tensor?.list[0];
-        if (!x) {
-          throw new Error("Could not create embedding");
-        }
-
-        return x;
-      },
-    });
+    vecDb = _get_vecDb_instance();
 
     const vecUpsertAll = async () => {
       // Imported lazily to avoid circular dependency
@@ -101,7 +66,6 @@
     (window as any).vecSearch = vecDb.search;
     (window as any).vecUpsertString = vecDb.upsert;
     (window as any).vecUpsertAll = vecUpsertAll;
-    (window as any).createEmbedding = createEmbedding;
 
     if (content) {
       await handleSubmit();
@@ -126,11 +90,6 @@
 
       if (!s) {
         toast({ title: "No content", message: "Box cannot be empty", type: "error" });
-        return;
-      }
-
-      if (!extractor) {
-        toast({ title: "Error", message: "Model not loaded", type: "error" });
         return;
       }
 

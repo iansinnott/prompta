@@ -24,6 +24,7 @@ import { createSyncer, getDefaultEndpoint, type Syncer } from "$lib/sync/vlcn";
 import { PENDING_THREAD_TITLE, hasThreadTitle, persistentStore } from "../storeUtils";
 import { chatModels, llmProviders, openAiConfig } from "./llmProvider";
 import { activeProfileName, getOpenAi, gptProfileStore } from "./llmProfile";
+import { featureFlags } from "$lib/featureFlags";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);

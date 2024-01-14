@@ -19,6 +19,7 @@ let schemaUrl = schema_0002;
 import { llmProviders, openAiConfig } from "./stores/stores/llmProvider";
 import { profilesStore } from "./stores/stores/llmProfile";
 import { featureFlags } from "./featureFlags";
+import type { VecDB } from "./vecDb";
 
 const legacyDbNames = [
   "chat_db-v1",
@@ -88,9 +89,11 @@ type OpenAICompatibleRole = "user" | "system" | "assistant";
 
 let _sqlite: SQLite3;
 let _db: DB;
+let _vecDb: VecDB;
 
 /** For use in debugging */
 export const _get_db_instance = () => _db;
+export const _get_vecDb_instance = () => _vecDb;
 
 /**
  * A helper for testing purposes.
@@ -225,6 +228,24 @@ export const initDb = async (dbName: string) => {
 
   _db = await _sqlite.open(dbName);
   db.set(_db);
+
+  if (featureFlags.check("vector_search_features")) {
+    const { VecDB } = await import("$lib/vecDb");
+    const { createEmbedding } = await import("$lib/embeddings");
+
+    _vecDb = await VecDB.create({
+      db: _get_db_instance(),
+      embedString: async (s: string) => {
+        const tensor = await createEmbedding(s);
+        const x = tensor?.list[0];
+        if (!x) {
+          throw new Error("Could not create embedding");
+        }
+
+        return x;
+      },
+    });
+  }
 
   const { name, content } = await getCurrentSchema();
 
@@ -738,6 +759,16 @@ export type FullTextSearchFilter = {
   offset?: number;
 };
 
+export interface SemanticFragmentRow {
+  id: number;
+  role: string;
+  value: string;
+  thread_id: string;
+  entity_type: string;
+  message_id: string;
+  created_at: string;
+}
+
 interface SemanticFragment {
   id: number;
   role: RoleEnum | string;
@@ -746,6 +777,7 @@ interface SemanticFragment {
   messageId: string;
   parentCreatedAt: Date;
 }
+
 export const Fragment = {
   ...crud<Fragment>({
     generateId: async (x) => {
@@ -770,18 +802,13 @@ export const Fragment = {
   async findSemanticFragments({
     where, // TODO: use the where clause
     limit = 500,
+    includeProcessedRows = false,
   }: {
     where?: { threadId?: string; role?: RoleEnum; before?: Date };
     limit?: number;
+    includeProcessedRows?: boolean;
   } = {}): Promise<Array<SemanticFragment>> {
-    const rows = await _db.execO<{
-      role: string;
-      thread_id: string;
-      message_id: string;
-      created_at: string;
-      id: number;
-      value: string;
-    }>(
+    const rows = await _db.execO<SemanticFragmentRow>(
       `
       SELECT
         m.role,
@@ -789,7 +816,8 @@ export const Fragment = {
         m.created_at,
         m.id as 'message_id',
         f.id,
-        f.value
+        f.value,
+        f.entity_type
       FROM
         fragment f
         INNER JOIN message m ON m.id = f.entity_id
@@ -954,6 +982,11 @@ const syncMessageFragments = debounce(async () => {
          AND fragment.entity_id NOT IN ( SELECT id FROM "message")`
     );
   });
+
+  if (featureFlags.check("vector_search_features")) {
+    console.debug("syncing vector db");
+    _vecDb.ingestFragments();
+  }
 }, 1000);
 
 /**

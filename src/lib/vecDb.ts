@@ -1,4 +1,4 @@
-import type { FragmentRow } from "$lib/db";
+import type { FragmentRow, SemanticFragmentRow } from "$lib/db";
 import type { DBAsync } from "@vlcn.io/xplat-api";
 import { Db } from "victor-db";
 
@@ -152,5 +152,115 @@ export class VecDB {
       record: newRecord,
       inserted: true,
     };
+  };
+
+  /**
+   * This is a very destructive operation, but the vectors are all derived data
+   * so it should be fine. It just takes a bit of time to derive them.
+   */
+  clear = async () => {
+    if (!this.isReady()) {
+      throw new Error("Could not connect to database");
+    }
+
+    await this.victor.clear();
+    await this.db.exec(`DELETE FROM vec_to_frag`);
+  };
+
+  #ingestInProgress = false;
+
+  ingestFragments = async () => {
+    if (!this.isReady()) {
+      throw new Error("Could not connect to database");
+    }
+
+    if (this.#ingestInProgress) {
+      console.warn("Ingest already in progress. Ignoring ingest request");
+      return;
+    }
+
+    this.#ingestInProgress = true;
+
+    // How many to do at once?
+    const batchSize = 100;
+
+    const getCount = async () => {
+      let [{ count }] = await this.db.execO<{ count: number }>(`
+      SELECT
+        COUNT(*) as 'count'
+      FROM
+        fragment f
+        INNER JOIN message m ON m.id = f.entity_id
+      WHERE
+        f.id NOT IN (SELECT vf.frag_id FROM vec_to_frag vf);
+    `);
+      return count;
+    };
+
+    try {
+      let remaining = await getCount();
+
+      while (remaining > 0) {
+        console.log("records to process:", remaining);
+        const fragments = await this.db.execO<SemanticFragmentRow>(
+          `
+      SELECT
+        m.role,
+        m.thread_id,
+        m.created_at,
+        m.id as 'message_id',
+        f.id,
+        f.value,
+        f.entity_type
+      FROM
+        fragment f
+        INNER JOIN message m ON m.id = f.entity_id
+      WHERE
+        f.id NOT IN (SELECT vf.frag_id FROM vec_to_frag vf)
+      ORDER BY
+        m.created_at ASC
+      LIMIT
+        ?;
+    `,
+          [batchSize]
+        );
+
+        const records = await Promise.all(
+          fragments.map((x) => {
+            return {
+              content: x.value,
+              tags: [x.role, x.thread_id, x.entity_type],
+              id: x.id,
+            };
+          })
+        );
+
+        // @todo Maybe it would make more sense to do this in the upsert call
+        // Victor does NOT like parallel upserts it seems. Last time I tried, it crashed.
+        console.time("upsert fragments");
+        for (const { id, ...record } of records) {
+          const result = await this.upsert(record);
+          console.debug("inserted", result);
+          const [existing] = await this.db.execO<{ id: string }>(
+            `SELECT id FROM "vec_to_frag" WHERE "frag_id" = ?`,
+            [id]
+          );
+          if (!existing) {
+            await this.db.exec(`INSERT INTO "vec_to_frag" ("vec_id", "frag_id") VALUES(?, ?)`, [
+              result.record.id,
+              id,
+            ]);
+          }
+        }
+        console.timeEnd("upsert fragments");
+
+        remaining = await getCount();
+      }
+    } catch (error) {
+      console.error("Error ingesting fragments", error);
+      throw error;
+    } finally {
+      this.#ingestInProgress = false;
+    }
   };
 }
