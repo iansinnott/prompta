@@ -24,7 +24,10 @@ const openAiFetchWrapper = (url: RequestInfo, options?: RequestInit) => {
     hs[k] = v;
   }
 
-  console.debug("OpenAI Fetch ::", (options?.method || "get").toUpperCase(), url, hs);
+  console.debug("OpenAI Fetch ::", (options?.method || "get").toUpperCase(), url, {
+    ...hs,
+    Authorization: hs.Authorization ? hs.Authorization?.slice(0, 14) + "..." : undefined,
+  });
 
   return fetch(url, {
     ...options,
