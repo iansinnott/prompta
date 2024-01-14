@@ -311,6 +311,15 @@ export type LLMProvider = Omit<LLMProviderRow, "created_at" | "enabled"> & {
   enabled: boolean;
 };
 
+export interface VecToFragRow {
+  id: string;
+  vec_id: string;
+  frag_id: number;
+  created_at: string;
+}
+
+export type VecToFrag = Omit<VecToFragRow, "created_at">;
+
 export interface FragmentRow {
   id: string;
   entity_id: string;
@@ -645,6 +654,10 @@ export const LLMProvider = {
   }),
 };
 
+export const VecToFrag = crud<VecToFrag>({
+  tableName: "vec_to_frag",
+});
+
 export const ChatMessage = {
   ...crud<ChatMessage>({
     tableName: "message",
@@ -730,6 +743,7 @@ interface SemanticFragment {
   role: RoleEnum | string;
   value: string;
   threadId: string;
+  messageId: string;
   parentCreatedAt: Date;
 }
 export const Fragment = {
@@ -763,6 +777,7 @@ export const Fragment = {
     const rows = await _db.execO<{
       role: string;
       thread_id: string;
+      message_id: string;
       created_at: string;
       id: number;
       value: string;
@@ -772,6 +787,7 @@ export const Fragment = {
         m.role,
         m.thread_id,
         m.created_at,
+        m.id as 'message_id',
         f.id,
         f.value
       FROM
@@ -785,9 +801,10 @@ export const Fragment = {
       [limit]
     );
 
-    return rows.map(({ created_at, thread_id, ...row }) => ({
+    return rows.map(({ created_at, thread_id, message_id, ...row }) => ({
       ...row,
       threadId: thread_id,
+      messageId: message_id,
       parentCreatedAt: dateFromSqlite(created_at),
     }));
   },

@@ -1,8 +1,6 @@
+import type { FragmentRow } from "$lib/db";
+import type { DBAsync } from "@vlcn.io/xplat-api";
 import { Db } from "victor-db";
-
-interface Opts {
-  embedString: (str: string) => Promise<Float64Array>;
-}
 
 interface VictorDBRecord {
   similarity: number;
@@ -21,8 +19,20 @@ interface VictorVector {
   max: number;
 }
 
+interface Opts {
+  embedString: (str: string) => Promise<Float64Array>;
+  db: DBAsync;
+}
+
 export class VecDB {
-  db: Db | null = null;
+  victor: Db | null = null;
+  db: DBAsync;
+
+  static async create(opts: Opts) {
+    const db = new VecDB(opts);
+    await db.init();
+    return db;
+  }
 
   /**
    * Given a string, return a vector embedding of it. The VecDB class is
@@ -32,18 +42,17 @@ export class VecDB {
 
   constructor(opts: Opts) {
     this.embedString = opts.embedString;
-
-    this.init();
+    this.db = opts.db;
   }
 
   async init() {
     // NOTE: This IS NECESSARY! The constructor returns a promise. Probably
     // something to do with being a Rust lib rather than a JS lib.
-    this.db = await new Db();
+    this.victor = await new Db();
   }
 
-  isReady(): this is { db: Db } {
-    return this.db !== null;
+  isReady(): this is { victor: Db } {
+    return this.victor !== null;
   }
 
   async searchEmbedding(
@@ -55,10 +64,36 @@ export class VecDB {
     }
 
     console.time("search");
-    const result = await this.db.search(embedding, tags, limit);
+    const result: VictorDBRecord[] = await this.victor.search(embedding, tags, limit);
     console.timeEnd("search");
 
-    return result as VictorDBRecord[];
+    const vecIds = result.map((x) => x.embedding.id);
+    const xs = await this.db.execO<FragmentRow & { vec_id: string }>(
+      `
+      SELECT
+        f.*,
+        vf.vec_id
+      FROM
+        vec_to_frag vf
+      INNER JOIN
+        fragment f ON vf.frag_id = f.id
+      WHERE
+        vf.vec_id IN (${vecIds.map((_) => "?").join(", ")})
+    `,
+      vecIds
+    );
+
+    return Promise.all(
+      result.map(async (x) => {
+        const fragment = xs.find((y) => y.vec_id === x.embedding.id);
+        return {
+          fragment,
+          similarity: x.similarity,
+          content: x.content,
+          embedding: x.embedding,
+        };
+      })
+    );
   }
 
   search = async (
@@ -76,6 +111,9 @@ export class VecDB {
     return this.searchEmbedding(embedding, { tags, limit });
   };
 
+  /**
+   * Upsert a record making sure the content is unique to the vector store for this set of tags.
+   */
   upsert = async (record: { content: string; tags?: string[] }) => {
     if (!this.isReady()) {
       throw new Error("Could not connect to database");
@@ -92,19 +130,27 @@ export class VecDB {
 
     if (result[0]?.content === record.content) {
       console.log("Already exists", record);
-      return result[0].embedding;
+      return {
+        record: result[0].embedding,
+        inserted: false,
+      };
     }
 
     console.time("insert");
-    await this.db.insert(record.content, embedding, record.tags);
+    await this.victor.insert(record.content, embedding, record.tags);
     console.timeEnd("insert");
 
-    // Return the new record
+    // Return the new record. Victor does not return it on insert...
     const xs = await this.searchEmbedding(embedding, {
       tags: record.tags,
       limit: 1,
     });
 
-    return xs[0].embedding;
+    const newRecord = xs[0].embedding;
+
+    return {
+      record: newRecord,
+      inserted: true,
+    };
   };
 }

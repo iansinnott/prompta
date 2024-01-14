@@ -13,6 +13,7 @@
     LLMProvider,
     _clearDatabase,
     _get_db_instance,
+    VecToFrag,
   } from "$lib/db";
   import { currentChatThread, currentThread, insertPendingMessage } from "$lib/stores/stores";
   import { featureFlags } from "$lib/featureFlags";
@@ -26,6 +27,7 @@
       ["Preferences", Preferences],
       ["Fragment", Fragment],
       ["LLMProvider", LLMProvider],
+      ["VecToFrag", VecToFrag],
       ["db", _get_db_instance()],
       ["featureFlags", featureFlags],
       [
