@@ -3,7 +3,7 @@
   "version": "4.0.2",
   "private": true,
   "scripts": {
-    "dev:tuari": "tauri dev",
+    "dev:tauri": "tauri dev",
     "build": "tauri build",
     "//build:debug": "this can be done easily from the CLI, so this is more for documentation",
     "build:debug": "tauri build --debug",
@@ -53,6 +53,7 @@
   "dependencies": {
     "@fastify/cors": "8.4.2",
     "@microsoft/fetch-event-source": "2.0.1",
+    "@radix-ui/react-progress": "1.0.3",
     "@tauri-apps/api": "1.5.2",
     "@vkontakte/vk-qr": "2.0.13",
     "@vlcn.io/crsqlite": "0.16.1",
