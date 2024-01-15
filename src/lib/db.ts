@@ -1,7 +1,8 @@
 import initWasm, { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import type { TXAsync, Schema, DBAsync } from "@vlcn.io/xplat-api";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
-import { db, sqlite, currentThread, syncStore, isNewThread, newThread } from "../lib/stores/stores";
+import { db, currentThread, syncStore, isNewThread, newThread } from "../lib/stores/stores";
+import { vecDbStore } from "../lib/stores/stores/vecDbStore";
 import { dev } from "$app/environment";
 import { nanoid } from "nanoid";
 import type OpenAI from "openai";
@@ -224,8 +225,6 @@ export const initDb = async (dbName: string) => {
 
   // @note This only works in the browser. Don't use SSR anywhere where you need this
   _sqlite = await initWasm(() => wasmUrl);
-  sqlite.set(_sqlite);
-
   _db = await _sqlite.open(dbName);
   db.set(_db);
 
@@ -245,6 +244,8 @@ export const initDb = async (dbName: string) => {
         return x;
       },
     });
+
+    vecDbStore.init(_vecDb);
   }
 
   const { name, content } = await getCurrentSchema();

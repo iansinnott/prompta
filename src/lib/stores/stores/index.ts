@@ -96,7 +96,6 @@ Do not provide a word count or add quotation marks.
 };
 
 const NEWTHREAD = "newthread";
-export const sqlite = writable<SQLite3 | null>(null);
 export const db = writable<DB | null>(null);
 export const newThread: Thread = {
   id: NEWTHREAD,

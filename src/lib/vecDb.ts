@@ -27,6 +27,7 @@ interface Opts {
 export class VecDB {
   victor: Db | null = null;
   db: DBAsync;
+  events = new EventTarget();
 
   static async create(opts: Opts) {
     const db = new VecDB(opts);
@@ -119,9 +120,23 @@ export class VecDB {
       throw new Error("Could not connect to database");
     }
 
+    let embedding: Float64Array | undefined;
+    let error: Error | undefined;
     console.time("embedString");
-    const embedding = await this.embedString(record.content);
+    for (let i = 0; i < 3; i++) {
+      try {
+        embedding = await this.embedString(record.content);
+        break;
+      } catch (e) {
+        console.warn("Error embedding string. Retrying...");
+        error = e;
+      }
+    }
     console.timeEnd("embedString");
+
+    if (!embedding) {
+      throw new Error("Could not embed string: " + error?.message || "Unknown error");
+    }
 
     const result = await this.searchEmbedding(embedding, {
       tags: record.tags,
@@ -200,6 +215,8 @@ export class VecDB {
     try {
       let remaining = await getCount();
 
+      this.events.dispatchEvent(new CustomEvent("ingest-start", { detail: { remaining } }));
+
       while (remaining > 0) {
         console.log("records to process:", remaining);
         const fragments = await this.db.execO<SemanticFragmentRow>(
@@ -225,20 +242,18 @@ export class VecDB {
           [batchSize]
         );
 
-        const records = await Promise.all(
-          fragments.map((x) => {
-            return {
-              content: x.value,
-              tags: [x.role, x.thread_id, x.entity_type],
-              id: x.id,
-            };
-          })
-        );
+        const records = fragments.map((x) => {
+          return {
+            content: x.value,
+            tags: [x.role, x.thread_id, x.entity_type],
+            id: x.id,
+          };
+        });
 
         // @todo Maybe it would make more sense to do this in the upsert call
         // Victor does NOT like parallel upserts it seems. Last time I tried, it crashed.
         console.time("upsert fragments");
-        for (const { id, ...record } of records) {
+        for (const [i, { id, ...record }] of records.entries()) {
           const result = await this.upsert(record);
           console.debug("inserted", result);
           const [existing] = await this.db.execO<{ id: string }>(
@@ -251,6 +266,12 @@ export class VecDB {
               id,
             ]);
           }
+
+          if (i % 3 === 0) {
+            this.events.dispatchEvent(
+              new CustomEvent("ingest-progress", { detail: { remaining: remaining - i } })
+            );
+          }
         }
         console.timeEnd("upsert fragments");
 
@@ -261,6 +282,7 @@ export class VecDB {
       throw error;
     } finally {
       this.#ingestInProgress = false;
+      this.events.dispatchEvent(new CustomEvent("ingest-end"));
     }
   };
 }

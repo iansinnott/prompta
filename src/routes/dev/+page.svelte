@@ -7,12 +7,16 @@
   export { _class as class };
 
   import type { VecDB } from "$lib/vecDb";
-  import { Atom } from "lucide-svelte";
+  import { Atom, Dice1 } from "lucide-svelte";
   import { autosize } from "$lib/utils";
   import { Button } from "$lib/components/ui/button";
   import type { ChatMessage, FragmentRow, VecToFrag } from "$lib/db";
   import ChatMessageItem from "$lib/components/ChatMessageItem.svelte";
+  import { Progress } from "$lib/components/ui/progress";
   import { goto } from "$app/navigation";
+  import { vecDbStore } from "$lib/stores/stores/vecDbStore";
+  import { slide } from "svelte/transition";
+  import * as Card from "$lib/components/ui/card";
 
   const batchPartition = <T,>(xs: T[], batchSize: number): T[][] => {
     const result: T[][] = [];
@@ -167,9 +171,40 @@
     <hr class="mb-5" />
   </div>
 
-  <div class="prose prose-invert mb-4">
-    <h3>Vector Search</h3>
-    <p>Search all messages by vector rather than FTS.</p>
+  <div class="mb-4">
+    <Card.Root class="w-full">
+      <Card.Header>
+        <Card.Title class="m-0">Vector Search</Card.Title>
+      </Card.Header>
+      <Card.Content>
+        <p class="mb-2">Search all messages by vector rather than FTS.</p>
+        {#if $vecDbStore.loading}
+          <div class="prose prose-invert">
+            <table transition:slide>
+              <tbody>
+                <tr>
+                  <td>Total</td>
+                  <td>{$vecDbStore.total}</td>
+                </tr>
+                <tr>
+                  <td>Progress</td>
+                  <td>{$vecDbStore.progress}</td>
+                </tr>
+              </tbody>
+              <Progress value={$vecDbStore.progress} max={$vecDbStore.total} />
+            </table>
+          </div>
+        {:else if $vecDbStore.error}
+          <div>{$vecDbStore.error}</div>
+        {:else}
+          <div>
+            <Button variant="outline" class="w-full block" on:click={() => vecDbStore.ingest()}
+              >Re-ingest</Button
+            >
+          </div>
+        {/if}
+      </Card.Content>
+    </Card.Root>
   </div>
   <form action="" on:submit|preventDefault={handleSubmit}>
     <textarea
