@@ -17,6 +17,8 @@
   import { Circle, HelpCircle } from "lucide-svelte";
   import LlmProviderList from "./LLMProviderList.svelte";
   import { Button } from "./ui/button";
+  import { Progress } from "./ui/progress";
+  import { slide } from "svelte/transition";
 
   const versionString = env.PUBLIC_VERSION_STRING;
 
@@ -64,6 +66,10 @@
     await sys.saveAs(`${Date.now()}_prompta.v${version}.json`, JSON.stringify(data));
   };
 
+  let importRowCount = 0;
+  let importProgress = 0;
+  let isImporting = false;
+
   const handleImportV2 = async (json: any) => {
     if (!$db) {
       console.error("No database");
@@ -76,37 +82,50 @@
 
     if (
       !(await sys.confirm(
-        `Are you sure you want to import ${tables.length} tables? Although unlikely, this can cause data loss if you are importing two exports from the same database.`
+        `Are you sure you want to import ${tables.length} tables? No data will be deleted, but this cannot be undone.`
       ))
     ) {
       console.log("Cancelled");
       return;
     }
 
-    const rowCount = tables.reduce((acc, [_, tableData]) => acc + tableData.length, 0);
-    let i = 0;
-    let progress = i / rowCount || 1; /* avoid div by zero */
+    try {
+      isImporting = true;
+      importRowCount = tables.reduce((acc, [_, tableData]) => acc + tableData.length, 0);
+      importProgress = 0;
 
-    await $db.tx(async (tx) => {
-      for (const [tableName, tableData] of tables) {
-        for (const row of tableData) {
-          i += 1;
-          progress = i / rowCount;
+      let pct = importProgress / importRowCount || 1; /* avoid div by zero */
 
-          console.log(`Importing ${tableName} ${i}/${rowCount} (${Math.round(progress * 100)}%)`);
+      await $db.tx(async (tx) => {
+        for (const [tableName, tableData] of tables) {
+          for (const row of tableData) {
+            importProgress += 1;
+            pct = importProgress / importRowCount;
 
-          const x = mapKeys(row, (x) => {
-            return toCamelCase(String(x));
-          });
-          if (tableName === "message") await ChatMessage.upsert(x, tx);
-          else if (tableName === "thread") await Thread.upsert(x, tx);
-          else if (tableName === "llm_provider") await LLMProvider.upsert(x, tx);
-          else throw new Error("Unknown table");
+            console.log(
+              `Importing ${tableName} ${importProgress}/${importRowCount} (${Math.round(
+                pct * 100
+              )}%)`
+            );
+
+            const x = mapKeys(row, (x) => {
+              return toCamelCase(String(x));
+            });
+            if (tableName === "message") await ChatMessage.upsert(x, tx);
+            else if (tableName === "thread") await Thread.upsert(x, tx);
+            else if (tableName === "llm_provider") await LLMProvider.upsert(x, tx);
+            else throw new Error("Unknown table");
+          }
         }
-      }
-    });
+      });
 
-    console.log("%c[import/v2] success", "color:salmon;", tables.length, "tables imported");
+      console.log("%c[import/v2] success", "color:salmon;", tables.length, "tables imported");
+    } catch (error) {
+      console.error("%c[import/v2] error", "color:salmon;", error);
+      toast({ title: "Error importing", message: error.message, type: "error" });
+    } finally {
+      isImporting = false;
+    }
   };
 </script>
 
@@ -246,15 +265,6 @@
 
                 const json = JSON.parse(file.data);
 
-                if (
-                  !(await sys.confirm(
-                    `Are you sure you want to import ${file.name}? Although unlikely, this can cause data loss if you are importing two exports from the same database.`
-                  ))
-                ) {
-                  console.log("Cancelled");
-                  return;
-                }
-
                 switch (json.version) {
                   case 2:
                     await handleImportV2(json);
@@ -301,12 +311,20 @@
             >
               Import
             </Button>
-            <div class="prose prose-invert prose-sm mt-2">
-              <p>
-                Run multiple times to import multiple prior exports. If records have the same ID,
-                the later one will overwrite.
-              </p>
-            </div>
+            {#if isImporting}
+              <div transition:slide={{ duration: 150 }} class="mt-2">
+                <p>
+                  Importing {importRowCount} records... If it's taking a while,
+                  <strong>please be patient</strong>. If you're importing thousands of records it
+                  may take some time and the window may become unresponsive.
+                </p>
+                <Progress value={importProgress} max={importRowCount} />
+              </div>
+            {:else}
+              <div class="prose prose-invert prose-sm mt-2">
+                <p>Import records you've exported.</p>
+              </div>
+            {/if}
           </fieldset>
 
           <label for="c" class="label">Info:</label>
