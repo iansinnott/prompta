@@ -23,6 +23,9 @@
   import { env } from "$env/dynamic/public";
   import { featureFlags } from "$lib/featureFlags";
   import ActionsMenu from "$lib/components/ActionsMenu.svelte";
+  import { ChevronLeftCircle } from "lucide-svelte";
+  import { page } from "$app/stores";
+  import { fly, slide } from "svelte/transition";
 
   const sys = getSystem();
   let startupError: Error | null = null;
@@ -299,7 +302,13 @@
 <Toaster />
 
 {#if appReady}
-  <div class=" absolute bottom-4 right-4">
+  <!--  This is just the value that happens to line up  -->
+  <div class=" absolute bottom-[14px] right-4 flex space-x-4 items-center">
+    {#if $page.url.pathname !== "/"}
+      <a in:fly={{ duration: 150, delay: 200, x: 20 }} href="/" class="flex items-center space-x-2">
+        <ChevronLeftCircle class="w-6 h-6" /> <span>Back to chat</span>
+      </a>
+    {/if}
     <ActionsMenu class="text-xs uppercase leading-[22px]" />
   </div>
   <DevTooling />
