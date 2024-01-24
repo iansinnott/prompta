@@ -285,7 +285,7 @@
       {:else}
         <button
           data-testid="ChatInputSubmit"
-          class="font-bold px-4 py-2 flex items-center text-xs uppercase leading-[22px]"
+          class="font-bold pl-4 pr-2 py-2 flex items-center text-xs uppercase leading-[22px]"
           type="submit"
         >
           {#if isPending}
