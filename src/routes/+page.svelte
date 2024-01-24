@@ -114,7 +114,11 @@
 
     if (!s) {
       console.debug("No string. Not sending.");
-      toast({ type: "error", title: "No message" });
+      toast({
+        type: "error",
+        title: "Message is empty",
+        message: "Please enter a message to send.",
+      });
       return;
     }
 

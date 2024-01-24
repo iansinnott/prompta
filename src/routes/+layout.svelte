@@ -14,7 +14,7 @@
   import { getSystem } from "$lib/gui";
   import classNames from "classnames";
   import { dev } from "$app/environment";
-  import Toaster from "$lib/toast/Toaster.svelte";
+  import { Toaster } from "$lib/components/ui/sonner";
   import { assets } from "$app/paths";
   import FullScreenError from "$lib/components/FullScreenError.svelte";
   import { debounce, wrapError } from "$lib/utils";
@@ -51,6 +51,9 @@
     location.reload();
   };
 
+  /**
+   * NOTE: Teardown is not currently used because the layout only gets torn down when the tab closes
+   */
   let teardown: any;
 
   const handleStartup = async () => {
@@ -117,10 +120,6 @@
       isPendingImport = true;
       localStorage.setItem("pendingImport", getLatestDbName() as string);
     }
-  });
-
-  onDestroy(async () => {
-    await teardown?.();
   });
 
   function isExternalUrl(href: any) {
@@ -299,7 +298,8 @@
   {/if}
 </div>
 
-<Toaster />
+<!-- Offset here is just for the y dimension. See style tag for the X dimension -->
+<Toaster richColors closeButton position="top-right" offset={84} visibleToasts={5} />
 
 {#if appReady}
   <!--  This is just the value that happens to line up  -->
@@ -313,3 +313,10 @@
   </div>
   <DevTooling />
 {/if}
+
+<style>
+  /*  Fix the offset of the toaster. It has no API for separately setting the x and y offset  */
+  :global([data-sonner-toaster][data-x-position="right"]) {
+    right: 16px !important;
+  }
+</style>

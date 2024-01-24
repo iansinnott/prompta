@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { toast } from "$lib/toast";
+  import { toast } from "svelte-sonner";
   import classNames from "classnames";
   import type { FeatureExtractionPipeline } from "@xenova/transformers";
   import { onMount } from "svelte";
@@ -7,7 +7,6 @@
   export { _class as class };
 
   import type { VecDB } from "$lib/vecDb";
-  import { Atom, Dice1 } from "lucide-svelte";
   import { autosize } from "$lib/utils";
   import { Button } from "$lib/components/ui/button";
   import type { ChatMessage, FragmentRow, VecToFrag } from "$lib/db";
@@ -94,7 +93,9 @@
       goto(`?content=${encodeURIComponent(s)}`);
 
       if (!s) {
-        toast({ title: "No content", message: "Box cannot be empty", type: "error" });
+        toast.error("No content", {
+          description: "Box cannot be empty",
+        });
         return;
       }
 
@@ -145,10 +146,10 @@
       console.log("search results", results);
       console.log("messages", messages);
 
-      toast({ title: "Success", message: "Model loaded", type: "success" });
+      toast.success("Success", { description: "Model loaded" });
     } catch (error) {
       console.error(error);
-      toast({ title: "Error", message: error.message, type: "error" });
+      toast("Error", { description: error.message });
     } finally {
       loading = false;
     }

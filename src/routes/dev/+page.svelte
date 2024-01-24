@@ -7,6 +7,10 @@
   import * as Tabs from "$lib/components/ui/tabs";
   import VectorSearch from "./experiment_VectorSearch.svelte";
   import StatsPage from "./experimental_StatsPage.svelte";
+  import ToastyPage from "./experimental_ToastyPage.svelte";
+
+  const defaultTab = "vector-search";
+  let currentTab = new URLSearchParams(location.search).get("tab") ?? defaultTab;
 </script>
 
 <div class={classNames("h-full overflow-auto", _class)}>
@@ -26,16 +30,34 @@
     <hr class="mb-5" />
   </div>
 
-  <Tabs.Root value="vector-search" class="w-full">
+  <Tabs.Root
+    value={currentTab}
+    class="w-full"
+    onValueChange={(x) => {
+      // Update the URL search string with the new tab value
+      const searchParams = new URLSearchParams(location.search);
+      if (x) {
+        searchParams.set("tab", x);
+      } else {
+        searchParams.delete("tab");
+      }
+      history.replaceState(null, "", "?" + searchParams.toString());
+      currentTab = x || defaultTab;
+    }}
+  >
     <Tabs.List>
       <Tabs.Trigger value="vector-search">Vector Search</Tabs.Trigger>
       <Tabs.Trigger value="stats">Stats</Tabs.Trigger>
+      <Tabs.Trigger value="toasty">Toasty</Tabs.Trigger>
     </Tabs.List>
     <Tabs.Content value="vector-search">
       <VectorSearch />
     </Tabs.Content>
     <Tabs.Content value="stats">
       <StatsPage />
+    </Tabs.Content>
+    <Tabs.Content value="toasty">
+      <ToastyPage />
     </Tabs.Content>
   </Tabs.Root>
 </div>
