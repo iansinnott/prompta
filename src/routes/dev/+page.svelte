@@ -6,6 +6,7 @@
   import { FlaskConical } from "lucide-svelte";
   import * as Tabs from "$lib/components/ui/tabs";
   import VectorSearch from "./experiment_VectorSearch.svelte";
+  import StatsPage from "./experimental_StatsPage.svelte";
 </script>
 
 <div class={classNames("h-full overflow-auto", _class)}>
@@ -28,11 +29,13 @@
   <Tabs.Root value="vector-search" class="w-full">
     <Tabs.List>
       <Tabs.Trigger value="vector-search">Vector Search</Tabs.Trigger>
-      <Tabs.Trigger value="example">Example</Tabs.Trigger>
+      <Tabs.Trigger value="stats">Stats</Tabs.Trigger>
     </Tabs.List>
     <Tabs.Content value="vector-search">
       <VectorSearch />
     </Tabs.Content>
-    <Tabs.Content value="example">Example stuff here</Tabs.Content>
+    <Tabs.Content value="stats">
+      <StatsPage />
+    </Tabs.Content>
   </Tabs.Root>
 </div>
