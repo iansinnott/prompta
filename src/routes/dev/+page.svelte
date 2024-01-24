@@ -17,6 +17,7 @@
   import { vecDbStore } from "$lib/stores/stores/vecDbStore";
   import { slide } from "svelte/transition";
   import * as Card from "$lib/components/ui/card";
+  import * as Tabs from "$lib/components/ui/tabs";
 
   const batchPartition = <T,>(xs: T[], batchSize: number): T[][] => {
     const result: T[][] = [];
@@ -171,78 +172,87 @@
     <hr class="mb-5" />
   </div>
 
-  <div class="mb-4">
-    <Card.Root class="w-full">
-      <Card.Header>
-        <Card.Title class="m-0">Vector Search</Card.Title>
-      </Card.Header>
-      <Card.Content>
-        <p class="mb-2">Search all messages by vector rather than FTS.</p>
-        {#if $vecDbStore.loading}
-          <div class="prose prose-invert">
-            <table transition:slide>
-              <tbody>
-                <tr>
-                  <td>Total</td>
-                  <td>{$vecDbStore.total}</td>
-                </tr>
-                <tr>
-                  <td>Progress</td>
-                  <td>{$vecDbStore.progress}</td>
-                </tr>
-              </tbody>
-              <Progress value={$vecDbStore.progress} max={$vecDbStore.total} />
-            </table>
-          </div>
-        {:else if $vecDbStore.error}
-          <div>{$vecDbStore.error}</div>
-        {:else}
-          <div>
-            <Button variant="outline" class="w-full block" on:click={() => vecDbStore.ingest()}
-              >Re-ingest</Button
-            >
-          </div>
-        {/if}
-      </Card.Content>
-    </Card.Root>
-  </div>
-  <form action="" on:submit|preventDefault={handleSubmit}>
-    <textarea
-      use:autosize
-      name="content"
-      id="content"
-      cols="30"
-      rows="1"
-      bind:value={content}
-      on:keydown={(e) => {
-        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-          e.preventDefault();
-          handleSubmit();
-        }
-      }}
-      class="bg-gray-700 text-white w-full p-2 rounded-lg"
-    />
-    <Button class="w-full block" type="submit">Search</Button>
-  </form>
-  <div class="flex flex-col space-y-3 overflow-auto mt-4">
-    {#each Object.entries(xs) as [messageId, result]}
-      <div class="flex space-x-2">
-        <div class="relative z-10 bg-zinc-900">
-          {#each result.matches as { fragment, similarity }}
-            <div
-              class={classNames("pt-1 px-1 font-mono ", {
-                "text-green-500": similarity >= 0.6,
-                "text-yellow-500": similarity >= 0.4 && similarity < 0.6,
-                "text-orange-500": similarity >= 0.3 && similarity < 0.4,
-                "text-red-500": similarity < 0.3,
-              })}
-            >
-              {similarity.toString().slice(0, 5)}
-            </div>
-          {/each}
-        </div>
-        <ChatMessageItem class="flex-1" item={result} />
+  <Tabs.Root value="vector-search" class="w-full">
+    <Tabs.List>
+      <Tabs.Trigger value="vector-search">Vector Search</Tabs.Trigger>
+      <Tabs.Trigger value="example">Example</Tabs.Trigger>
+    </Tabs.List>
+    <Tabs.Content value="vector-search">
+      <div class="mb-4">
+        <Card.Root class="w-full">
+          <Card.Header>
+            <Card.Title class="m-0">Vector Search</Card.Title>
+          </Card.Header>
+          <Card.Content>
+            <p class="mb-2">Search all messages by vector rather than FTS.</p>
+            {#if $vecDbStore.loading}
+              <div class="prose prose-invert">
+                <table transition:slide>
+                  <tbody>
+                    <tr>
+                      <td>Total</td>
+                      <td>{$vecDbStore.total}</td>
+                    </tr>
+                    <tr>
+                      <td>Progress</td>
+                      <td>{$vecDbStore.progress}</td>
+                    </tr>
+                  </tbody>
+                  <Progress value={$vecDbStore.progress} max={$vecDbStore.total} />
+                </table>
+              </div>
+            {:else if $vecDbStore.error}
+              <div>{$vecDbStore.error}</div>
+            {:else}
+              <div>
+                <Button variant="outline" class="w-full block" on:click={() => vecDbStore.ingest()}
+                  >Re-ingest</Button
+                >
+              </div>
+            {/if}
+          </Card.Content>
+        </Card.Root>
       </div>
-    {/each}
-  </div>
+      <form action="" on:submit|preventDefault={handleSubmit}>
+        <textarea
+          use:autosize
+          name="content"
+          id="content"
+          cols="30"
+          rows="1"
+          bind:value={content}
+          on:keydown={(e) => {
+            if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
+          class="bg-gray-700 text-white w-full p-2 rounded-lg"
+        />
+        <Button class="w-full block" type="submit">Search</Button>
+      </form>
+      <div class="flex flex-col space-y-3 overflow-auto mt-4">
+        {#each Object.entries(xs) as [messageId, result]}
+          <div class="flex space-x-2">
+            <div class="relative z-10 bg-zinc-900">
+              {#each result.matches as { fragment, similarity }}
+                <div
+                  class={classNames("pt-1 px-1 font-mono ", {
+                    "text-green-500": similarity >= 0.6,
+                    "text-yellow-500": similarity >= 0.4 && similarity < 0.6,
+                    "text-orange-500": similarity >= 0.3 && similarity < 0.4,
+                    "text-red-500": similarity < 0.3,
+                  })}
+                >
+                  {similarity.toString().slice(0, 5)}
+                </div>
+              {/each}
+            </div>
+            <ChatMessageItem class="flex-1" item={result} />
+          </div>
+        {/each}
+      </div>
+    </Tabs.Content>
+    <Tabs.Content value="example">Example stuff here</Tabs.Content>
+  </Tabs.Root>
 </div>
