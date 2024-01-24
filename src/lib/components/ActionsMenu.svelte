@@ -34,7 +34,7 @@
   import { chatModels, llmProviders, modelPickerOpen } from "$lib/stores/stores/llmProvider";
   import IconOpenAi from "./IconOpenAI.svelte";
   import IconBrain from "./IconBrain.svelte";
-  import { Atom, Command as CommandIcon, FlaskConical } from "lucide-svelte";
+  import { Atom, Command as CommandIcon, FlaskConical, Flag } from "lucide-svelte";
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import { featureFlags } from "$lib/featureFlags";
@@ -160,9 +160,9 @@
       },
     },
     {
-      name: "Beta Features",
-      icon: FlaskConical,
-      altFilterText: "flags experimental",
+      name: "Feature Flags",
+      icon: Flag,
+      altFilterText: "beta alpha experimental",
       when: () => $page.url.pathname !== "/dev/feature-flags",
       execute: () => {
         goto("/dev/feature-flags");
@@ -170,7 +170,7 @@
     },
     {
       name: "Dev Experiments",
-      icon: Atom,
+      icon: FlaskConical,
       when: () => $page.url.pathname !== "/dev" && featureFlags.check("dev_experiments"),
       execute: () => {
         goto("/dev");

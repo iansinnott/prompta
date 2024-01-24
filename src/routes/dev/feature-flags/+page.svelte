@@ -4,7 +4,7 @@
   export { _class as class };
   import { featureFlags } from "$lib/featureFlags";
   import { Button } from "$lib/components/ui/button";
-  import { FlaskConical } from "lucide-svelte";
+  import { Flag } from "lucide-svelte";
   import { dev } from "$app/environment";
 
   let dirty = false;
@@ -13,8 +13,8 @@
 <div class={classNames("", _class)}>
   <div class="prose prose-invert">
     <h1 class="flex items-center">
-      <FlaskConical size="24" class="inline-block mr-4" />
-      <span> Experimental Features </span>
+      <Flag size="24" class="inline-block mr-4" />
+      <span>Feature Flags</span>
     </h1>
     <p>
       Enable or disable these as you like. They are experimental and might cause breakage, but they
@@ -41,10 +41,18 @@
           }}
           class="mr-2"
         />
-        <label for={flag.id}>{flag.name}</label>
+        <label for={flag.id}>
+          <span> {flag.name} </span>
+        </label>
       </div>
-      <div class="text-sm text-gray-500">
-        {featureFlags.check(flag.id) ? "Enabled" : "Disabled"}
+      <div class="text-sm text-gray-500 flex space-x-4">
+        <small class="">
+          <span>id:</span>
+          <span class="text-indigo-400">{flag.id}</span>
+        </small>
+        <span>
+          {featureFlags.check(flag.id) ? "Enabled" : "Disabled"}
+        </span>
       </div>
     </div>
     {#if flag.description}
