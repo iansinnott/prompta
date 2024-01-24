@@ -330,10 +330,13 @@
 </div>
 
 <style>
-  .dev-container {
-    @apply border-2 border-yellow-600;
+  .dev-container:before {
+    content: "";
+    position: absolute;
+    @apply inset-0 border-2 border-yellow-600;
   }
   .app-container {
+    position: relative;
     display: grid;
     grid-template-rows:
       auto
