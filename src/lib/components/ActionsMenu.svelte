@@ -165,7 +165,7 @@
     {
       name: "Feature Flags",
       icon: Flag,
-      altFilterText: "beta alpha experimental",
+      altFilterText: "beta alpha experimental lab",
       when: () => $page.url.pathname !== "/dev/feature-flags",
       execute: () => {
         goto("/dev/feature-flags");
