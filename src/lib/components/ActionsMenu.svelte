@@ -53,6 +53,7 @@
     {
       name: "Generate Title...",
       icon: IconThreadTitle,
+      when: () => $page.url.pathname === "/",
       execute: () => {
         generateThreadTitle({ threadId: $currentThread.id }).catch((error) => {
           toast({
@@ -65,6 +66,7 @@
     },
     {
       name: "Regenerate Response",
+      when: () => $page.url.pathname === "/",
       icon: IconRefreshOutline,
       execute: currentChatThread.regenerateResponse,
     },
@@ -72,7 +74,7 @@
       name: "Enable OpenAI",
       when: () => {
         const oai = llmProviders.getOpenAi();
-        return !oai.apiKey && oai.enabled;
+        return !oai.apiKey && oai.enabled && $page.url.pathname === "/";
       },
       icon: IconOpenAi,
       execute: () => {
@@ -80,14 +82,14 @@
       },
     },
     {
-      when: () => !sys.isBrowser,
+      when: () => !sys.isBrowser && $page.url.pathname === "/",
       name: "Chat History",
       icon: IconHistoryClock,
       keyboard: { shortcut: "meta+p" },
       execute: () => ($threadMenu.open = !$threadMenu.open),
     },
     {
-      when: () => sys.isBrowser,
+      when: () => sys.isBrowser && $page.url.pathname === "/",
       name: "Chat History",
       icon: IconHistoryClock,
       keyboard: { shortcut: "ctrl+p" },
@@ -95,7 +97,7 @@
     },
 
     {
-      when: () => !sys.isBrowser,
+      when: () => !sys.isBrowser && $page.url.pathname === "/",
       name: "New Chat",
       icon: IconSparkle,
       keyboard: { shortcut: "meta+n" }, // NOTE Meta key with N only works in the Tauri app. In a browser this opens a new window
@@ -103,7 +105,7 @@
       execute: currentThread.reset,
     },
     {
-      when: () => sys.isBrowser,
+      when: () => sys.isBrowser && $page.url.pathname === "/",
       name: "New Chat",
       icon: IconSparkle,
       keyboard: { shortcut: "ctrl+n" },
@@ -112,7 +114,7 @@
     },
 
     {
-      when: () => !sys.isBrowser,
+      when: () => !sys.isBrowser && $page.url.pathname === "/",
       name: "Choose LLM Model",
       icon: IconBrain,
       keyboard: { shortcut: "meta+l" }, // NOTE Meta key with N only works in the Tauri app. In a browser this opens a new window
@@ -122,7 +124,7 @@
       },
     },
     {
-      when: () => sys.isBrowser,
+      when: () => sys.isBrowser && $page.url.pathname === "/",
       name: "Choose LLM Model",
       icon: IconBrain,
       keyboard: { shortcut: "ctrl+l" },
@@ -135,13 +137,14 @@
     {
       name: "Archive Chat",
       icon: IconArchiveIn,
-      when: () => !$currentThread.archived && !isNewThread($currentThread),
+      when: () =>
+        !$currentThread.archived && !isNewThread($currentThread) && $page.url.pathname === "/",
       execute: currentThread.archive,
     },
     {
       name: "Unarchive Chat",
       icon: IconArchiveOut,
-      when: () => $currentThread.archived,
+      when: () => $currentThread.archived && $page.url.pathname === "/",
       execute: currentThread.unarchive,
     },
     {
@@ -198,6 +201,7 @@
     {
       name: "Attempt Restore DB",
       icon: IconTerminalPrompt,
+      when: () => dev && $devStore.showDebug,
       execute: async () => {
         try {
           await reinstatePriorData();
