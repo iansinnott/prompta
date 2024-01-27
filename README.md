@@ -54,14 +54,14 @@ For macOS users you will need to right-click the app and select "Open" the first
 
 ## Developing
 
-The following examples use `npm` but `yarn` or `pnpm` will also work:
+`pnpm` is used for development. You cam try using `yarn`, `bun`, `npm`, etc but other package managers have not been tested and are not deliberately supported:
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+# To devlop the Tuari desktop app as well:
+pnpm run dev:tauri
 ```
 
 ## Building
@@ -69,15 +69,21 @@ npm run dev -- --open
 To create a production version of your app:
 
 ```bash
-npm run build
+pnpm run build
 ```
 
-You can preview the production build with `npm run preview`.
+If you want to build only for the browser, ignoring the desktop app:
+
+```bash
+pnpm run ui:build-static
+```
+
+The advantage here is that you don't need any Rust dependencies which are required for building Tauri.
 
 ## Releasing a new Version
 
 ```bash
-npm run release
+pnpm run release
 ```
 
 You will be prompted to enter a new version number. New versions that don't contain a suffix such as `-beta` or `-alpha` will be published to GitHub.
