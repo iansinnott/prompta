@@ -18,7 +18,7 @@
     "bundle": {
       "active": true,
       "category": "Productivity",
-      "copyright": "© 2023 Ian Sinnott",
+      "copyright": "© 2024 Ian Sinnott",
       "deb": {
         "depends": [ ]
       },
