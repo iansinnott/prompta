@@ -67,3 +67,9 @@
       >{@html highlighted}</code
     ></pre>
 </div>
+
+<style>
+  :global(.CodeBlock) > pre {
+    @apply rounded-t-none mt-0;
+  }
+</style>
