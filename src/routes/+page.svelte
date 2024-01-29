@@ -336,8 +336,7 @@
 <style>
   .dev-container:before {
     content: "";
-    position: absolute;
-    @apply inset-0 border-2 border-yellow-600;
+    @apply absolute inset-0 border-2 border-yellow-600 pointer-events-none;
   }
   .app-container {
     position: relative;

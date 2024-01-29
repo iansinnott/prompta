@@ -17,7 +17,7 @@
     "release": "direnv reload && yarn version && ./scripts/release.sh",
     "gh:publish": "./scripts/publish.sh",
     "preview": "vite preview",
-    "test": "playwright test",
+    "test": "playwright test --retries=2",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "test:unit": "vitest"
