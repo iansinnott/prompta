@@ -1,7 +1,8 @@
 import initWasm, { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import type { TXAsync, Schema, DBAsync } from "@vlcn.io/xplat-api";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
-import { db, sqlite, currentThread, syncStore, isNewThread, newThread } from "../lib/stores/stores";
+import { db, currentThread, syncStore, isNewThread, newThread } from "../lib/stores/stores";
+import { vecDbStore } from "../lib/stores/stores/vecDbStore";
 import { dev } from "$app/environment";
 import { nanoid } from "nanoid";
 import type OpenAI from "openai";
@@ -10,12 +11,16 @@ import { basename, debounce, groupBy, mapKeys, sha1sum, toCamelCase, toSnakeCase
 import { extractFragments } from "./markdown";
 import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
 
-import schemaUrl from "$lib/migrations/0002_schema.sql?url";
+import schema_0002 from "$lib/migrations/0002_schema.sql?url";
+import schema_0003 from "$lib/migrations/0003_schema_vecdb.sql?url";
 
-export { schemaUrl };
+// Default schema. May be overwritten via feature flags (see references)
+let schemaUrl = schema_0002;
 
 import { llmProviders, openAiConfig } from "./stores/stores/llmProvider";
 import { profilesStore } from "./stores/stores/llmProfile";
+import { featureFlags } from "./featureFlags";
+import type { VecDB } from "./vecDb";
 
 const legacyDbNames = [
   "chat_db-v1",
@@ -79,13 +84,17 @@ export const incrementDbName = () => {
   return next;
 };
 
-type RoleEnum = OpenAI.Chat.Completions.ChatCompletionMessage["role"];
+// NOTE: Not all of thse are usable by openai. Some are custom
+type RoleEnum = "user" | "system" | "assistant" | "comment";
+type OpenAICompatibleRole = "user" | "system" | "assistant";
 
 let _sqlite: SQLite3;
 let _db: DB;
+let _vecDb: VecDB;
 
 /** For use in debugging */
 export const _get_db_instance = () => _db;
+export const _get_vecDb_instance = () => _vecDb;
 
 /**
  * A helper for testing purposes.
@@ -190,6 +199,11 @@ export const reinstatePriorData = async (database: DBAsync = _db as DBAsync) => 
 };
 
 export const getCurrentSchema = async () => {
+  // Alternate schemas as needed
+  if (featureFlags.check("vector_search_features")) {
+    schemaUrl = schema_0003;
+  }
+
   const schemaRaw = await fetch(schemaUrl).then((r) => (r.ok ? r.text() : Promise.reject(r)));
   const u = new URL(schemaUrl, window.location.href);
   const schemaName = basename(u.pathname) as string;
@@ -211,10 +225,28 @@ export const initDb = async (dbName: string) => {
 
   // @note This only works in the browser. Don't use SSR anywhere where you need this
   _sqlite = await initWasm(() => wasmUrl);
-  sqlite.set(_sqlite);
-
   _db = await _sqlite.open(dbName);
   db.set(_db);
+
+  if (featureFlags.check("vector_search_features")) {
+    const { VecDB } = await import("$lib/vecDb");
+    const { createEmbedding } = await import("$lib/embeddings");
+
+    _vecDb = await VecDB.create({
+      db: _get_db_instance(),
+      embedString: async (s: string) => {
+        const tensor = await createEmbedding(s);
+        const x = tensor?.list[0];
+        if (!x) {
+          throw new Error("Could not create embedding");
+        }
+
+        return x;
+      },
+    });
+
+    vecDbStore.init(_vecDb);
+  }
 
   const { name, content } = await getCurrentSchema();
 
@@ -300,6 +332,15 @@ export type LLMProvider = Omit<LLMProviderRow, "created_at" | "enabled"> & {
   createdAt: Date;
   enabled: boolean;
 };
+
+export interface VecToFragRow {
+  id: string;
+  vec_id: string;
+  frag_id: number;
+  created_at: string;
+}
+
+export type VecToFrag = Omit<VecToFragRow, "created_at">;
 
 export interface FragmentRow {
   id: string;
@@ -635,6 +676,10 @@ export const LLMProvider = {
   }),
 };
 
+export const VecToFrag = crud<VecToFrag>({
+  tableName: "vec_to_frag",
+});
+
 export const ChatMessage = {
   ...crud<ChatMessage>({
     tableName: "message",
@@ -655,7 +700,7 @@ export const ChatMessage = {
     threadId,
   }: {
     threadId: string;
-  }): Promise<Array<Omit<ChatMessage, "role"> & { role: RoleEnum }>> {
+  }): Promise<Array<Omit<ChatMessage, "role"> & { role: OpenAICompatibleRole }>> {
     const context = await ChatMessage.findMany({
       where: {
         threadId,
@@ -665,7 +710,8 @@ export const ChatMessage = {
       },
       orderBy: { createdAt: "ASC" },
     });
-    return context as Array<Omit<ChatMessage, "role"> & { role: RoleEnum }>;
+
+    return context as Array<Omit<ChatMessage, "role"> & { role: OpenAICompatibleRole }>;
   },
 };
 
@@ -714,6 +760,25 @@ export type FullTextSearchFilter = {
   offset?: number;
 };
 
+export interface SemanticFragmentRow {
+  id: number;
+  role: string;
+  value: string;
+  thread_id: string;
+  entity_type: string;
+  message_id: string;
+  created_at: string;
+}
+
+interface SemanticFragment {
+  id: number;
+  role: RoleEnum | string;
+  value: string;
+  threadId: string;
+  messageId: string;
+  parentCreatedAt: Date;
+}
+
 export const Fragment = {
   ...crud<Fragment>({
     generateId: async (x) => {
@@ -728,6 +793,51 @@ export const Fragment = {
       };
     },
   }),
+
+  /**
+   * Find fragments for use in semantic search. Fragments returned from this
+   * function are expected to be used for indexing in a vector store.
+   *
+   * @todo We may need to track whether something has been indexed here. not sure if the vec db can do it.
+   */
+  async findSemanticFragments({
+    where, // TODO: use the where clause
+    limit = 500,
+    includeProcessedRows = false,
+  }: {
+    where?: { threadId?: string; role?: RoleEnum; before?: Date };
+    limit?: number;
+    includeProcessedRows?: boolean;
+  } = {}): Promise<Array<SemanticFragment>> {
+    const rows = await _db.execO<SemanticFragmentRow>(
+      `
+      SELECT
+        m.role,
+        m.thread_id,
+        m.created_at,
+        m.id as 'message_id',
+        f.id,
+        f.value,
+        f.entity_type
+      FROM
+        fragment f
+        INNER JOIN message m ON m.id = f.entity_id
+      ORDER BY
+        m.created_at ASC
+      LIMIT
+        ?;
+    `,
+      [limit]
+    );
+
+    return rows.map(({ created_at, thread_id, message_id, ...row }) => ({
+      ...row,
+      threadId: thread_id,
+      messageId: message_id,
+      parentCreatedAt: dateFromSqlite(created_at),
+    }));
+  },
+
   async fullTextSearch(
     content: string,
     { archived = false, limit = 500, offset = 0 }: FullTextSearchFilter = {}
@@ -873,6 +983,11 @@ const syncMessageFragments = debounce(async () => {
          AND fragment.entity_id NOT IN ( SELECT id FROM "message")`
     );
   });
+
+  if (featureFlags.check("vector_search_features")) {
+    console.debug("syncing vector db");
+    _vecDb.ingestFragments();
+  }
 }, 1000);
 
 /**

@@ -4,6 +4,7 @@
   import { onDestroy, onMount } from "svelte";
   import {
     DatabaseMeta,
+    getCurrentSchema,
     getLatestDbName,
     importFromDatabase,
     incrementDbName,
@@ -13,12 +14,18 @@
   import { getSystem } from "$lib/gui";
   import classNames from "classnames";
   import { dev } from "$app/environment";
-  import Toaster from "$lib/toast/Toaster.svelte";
+  import { Toaster } from "$lib/components/ui/sonner";
   import { assets } from "$app/paths";
   import FullScreenError from "$lib/components/FullScreenError.svelte";
   import { debounce, wrapError } from "$lib/utils";
   import DevTooling from "$lib/components/DevTooling.svelte";
   import { openAiConfig } from "$lib/stores/stores/llmProvider";
+  import { env } from "$env/dynamic/public";
+  import { featureFlags } from "$lib/featureFlags";
+  import ActionsMenu from "$lib/components/ActionsMenu.svelte";
+  import { ChevronLeftCircle } from "lucide-svelte";
+  import { page } from "$app/stores";
+  import { fly, slide } from "svelte/transition";
 
   const sys = getSystem();
   let startupError: Error | null = null;
@@ -44,9 +51,24 @@
     location.reload();
   };
 
+  /**
+   * NOTE: Teardown is not currently used because the layout only gets torn down when the tab closes
+   */
   let teardown: any;
 
   const handleStartup = async () => {
+    // Initialize feature flags. Feature flags may be used during app bootstrap,
+    // which is why they are initialized first.
+    if (env.PUBLIC_STATSIG_CLIENT_SDK_KEY) {
+      try {
+        await featureFlags.initialize(env.PUBLIC_STATSIG_CLIENT_SDK_KEY, {
+          appVersion: env.PUBLIC_VERSION_STRING,
+        });
+      } catch (error) {
+        console.error("featureFlags error", error);
+      }
+    }
+
     // throw up after a time if the app is hanging
     let _timeout = setTimeout(() => {
       throw new Error("Timed out trying to initialize");
@@ -98,10 +120,6 @@
       isPendingImport = true;
       localStorage.setItem("pendingImport", getLatestDbName() as string);
     }
-  });
-
-  onDestroy(async () => {
-    await teardown?.();
   });
 
   function isExternalUrl(href: any) {
@@ -190,9 +208,9 @@
   {#if !telemetryDisabled}
     <script>
       // prettier-ignore
-      !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+      !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
       // prettier-ignore
-      posthog.init('phc_jZwlYsZzRdvtyjOgVSSt4IkuRGZJU37zovr2oj5clAv',{api_host:'https://app.posthog.com'})
+      posthog.init('phc_sM0XZyv1NmCKHt481PFSGpKfuVDJ1IkNvYtrdFK7r4s',{api_host:'https://app.posthog.com'})
     </script>
   {/if}
 </svelte:head>
@@ -209,10 +227,13 @@
       level={isPendingImport ? "info" : "error"}
     >
       <div class="prose prose-invert">
-        <div class="prose prose-invert mt-3">
-          <p>
-            Database Path: <code>{getLatestDbName()}</code>
-          </p>
+        <div class="mt-3">
+          <p>Database Path: <code>{getLatestDbName()}</code></p>
+          {#await getCurrentSchema() then schema}
+            <p>Schema Name: <code>{schema.name}</code></p>
+          {:catch}
+            <p>Schema: <code>unknown</code></p>
+          {/await}
         </div>
         {#if isPendingImport}
           <h3>
@@ -277,8 +298,25 @@
   {/if}
 </div>
 
-<Toaster />
+<!-- Offset here is just for the y dimension. See style tag for the X dimension -->
+<Toaster richColors closeButton position="top-right" offset={84} visibleToasts={5} />
 
 {#if appReady}
+  <!--  This is just the value that happens to line up  -->
+  <div class=" absolute bottom-[14px] right-4 flex space-x-4 items-center">
+    {#if $page.url.pathname !== "/"}
+      <a in:fly={{ duration: 150, delay: 200, x: 20 }} href="/" class="flex items-center space-x-2">
+        <ChevronLeftCircle class="w-6 h-6" /> <span>Back to chat</span>
+      </a>
+    {/if}
+    <ActionsMenu class="text-xs uppercase leading-[22px]" />
+  </div>
   <DevTooling />
 {/if}
+
+<style>
+  /*  Fix the offset of the toaster. It has no API for separately setting the x and y offset  */
+  :global([data-sonner-toaster][data-x-position="right"]) {
+    right: 16px !important;
+  }
+</style>

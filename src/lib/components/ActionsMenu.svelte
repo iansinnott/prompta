@@ -33,8 +33,11 @@
   import { toast } from "$lib/toast";
   import { chatModels, llmProviders, modelPickerOpen } from "$lib/stores/stores/llmProvider";
   import IconOpenAi from "./IconOpenAI.svelte";
-  import { Brain } from "lucide-svelte";
   import IconBrain from "./IconBrain.svelte";
+  import { Atom, Command as CommandIcon, FlaskConical, Flag } from "lucide-svelte";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
+  import { featureFlags } from "$lib/featureFlags";
   let _class: string = "";
   export { _class as class };
 
@@ -50,6 +53,7 @@
     {
       name: "Generate Title...",
       icon: IconThreadTitle,
+      when: () => $page.url.pathname === "/",
       execute: () => {
         generateThreadTitle({ threadId: $currentThread.id }).catch((error) => {
           toast({
@@ -62,6 +66,7 @@
     },
     {
       name: "Regenerate Response",
+      when: () => $page.url.pathname === "/",
       icon: IconRefreshOutline,
       execute: currentChatThread.regenerateResponse,
     },
@@ -69,7 +74,7 @@
       name: "Enable OpenAI",
       when: () => {
         const oai = llmProviders.getOpenAi();
-        return !oai.apiKey && oai.enabled;
+        return !oai.apiKey && oai.enabled && $page.url.pathname === "/";
       },
       icon: IconOpenAi,
       execute: () => {
@@ -77,14 +82,14 @@
       },
     },
     {
-      when: () => !sys.isBrowser,
+      when: () => !sys.isBrowser && $page.url.pathname === "/",
       name: "Chat History",
       icon: IconHistoryClock,
       keyboard: { shortcut: "meta+p" },
       execute: () => ($threadMenu.open = !$threadMenu.open),
     },
     {
-      when: () => sys.isBrowser,
+      when: () => sys.isBrowser && $page.url.pathname === "/",
       name: "Chat History",
       icon: IconHistoryClock,
       keyboard: { shortcut: "ctrl+p" },
@@ -92,7 +97,7 @@
     },
 
     {
-      when: () => !sys.isBrowser,
+      when: () => !sys.isBrowser && $page.url.pathname === "/",
       name: "New Chat",
       icon: IconSparkle,
       keyboard: { shortcut: "meta+n" }, // NOTE Meta key with N only works in the Tauri app. In a browser this opens a new window
@@ -100,7 +105,7 @@
       execute: currentThread.reset,
     },
     {
-      when: () => sys.isBrowser,
+      when: () => sys.isBrowser && $page.url.pathname === "/",
       name: "New Chat",
       icon: IconSparkle,
       keyboard: { shortcut: "ctrl+n" },
@@ -109,7 +114,7 @@
     },
 
     {
-      when: () => !sys.isBrowser,
+      when: () => !sys.isBrowser && $page.url.pathname === "/",
       name: "Choose LLM Model",
       icon: IconBrain,
       keyboard: { shortcut: "meta+l" }, // NOTE Meta key with N only works in the Tauri app. In a browser this opens a new window
@@ -119,7 +124,7 @@
       },
     },
     {
-      when: () => sys.isBrowser,
+      when: () => sys.isBrowser && $page.url.pathname === "/",
       name: "Choose LLM Model",
       icon: IconBrain,
       keyboard: { shortcut: "ctrl+l" },
@@ -132,13 +137,14 @@
     {
       name: "Archive Chat",
       icon: IconArchiveIn,
-      when: () => !$currentThread.archived && !isNewThread($currentThread),
+      when: () =>
+        !$currentThread.archived && !isNewThread($currentThread) && $page.url.pathname === "/",
       execute: currentThread.archive,
     },
     {
       name: "Unarchive Chat",
       icon: IconArchiveOut,
-      when: () => $currentThread.archived,
+      when: () => $currentThread.archived && $page.url.pathname === "/",
       execute: currentThread.unarchive,
     },
     {
@@ -146,6 +152,31 @@
       icon: IconGear,
       execute: () => {
         $showSettings = true;
+      },
+    },
+    {
+      name: "Back to chat",
+      icon: IconBrain,
+      when: () => $page.url.pathname !== "/",
+      execute: () => {
+        goto("/");
+      },
+    },
+    {
+      name: "Feature Flags",
+      icon: Flag,
+      altFilterText: "beta alpha experimental lab",
+      when: () => $page.url.pathname !== "/dev/feature-flags",
+      execute: () => {
+        goto("/dev/feature-flags");
+      },
+    },
+    {
+      name: "Dev Experiments",
+      icon: FlaskConical,
+      when: () => $page.url.pathname !== "/dev" && featureFlags.check("dev_experiments"),
+      execute: () => {
+        goto("/dev");
       },
     },
     {
@@ -170,6 +201,7 @@
     {
       name: "Attempt Restore DB",
       icon: IconTerminalPrompt,
+      when: () => dev && $devStore.showDebug,
       execute: async () => {
         try {
           await reinstatePriorData();
@@ -436,16 +468,21 @@
     data-testid="CommandMenuButton"
     type="button"
     on:click={toggleMenu}
-    class={classNames("font-bold px-4 py-2", _class, {})}
+    class={classNames(
+      "font-bold px-2 py-2 flex items-center justify-center border border-zinc-700 rounded-lg h-[42px] w-[42px]",
+      _class,
+      {
+        "bg-zinc-800": menuOpen,
+      }
+    )}
   >
-    Command
-    <span class="hidden sm:inline-flex items-center space-x-1 text-white/40">
-      <kbd
-        style="font-family:system-ui, -apple-system;"
+    <span class="inline-flex items-center space-x-1 text-white">
+      <CommandIcon
+        size={20}
         class={classNames("text-sm", {
           "text-teal-300": menuOpen,
-        })}>{mapKeysToMacSymbols("meta")}K</kbd
-      >
+        })}
+      />
     </span>
   </button>
   {#if menuOpen}

@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 const openSettings = async (page: Page) => {
-  await page.locator("text=Command").click();
+  await page.getByTestId("CommandMenuButton").click();
   await page.getByPlaceholder("Search for actions").fill("settings");
   await page.keyboard.press("Enter");
   await expect(page.getByText("Settings", { exact: true })).toBeVisible();
