@@ -6,6 +6,7 @@
   import IconBrain from "./IconBrain.svelte";
   import IconVerticalDots from "./IconVerticalDots.svelte";
   import CodeBlock from "./CodeBlock.svelte";
+  import MarkdownHtmlBlock from "./MarkdownHtmlBlock.svelte";
   import "./markdown.css";
   import { currentlyEditingMessage, inProgressMessageId } from "$lib/stores/stores";
   import { onMount } from "svelte";
@@ -103,7 +104,13 @@
       <!-- User input is not considered markdown, but whitespace should be respected -->
       <p class="whitespace-pre-wrap">{item.content}</p>
     {:else}
-      <SvelteMarkdown source={item.content || NBSP} renderers={{ code: CodeBlock }} />
+      <SvelteMarkdown
+        source={item.content || NBSP}
+        renderers={{
+          code: CodeBlock,
+          html: MarkdownHtmlBlock,
+        }}
+      />
     {/if}
 
     <!-- All this markup to accomplish a smooth animation -->
