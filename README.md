@@ -31,8 +31,9 @@ Yet another interface for chatting with ChatGPT (or GPT-4).
 - [x] Leave notes on responses, such as "working code!" or "not working"
 - [x] Keep all your chat history stored locally
 - [x] Search previous chat threads
-- [x] Chat with ChatGPT / GPT-4
+- [x] Chat with the latest models (updated dynamically)
 - [x] Use local LLMs like Llama, Mistral, etc
+- [x] Customize the system message
 
 ## Roadmap
 
