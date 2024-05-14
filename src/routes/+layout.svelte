@@ -304,8 +304,9 @@
 {#if appReady}
   <!--  This is just the value that happens to line up  -->
   <div
-    class={classNames("absolute bottom-[14px] right-4 flex space-x-4 items-center", {
+    class={classNames("absolute right-4 flex space-x-4 items-center", {
       "bottom-14": sys.isPWAInstalled,
+      "bottom-[14px]": !sys.isPWAInstalled,
     })}
   >
     {#if $page.url.pathname !== "/"}
