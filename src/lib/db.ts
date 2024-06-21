@@ -2,17 +2,14 @@ import initWasm, { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import type { TXAsync, Schema, DBAsync } from "@vlcn.io/xplat-api";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { db, currentThread, syncStore, isNewThread, newThread } from "../lib/stores/stores";
-import { vecDbStore } from "../lib/stores/stores/vecDbStore";
 import { dev } from "$app/environment";
 import { nanoid } from "nanoid";
-import type OpenAI from "openai";
 import { stringify as uuidStringify } from "uuid";
 import { basename, debounce, groupBy, mapKeys, sha1sum, toCamelCase, toSnakeCase } from "./utils";
 import { extractFragments } from "./markdown";
 import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
 
 import schema_0002 from "$lib/migrations/0002_schema.sql?url";
-import schema_0003 from "$lib/migrations/0003_schema_vecdb.sql?url";
 
 // Default schema. May be overwritten via feature flags (see references)
 let schemaUrl = schema_0002;
@@ -20,7 +17,6 @@ let schemaUrl = schema_0002;
 import { llmProviders, openAiConfig } from "./stores/stores/llmProvider";
 import { profilesStore } from "./stores/stores/llmProfile";
 import { featureFlags } from "./featureFlags";
-import type { VecDB } from "./vecDb";
 
 const legacyDbNames = [
   "chat_db-v1",
@@ -90,11 +86,9 @@ type OpenAICompatibleRole = "user" | "system" | "assistant";
 
 let _sqlite: SQLite3;
 let _db: DB;
-let _vecDb: VecDB;
 
 /** For use in debugging */
 export const _get_db_instance = () => _db;
-export const _get_vecDb_instance = () => _vecDb;
 
 /**
  * A helper for testing purposes.
@@ -199,11 +193,6 @@ export const reinstatePriorData = async (database: DBAsync = _db as DBAsync) => 
 };
 
 export const getCurrentSchema = async () => {
-  // Alternate schemas as needed
-  if (featureFlags.check("vector_search_features")) {
-    schemaUrl = schema_0003;
-  }
-
   const schemaRaw = await fetch(schemaUrl).then((r) => (r.ok ? r.text() : Promise.reject(r)));
   const u = new URL(schemaUrl, window.location.href);
   const schemaName = basename(u.pathname) as string;
@@ -227,26 +216,6 @@ export const initDb = async (dbName: string) => {
   _sqlite = await initWasm(() => wasmUrl);
   _db = await _sqlite.open(dbName);
   db.set(_db);
-
-  if (featureFlags.check("vector_search_features")) {
-    const { VecDB } = await import("$lib/vecDb");
-    const { createEmbedding } = await import("$lib/embeddings");
-
-    _vecDb = await VecDB.create({
-      db: _get_db_instance(),
-      embedString: async (s: string) => {
-        const tensor = await createEmbedding(s);
-        const x = tensor?.list[0];
-        if (!x) {
-          throw new Error("Could not create embedding");
-        }
-
-        return x;
-      },
-    });
-
-    vecDbStore.init(_vecDb);
-  }
 
   const { name, content } = await getCurrentSchema();
 
@@ -983,11 +952,6 @@ const syncMessageFragments = debounce(async () => {
          AND fragment.entity_id NOT IN ( SELECT id FROM "message")`
     );
   });
-
-  if (featureFlags.check("vector_search_features")) {
-    console.debug("syncing vector db");
-    _vecDb.ingestFragments();
-  }
 }, 1000);
 
 /**

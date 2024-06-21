@@ -5,7 +5,6 @@
 
   import { FlaskConical } from "lucide-svelte";
   import * as Tabs from "$lib/components/ui/tabs";
-  import VectorSearch from "./experiment_VectorSearch.svelte";
   import StatsPage from "./experimental_StatsPage.svelte";
   import ToastyPage from "./experimental_ToastyPage.svelte";
 
@@ -50,9 +49,6 @@
       <Tabs.Trigger value="stats">Stats</Tabs.Trigger>
       <Tabs.Trigger value="toasty">Toasty</Tabs.Trigger>
     </Tabs.List>
-    <Tabs.Content value="vector-search">
-      <VectorSearch />
-    </Tabs.Content>
     <Tabs.Content value="stats">
       <StatsPage />
     </Tabs.Content>
