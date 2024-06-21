@@ -20,7 +20,7 @@ export const activeProfileName = writable("default");
 export const profilesStore = persistentStore<{ [key: string]: GPTProfile }>("profile", {
   default: {
     name: "default",
-    model: "prompta/nous-hermes-llama2-13b", // Default for new users. Existing users should retain persisted choice of openai gpt-*
+    model: "prompta/hermes-2-pro-llama-3-8b", // Default for new users. Existing users should retain persisted choice of openai gpt-*
     systemMessage: DEFAULT_SYSTEM_MESSAGE,
   },
 });
