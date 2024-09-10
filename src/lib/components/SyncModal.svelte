@@ -193,10 +193,16 @@
         <p class="mb-2">You can customize this to use your own sync server.</p>
         <input
           id="endpoint"
-          class="bg-transparent w-full outline-none appearance-none truncate px-4 rounded-lg py-2 bg-zinc-700"
+          class="bg-transparent w-full outline-none appearance-none truncate px-4 rounded-lg py-2 bg-zinc-700 mb-2"
           type="text"
           bind:value={$serverConfig.endpoint}
         />
+        <p>
+          Source code for the sync server can be found <a
+            href="https://github.com/iansinnott/prompta/tree/master/sync-server"
+            target="_blank">here</a
+          >, if you want to run your own.
+        </p>
       </fieldset>
     </form>
   {/if}
