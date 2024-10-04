@@ -48,12 +48,13 @@
   let index = 0;
 
   const isMenuActive = () => menuOpen && input === document.activeElement;
+  const isHomePage = () => $page.url.pathname === "/" || $page.url.pathname === "";
 
   let actionItems = [
     {
       name: "Generate Title...",
       icon: IconThreadTitle,
-      when: () => $page.url.pathname === "/",
+      when: isHomePage,
       execute: () => {
         generateThreadTitle({ threadId: $currentThread.id }).catch((error) => {
           toast({
@@ -66,7 +67,7 @@
     },
     {
       name: "Regenerate Response",
-      when: () => $page.url.pathname === "/",
+      when: isHomePage,
       icon: IconRefreshOutline,
       execute: currentChatThread.regenerateResponse,
     },
@@ -74,7 +75,7 @@
       name: "Enable OpenAI",
       when: () => {
         const oai = llmProviders.getOpenAi();
-        return !oai.apiKey && oai.enabled && $page.url.pathname === "/";
+        return !oai.apiKey && oai.enabled && isHomePage();
       },
       icon: IconOpenAi,
       execute: () => {
@@ -82,14 +83,14 @@
       },
     },
     {
-      when: () => !sys.isBrowser && $page.url.pathname === "/",
+      when: () => !sys.isBrowser && isHomePage(),
       name: "Chat History",
       icon: IconHistoryClock,
       keyboard: { shortcut: "meta+p" },
       execute: () => ($threadMenu.open = !$threadMenu.open),
     },
     {
-      when: () => sys.isBrowser && $page.url.pathname === "/",
+      when: () => sys.isBrowser && isHomePage(),
       name: "Chat History",
       icon: IconHistoryClock,
       keyboard: { shortcut: "ctrl+p" },
@@ -97,7 +98,7 @@
     },
 
     {
-      when: () => !sys.isBrowser && $page.url.pathname === "/",
+      when: () => !sys.isBrowser && isHomePage(),
       name: "New Chat",
       icon: IconSparkle,
       keyboard: { shortcut: "meta+n" }, // NOTE Meta key with N only works in the Tauri app. In a browser this opens a new window
@@ -105,7 +106,7 @@
       execute: currentThread.reset,
     },
     {
-      when: () => sys.isBrowser && $page.url.pathname === "/",
+      when: () => sys.isBrowser && isHomePage(),
       name: "New Chat",
       icon: IconSparkle,
       keyboard: { shortcut: "ctrl+n" },
@@ -114,17 +115,17 @@
     },
 
     {
-      when: () => !sys.isBrowser && $page.url.pathname === "/",
+      when: () => !sys.isBrowser && isHomePage(),
       name: "Choose LLM Model",
       icon: IconBrain,
-      keyboard: { shortcut: "meta+l" }, // NOTE Meta key with N only works in the Tauri app. In a browser this opens a new window
+      keyboard: { shortcut: "meta+l" },
       altFilterText: "thread",
       execute: () => {
         $modelPickerOpen = !$modelPickerOpen;
       },
     },
     {
-      when: () => sys.isBrowser && $page.url.pathname === "/",
+      when: () => sys.isBrowser && isHomePage(),
       name: "Choose LLM Model",
       icon: IconBrain,
       keyboard: { shortcut: "ctrl+l" },
@@ -138,13 +139,13 @@
       name: "Archive Chat",
       icon: IconArchiveIn,
       when: () =>
-        !$currentThread.archived && !isNewThread($currentThread) && $page.url.pathname === "/",
+        !$currentThread.archived && !isNewThread($currentThread) && isHomePage(),
       execute: currentThread.archive,
     },
     {
       name: "Unarchive Chat",
       icon: IconArchiveOut,
-      when: () => $currentThread.archived && $page.url.pathname === "/",
+      when: () => $currentThread.archived && isHomePage(),
       execute: currentThread.unarchive,
     },
     {
@@ -157,7 +158,7 @@
     {
       name: "Back to chat",
       icon: IconBrain,
-      when: () => $page.url.pathname !== "/",
+      when: () => !isHomePage(),
       execute: () => {
         goto("/");
       },
