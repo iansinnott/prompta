@@ -1,10 +1,21 @@
 <script lang="ts">
   import classNames from "classnames";
+  import { browser } from "$app/environment";
+
   let _class: string = "";
   export { _class as class };
   export let error: Error | undefined;
   export let title = "An error occurred";
   export let level: "info" | "warn" | "error" = "error";
+
+  function isInsecureNonLocalhost(): boolean {
+    if (!browser) return false;
+    return (
+      location.protocol !== "https:" && !["localhost", "127.0.0.1"].includes(location.hostname)
+    );
+  }
+
+  $: isInsecureConnection = isInsecureNonLocalhost();
 </script>
 
 <div class={classNames("flex flex-col items-center justify-center h-screen p-2")}>
@@ -34,12 +45,24 @@
           "text-blue-200": level === "info",
         })}
       >
-        {title}
+        {isInsecureConnection ? "Insecure Connection" : title}
       </h1>
-      {#if error}
+      {#if isInsecureConnection}
+        <p class="my-2">
+          This application requires a secure connection. Please access this site via HTTPS or on
+          localhost.
+        </p>
+        <p>
+          If you're trying to run in development mode, use localhost. Otherwise, <code
+            >navigator.locks</code
+          > will be undefined and the database won't load.
+        </p>
+      {:else if error}
         <pre class="mt-2">{error.message}</pre>
       {/if}
     </div>
-    <slot />
+    {#if !isInsecureConnection}
+      <slot />
+    {/if}
   </div>
 </div>
