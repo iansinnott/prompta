@@ -1,7 +1,7 @@
 import { initOpenAi } from "$lib/llm/openai";
 import { writable, derived, get } from "svelte/store";
 import { persistentStore } from "../storeUtils";
-import { chatModels, llmProviders, openAiConfig } from "./llmProvider";
+import { chatModels, llmProviders } from "./llmProvider";
 
 interface GPTProfile {
   name: string;
@@ -11,7 +11,6 @@ interface GPTProfile {
 
 export const DEFAULT_SYSTEM_MESSAGE = `
 You are a helpful assistant. Respond to user messages as accurately as possible. Do not repeat the prompt.
-Be concise, unless the user asks for more detail.
 Assume the user has a technical background and understands software programming, although they may ask about any topic.
 When producing code, insert the language identifier after opening fences.
     `.trim();
@@ -20,7 +19,7 @@ export const activeProfileName = writable("default");
 export const profilesStore = persistentStore<{ [key: string]: GPTProfile }>("profile", {
   default: {
     name: "default",
-    model: "prompta/hermes-2-pro-llama-3-8b", // Default for new users. Existing users should retain persisted choice of openai gpt-*
+    model: "prompta/gemini-flash-1.5-8b", // Default for new users. Existing users should retain persisted choice of openai gpt-*
     systemMessage: DEFAULT_SYSTEM_MESSAGE,
   },
 });
