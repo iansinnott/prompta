@@ -216,7 +216,7 @@
 </svelte:head>
 
 <div
-  class={classNames("overflow-hidden text-white bg-[#1B1B1B] border border-zinc-700", {
+  class={classNames("overflow-hidden text-white bg-[#1B1B1B] border ", {
     "rounded-lg": sys.isTauri,
   })}
 >
