@@ -309,11 +309,6 @@
       "bottom-[14px]": !sys.isPWAInstalled,
     })}
   >
-    {#if $page.url.pathname !== "/"}
-      <a in:fly={{ duration: 150, delay: 200, x: 20 }} href="/" class="flex items-center space-x-2">
-        <ChevronLeftCircle class="w-6 h-6" /> <span>Back to chat</span>
-      </a>
-    {/if}
     <ActionsMenu class="text-xs uppercase leading-[22px]" />
   </div>
   <DevTooling />
