@@ -93,7 +93,7 @@
         variant="outline"
         data-testid="ModelPickerButton"
         size="sm"
-        class={classNames("h-[42px] justify-start border border-zinc-700", {
+        class={classNames("h-[42px] justify-start border border-zinc-700 dark", {
           "bg-zinc-700": $modelPickerOpen,
         })}
       >
