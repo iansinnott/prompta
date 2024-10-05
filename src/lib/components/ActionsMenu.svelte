@@ -97,7 +97,8 @@
     },
 
     {
-      when: () => !sys.isBrowser && $page.url.pathname === "/",
+      when: () =>
+        !sys.isBrowser && ($page.url.pathname === "/" || !$page.url.pathname),
       name: "New Chat",
       icon: IconSparkle,
       keyboard: { shortcut: "meta+n" }, // NOTE Meta key with N only works in the Tauri app. In a browser this opens a new window
