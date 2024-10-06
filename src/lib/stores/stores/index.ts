@@ -722,7 +722,7 @@ export const syncStore = (() => {
 
   const healthcheck = async () => {
     const endpoint = get(serverConfig).endpoint;
-    const u = new URL("/health", endpoint);
+    const u = new URL("./health", endpoint);
     const res = await fetch(u).then((x) => (x.ok ? x.json() : Promise.reject(x)));
 
     if (res.status === "ok" && res.n === 47) {
@@ -767,7 +767,7 @@ export const syncStore = (() => {
 
   const registerSchema = async (schemaName: string, content: string) => {
     const endpoint = get(serverConfig).endpoint;
-    const u = new URL("/schema", endpoint);
+    const u = new URL("./schema", endpoint);
     const res = await fetch(u, {
       method: "POST",
       body: JSON.stringify({ schemaName, content }),
@@ -838,7 +838,7 @@ export const syncStore = (() => {
 
       console.debug("register schema ::", schema_name, result);
 
-      const syncEndpoint = new URL("/changes", get(serverConfig).endpoint).href;
+      const syncEndpoint = new URL("./changes", get(serverConfig).endpoint).href;
       syncAdapter = await createSyncer({
         db: _db,
         endpoint: syncEndpoint,
