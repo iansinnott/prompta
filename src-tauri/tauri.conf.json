@@ -3,57 +3,49 @@
   "build": {
     "beforeBuildCommand": "npm run ui:build-static",
     "beforeDevCommand": "npm run ui:dev",
-    "devPath": "http://localhost:5173",
-    "distDir": "../build"
+    "frontendDist": "../build",
+    "devUrl": "http://localhost:5173"
   },
-  "package": {
-    "productName": "Prompta",
-    "version": "4.1.7"
-  },
-  "tauri": {
-    "allowlist": {
-      "all": true
+  "bundle": {
+    "active": true,
+    "category": "Productivity",
+    "copyright": "© 2024 Ian Sinnott",
+    "targets": "all",
+    "externalBin": [],
+    "icon": [
+      "icons/icon_32x32.png",
+      "icons/icon_128x128.png",
+      "icons/icon_128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
     },
-    "macOSPrivateApi": true,
-    "bundle": {
-      "active": true,
-      "category": "Productivity",
-      "copyright": "© 2024 Ian Sinnott",
+    "longDescription": "Yet another UI for using the ChatGPT API",
+    "macOS": {
+      "entitlements": null,
+      "exceptionDomain": "",
+      "frameworks": [],
+      "providerShortName": null,
+      "signingIdentity": null
+    },
+    "resources": [],
+    "shortDescription": "",
+    "linux": {
       "deb": {
-        "depends": [ ]
-      },
-      "externalBin": [ ],
-      "icon": [
-        "icons/icon_32x32.png",
-        "icons/icon_128x128.png",
-        "icons/icon_128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
-      "identifier": "com.prompta.dev",
-      "longDescription": "Yet another UI for using the ChatGPT API",
-      "macOS": {
-        "entitlements": null,
-        "exceptionDomain": "",
-        "frameworks": [ ],
-        "providerShortName": null,
-        "signingIdentity": null
-      },
-      "resources": [ ],
-      "shortDescription": "",
-      "targets": "all",
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": ""
+        "depends": []
       }
-    },
-    "security": {
-      "csp": null
-    },
-    "updater": {
-      "active": false
-    },
+    }
+  },
+  "productName": "Prompta",
+  "mainBinaryName": "Prompta",
+  "version": "4.1.7",
+  "identifier": "com.prompta.dev",
+  "plugins": {},
+  "app": {
     "windows": [
       {
         "fullscreen": false,
@@ -66,6 +58,10 @@
         "transparent": true,
         "decorations": false
       }
-    ]
+    ],
+    "macOSPrivateApi": true,
+    "security": {
+      "csp": null
+    }
   }
 }
