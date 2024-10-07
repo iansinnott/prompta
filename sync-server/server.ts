@@ -4,6 +4,8 @@ import { createDb, DBWrapper } from "./DBWrapper.js";
 import cors from "@fastify/cors";
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 8081;
+const HOST = process.env.HOST ? process.env.HOST : "0.0.0.0";
+const BODYLIMIT = process.env.BODYLIMIT ? Number(process.env.BODYLIMIT) : 10;
 
 // Create our Fastify server
 const app = Fastify({
@@ -13,7 +15,7 @@ const app = Fastify({
   // to sync where my full db was ~4mb. What we really should do here is either
   // use a different sync strategy, such as websockets, or make sure the body is
   // sent in smaller chunks.
-  bodyLimit: 10 * 1024 * 1024, // 10mb
+  bodyLimit: BODYLIMIT * 1024 * 1024, // 10mb
 });
 
 // Add a parser to handle binary data sent by the client
@@ -149,7 +151,7 @@ app.get("/health", async (req, res) => {
   res.send({ status: "ok", n: 47 });
 });
 
-app.listen({ port: PORT, host: "0.0.0.0" }, (err, address) => {
+app.listen({ port: PORT, host: HOST }, (err, address) => {
   if (err) {
     app.log.error(err);
     process.exit(1);
