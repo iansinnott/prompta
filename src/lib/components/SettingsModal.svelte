@@ -19,6 +19,7 @@
   import { Button } from "./ui/button";
   import { Progress } from "./ui/progress";
   import { slide } from "svelte/transition";
+  import { isTauri } from "@tauri-apps/api/core";
 
   const versionString = env.PUBLIC_VERSION_STRING;
 
@@ -127,6 +128,8 @@
       isImporting = false;
     }
   };
+
+  const sys = getSystem();
 </script>
 
 <!-- Hide on escape -->
@@ -164,6 +167,11 @@
         <label class="label" for="b">Version</label>
         <div>
           Prompta {versionString}
+          {#if sys.isTauri}
+            <div class="text-sm opacity-70">
+              Tauri v{env.PUBLIC_TAURI_VERSION} • Svelte v{env.PUBLIC_SVELTE_VERSION}
+            </div>
+          {/if}
         </div>
 
         <div class="Separator h-px bg-zinc-700 my-4" />
@@ -255,7 +263,6 @@
                   throw new Error("No database");
                 }
 
-                const sys = getSystem();
                 const file = await sys.chooseAndOpenTextFile();
 
                 if (!file) {

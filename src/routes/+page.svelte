@@ -3,20 +3,18 @@
   import {
     currentThread,
     currentChatThread,
-    showSettings,
     syncStore,
     devStore,
     showInitScreen,
     messageText,
     pendingMessageStore,
     isNewThread,
-  } from "../lib/stores/stores";
+  } from "$lib/stores/stores";
   import { ArrowUpCircle, XCircle } from "lucide-svelte";
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
   import SmallSpinner from "$lib/components/SmallSpinner.svelte";
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
   import ChatMessageList from "$lib/components/ChatMessageList.svelte";
-  import ActionsMenu from "$lib/components/ActionsMenu.svelte";
   import { getSystem } from "$lib/gui";
   import { dev } from "$app/environment";
   import classNames from "classnames";
@@ -309,20 +307,6 @@
     <div class="w-[42px] h-[42px]"></div>
   </footer>
 
-  <!-- Decided not to go with this for now -->
-  {#if false}
-    <footer
-      class="app-statusbar text-sm bg-white/5 border-t border-zinc-700 grid grid-cols-[minmax(0,1fr)_auto]"
-    >
-      <div>
-        <!-- Currently empty -->
-      </div>
-      <div class="flex items-center space-x-4">
-        <button class="uppercase text-xs tracking-wider px-2 py-2"> Send </button>
-        <ActionsMenu class="uppercase text-xs tracking-wider px-2 py-0 " />
-      </div>
-    </footer>
-  {/if}
   {#if $showInitScreen}
     <div
       out:fly|global={{ duration: 200, opacity: 0, delay: 300 }}

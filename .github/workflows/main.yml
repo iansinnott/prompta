@@ -53,9 +53,12 @@ jobs:
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
         run: pnpm install # Change this to npm, yarn or pnpm.
 
-      - name: Populate the verson string
-        id: git_version # ID for the step, to be referred to later
-        run: echo "PUBLIC_VERSION_STRING=$(git describe --tags --always --dirty)" >> $GITHUB_ENV
+      - name: Populate the version strings
+        id: versions
+        run: |
+          echo "PUBLIC_VERSION_STRING=$(git describe --tags --always --dirty)" >> $GITHUB_ENV
+          echo "PUBLIC_TAURI_VERSION=$(pnpm tsx scripts/get-versions.ts | grep PUBLIC_TAURI_VERSION | cut -d= -f2)" >> $GITHUB_ENV
+          echo "PUBLIC_SVELTE_VERSION=$(pnpm tsx scripts/get-versions.ts | grep PUBLIC_SVELTE_VERSION | cut -d= -f2)" >> $GITHUB_ENV
 
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
@@ -65,6 +68,9 @@ jobs:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          PUBLIC_VERSION_STRING: ${{ env.PUBLIC_VERSION_STRING }}
+          PUBLIC_TAURI_VERSION: ${{ env.PUBLIC_TAURI_VERSION }}
+          PUBLIC_SVELTE_VERSION: ${{ env.PUBLIC_SVELTE_VERSION }}
         with:
           tagName: ${{ github.ref_name }} # This only works if your workflow triggers on new tags.
           releaseName: "Prompta v__VERSION__" # tauri-action replaces \_\_VERSION\_\_ with the app version.

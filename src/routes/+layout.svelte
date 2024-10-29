@@ -1,7 +1,7 @@
 <script lang="ts">
   import "../app.postcss";
-  import { syncStore } from "../lib/stores/stores";
-  import { onDestroy, onMount } from "svelte";
+  import { syncStore, fragmentSyncCount } from "$lib/stores/stores";
+  import { onMount, onDestroy } from "svelte";
   import {
     DatabaseMeta,
     getCurrentSchema,
@@ -23,9 +23,6 @@
   import { env } from "$env/dynamic/public";
   import { featureFlags } from "$lib/featureFlags";
   import ActionsMenu from "$lib/components/ActionsMenu.svelte";
-  import { ChevronLeftCircle } from "lucide-svelte";
-  import { page } from "$app/stores";
-  import { fly, slide } from "svelte/transition";
 
   const sys = getSystem();
   let startupError: Error | null = null;
@@ -183,7 +180,18 @@
     }
   }, 100);
 
-  const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  let showDelayedMessage = false;
+  let messageTimer: ReturnType<typeof setTimeout>;
+
+  onMount(() => {
+    messageTimer = setTimeout(() => {
+      showDelayedMessage = true;
+    }, 2000);
+  });
+
+  onDestroy(() => {
+    clearTimeout(messageTimer);
+  });
 </script>
 
 <svelte:window on:click={handleExternalUrls} on:focus={handleSync} />
@@ -217,7 +225,7 @@
 
 <div
   class={classNames("overflow-hidden text-white bg-[#1B1B1B] border ", {
-    "rounded-lg": sys.isTauri,
+    "rounded-2xl": sys.isTauri,
   })}
 >
   {#if startupError}
@@ -291,9 +299,22 @@
     <slot />
     <SettingsModal />
   {:else}
+    <!-- Loading Spinner before initialization -->
     <!-- adding both heights for fallback. not every browser likes svh -->
-    <div class="flex items-center justify-center h-screen" style="height: 100svh;">
-      <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-zinc-700" />
+    <div class="flex flex-col items-center justify-center h-screen" style="height: 100svh;">
+      <div class="relative">
+        <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-zinc-700" />
+        {#if $fragmentSyncCount > 0}
+          <div class="absolute inset-0 flex items-center justify-center">
+            <span class="text-zinc-400">{$fragmentSyncCount}</span>
+          </div>
+        {/if}
+      </div>
+      {#if showDelayedMessage}
+        <p class="mt-4 text-zinc-400 text-sm">
+          This may take a while as we process your chat history...
+        </p>
+      {/if}
     </div>
   {/if}
 </div>

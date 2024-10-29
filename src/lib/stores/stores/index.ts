@@ -1,7 +1,7 @@
 import type { DBAsync } from "@vlcn.io/xplat-api";
-import { OpenAI, type ClientOptions } from "openai";
-import { derived, readable, writable, type Subscriber, get } from "svelte/store";
-import type { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
+import { OpenAI } from "openai";
+import { derived, writable, get } from "svelte/store";
+import type { DB } from "@vlcn.io/crsqlite-wasm";
 import {
   ChatMessage,
   DatabaseMeta,
@@ -13,7 +13,6 @@ import {
   LLMProvider,
 } from "$lib/db";
 import { nanoid } from "nanoid";
-import { initOpenAi } from "$lib/llm/openai";
 import { fetchEventSource, type EventSourceMessage } from "@microsoft/fetch-event-source";
 import { getSystem } from "$lib/gui";
 import { dev } from "$app/environment";
@@ -24,10 +23,10 @@ import { createSyncer, getDefaultEndpoint, type Syncer } from "$lib/sync/vlcn";
 import { PENDING_THREAD_TITLE, hasThreadTitle, persistentStore } from "../storeUtils";
 import { chatModels, llmProviders, openAiConfig } from "./llmProvider";
 import { activeProfileName, getOpenAi, gptProfileStore } from "./llmProfile";
-import { featureFlags } from "$lib/featureFlags";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
+export const fragmentSyncCount = writable(0);
 
 /**
  * A store for _RUNTIME_ dev stuff. For build-time, use the `dev` variable.

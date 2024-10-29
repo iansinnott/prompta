@@ -1,7 +1,9 @@
 import { basename } from "$lib/utils";
-import * as tauri from "@tauri-apps/api";
-import * as shell from "@tauri-apps/api/shell";
-import { appWindow } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import * as shell from "@tauri-apps/plugin-shell";
+import * as dialog from "@tauri-apps/plugin-dialog";
+import * as fs from "@tauri-apps/plugin-fs";
 
 export const openExternal = async (url: string) => {
   try {
@@ -13,23 +15,23 @@ export const openExternal = async (url: string) => {
 };
 
 export const AppWindow = {
-  minimize: () => appWindow.minimize(),
-  toggleMaximize: () => appWindow.toggleMaximize(),
-  close: () => appWindow.close(),
+  minimize: () => getCurrentWebviewWindow().minimize(),
+  toggleMaximize: () => getCurrentWebviewWindow().toggleMaximize(),
+  close: () => getCurrentWebviewWindow().close(),
 };
 
 export const toggleDevTools = async () => {
-  await tauri.invoke("toggle_devtools");
+  await invoke("toggle_devtools");
 };
 
 export async function saveAs(filename: string, data: string) {
-  const savePath = await tauri.dialog.save({ title: "Save as", defaultPath: filename });
+  const savePath = await dialog.save({ title: "Save as", defaultPath: filename });
   if (!savePath) return;
-  return tauri.fs.writeFile(savePath, data);
+  return fs.writeFile(savePath, new TextEncoder().encode(data));
 }
 
 export async function chooseAndOpenTextFile() {
-  const file = await tauri.dialog.open({
+  const file = await dialog.open({
     multiple: false,
     filters: [{ name: "JSON", extensions: ["json"] }],
   });
@@ -43,7 +45,7 @@ export async function chooseAndOpenTextFile() {
     filePath = file;
   }
 
-  const data = await tauri.fs.readTextFile(filePath);
+  const data = await fs.readTextFile(filePath);
 
   return {
     name: basename(filePath) as string,
@@ -52,9 +54,9 @@ export async function chooseAndOpenTextFile() {
 }
 
 export async function alert(message: string) {
-  await tauri.dialog.message(message);
+  await dialog.message(message);
 }
 
 export async function confirm(message: string) {
-  return tauri.dialog.confirm(message, { type: "warning" });
+  return dialog.confirm(message, { kind: "warning" });
 }

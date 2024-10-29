@@ -1,71 +1,47 @@
 {
-  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Prompta",
+  "version": "4.1.7",
+  "identifier": "com.prompta.dev",
   "build": {
-    "beforeBuildCommand": "npm run ui:build-static",
+    "frontendDist": "../build",
+    "devUrl": "http://localhost:5173",
     "beforeDevCommand": "npm run ui:dev",
-    "devPath": "http://localhost:5173",
-    "distDir": "../build"
+    "beforeBuildCommand": "npm run ui:build-static"
   },
-  "package": {
-    "productName": "Prompta",
-    "version": "4.1.7"
-  },
-  "tauri": {
-    "allowlist": {
-      "all": true
-    },
-    "macOSPrivateApi": true,
-    "bundle": {
-      "active": true,
-      "category": "Productivity",
-      "copyright": "© 2024 Ian Sinnott",
-      "deb": {
-        "depends": [ ]
-      },
-      "externalBin": [ ],
-      "icon": [
-        "icons/icon_32x32.png",
-        "icons/icon_128x128.png",
-        "icons/icon_128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
-      "identifier": "com.prompta.dev",
-      "longDescription": "Yet another UI for using the ChatGPT API",
-      "macOS": {
-        "entitlements": null,
-        "exceptionDomain": "",
-        "frameworks": [ ],
-        "providerShortName": null,
-        "signingIdentity": null
-      },
-      "resources": [ ],
-      "shortDescription": "",
-      "targets": "all",
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": ""
-      }
-    },
-    "security": {
-      "csp": null
-    },
-    "updater": {
-      "active": false
-    },
+  "app": {
     "windows": [
       {
-        "fullscreen": false,
-        "height": 700,
         "resizable": true,
         "title": "Prompta",
-        "width": 880,
         "minWidth": 500,
         "maxWidth": 1080,
         "transparent": true,
         "decorations": false
       }
+    ],
+    "macOSPrivateApi": true,
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "category": "Productivity",
+    "copyright": "© 2024 Ian Sinnott",
+    "longDescription": "Yet another UI for using the ChatGPT API",
+    "shortDescription": "",
+    "macOS": {
+      "entitlements": null
+    },
+    "targets": "all",
+    "icon": [
+      "icons/icon_32x32.png",
+      "icons/icon_128x128.png",
+      "icons/icon_128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
     ]
   }
 }
