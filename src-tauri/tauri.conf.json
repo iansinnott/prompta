@@ -13,12 +13,8 @@
   "app": {
     "windows": [
       {
-        "fullscreen": false,
-        "height": 700,
         "resizable": true,
-        "dragDropEnabled": true,
         "title": "Prompta",
-        "width": 880,
         "minWidth": 500,
         "maxWidth": 1080,
         "transparent": true,
