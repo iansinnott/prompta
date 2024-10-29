@@ -38,6 +38,7 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import { featureFlags } from "$lib/featureFlags";
+  import IconAnthropic from "./IconAnthropic.svelte";
   let _class: string = "";
   export { _class as class };
 
@@ -75,9 +76,20 @@
       name: "Enable OpenAI",
       when: () => {
         const oai = llmProviders.getOpenAi();
-        return !oai.apiKey && oai.enabled && isHomePage();
+        return !oai.apiKey && isHomePage();
       },
       icon: IconOpenAi,
+      execute: () => {
+        showInitScreen.set(true);
+      },
+    },
+    {
+      name: "Enable Anthropic",
+      when: () => {
+        const anthropic = llmProviders.byId("anthropic");
+        return !anthropic?.apiKey && isHomePage();
+      },
+      icon: IconAnthropic,
       execute: () => {
         showInitScreen.set(true);
       },
@@ -138,8 +150,7 @@
     {
       name: "Archive Chat",
       icon: IconArchiveIn,
-      when: () =>
-        !$currentThread.archived && !isNewThread($currentThread) && isHomePage(),
+      when: () => !$currentThread.archived && !isNewThread($currentThread) && isHomePage(),
       execute: currentThread.archive,
     },
     {

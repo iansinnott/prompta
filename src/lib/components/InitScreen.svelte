@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { dev } from "$app/environment";
   import { showInitScreen } from "$lib/stores/stores";
   import { gptProfileStore, verifyOpenAiApiKey } from "$lib/stores/stores/llmProfile";
-  import { chatModels, llmProviders, openAiConfig } from "$lib/stores/stores/llmProvider";
+  import { chatModels, llmProviders } from "$lib/stores/stores/llmProvider";
   import { toast } from "$lib/toast";
   import classNames from "classnames";
   import { onMount } from "svelte";
