@@ -15,25 +15,32 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          - macos-latest # very expensive if in private repo, but we're OSS now
-          - ubuntu-20.04
-          - windows-latest
+        include:
+          - platform: "macos-latest"
+            args: "--target aarch64-apple-darwin"
+          - platform: "macos-latest"
+            args: "--target x86_64-apple-darwin"
+          - platform: "ubuntu-22.04"
+            args: ""
+          - platform: "windows-latest"
+            args: ""
+
     runs-on: ${{ matrix.platform }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-20.04'
-        # You can remove libayatana-appindicator3-dev if you don't use the system tray feature.
+        if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libayatana-appindicator3-dev librsvg2-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
-      - name: Rust setup
+      - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -43,15 +50,15 @@ jobs:
       - uses: pnpm/action-setup@v2
         with:
           version: 8
-      - name: Sync node version and setup cache
-        uses: actions/setup-node@v3
+
+      - name: Setup node
+        uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
-          cache: "pnpm" # Set this to npm, yarn or pnpm.
+          cache: "pnpm"
 
       - name: Install frontend dependencies
-        # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
-        run: pnpm install # Change this to npm, yarn or pnpm.
+        run: pnpm install
 
       - name: Populate the version strings
         id: versions
@@ -72,9 +79,10 @@ jobs:
           PUBLIC_TAURI_VERSION: ${{ env.PUBLIC_TAURI_VERSION }}
           PUBLIC_SVELTE_VERSION: ${{ env.PUBLIC_SVELTE_VERSION }}
         with:
-          tagName: ${{ github.ref_name }} # This only works if your workflow triggers on new tags.
-          releaseName: "Prompta v__VERSION__" # tauri-action replaces \_\_VERSION\_\_ with the app version.
+          tagName: ${{ github.ref_name }}
+          releaseName: "Prompta v__VERSION__"
           releaseBody: "See the assets to download and install this version."
           releaseDraft: false
           prerelease: false
+          args: ${{ matrix.args }}
           tauriScript: pnpm
