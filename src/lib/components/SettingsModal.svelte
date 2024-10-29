@@ -164,6 +164,9 @@
         <label class="label" for="b">Version</label>
         <div>
           Prompta {versionString}
+          <div class="text-sm opacity-70">
+            Tauri v{env.PUBLIC_TAURI_VERSION} • Svelte v{env.PUBLIC_SVELTE_VERSION}
+          </div>
         </div>
 
         <div class="Separator h-px bg-zinc-700 my-4" />
