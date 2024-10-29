@@ -32,7 +32,7 @@ interface SystemApi extends SystemSpecificApi {
 
 export const getSystem = (): SystemApi => {
   // @ts-ignore
-  if (window.__TAURI_IPC__) {
+  if (window.__TAURI_IPC__ || window.__TAURI_INTERNALS__) {
     return {
       ...Tauri,
       isTauri: true,
