@@ -1,1 +1,1 @@
-{"default":{"identifier":"default","description":"enables the default permissions","local":true,"windows":["main"],"permissions":["core:default","core:window:default","core:window:allow-start-dragging"]}}
+{"default":{"identifier":"default","description":"enables the default permissions","local":true,"windows":["main"],"permissions":["core:default","core:window:default","core:window:allow-start-dragging","dialog:allow-open","fs:allow-read","fs:allow-write"]}}
