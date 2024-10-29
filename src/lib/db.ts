@@ -1,7 +1,14 @@
 import initWasm, { SQLite3, DB } from "@vlcn.io/crsqlite-wasm";
 import type { TXAsync, Schema, DBAsync } from "@vlcn.io/xplat-api";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
-import { db, currentThread, syncStore, isNewThread, newThread } from "../lib/stores/stores";
+import {
+  db,
+  currentThread,
+  syncStore,
+  isNewThread,
+  newThread,
+  fragmentSyncCount,
+} from "../lib/stores/stores";
 import { dev } from "$app/environment";
 import { nanoid } from "nanoid";
 import { stringify as uuidStringify } from "uuid";
@@ -16,7 +23,6 @@ let schemaUrl = schema_0002;
 
 import { llmProviders, openAiConfig } from "./stores/stores/llmProvider";
 import { profilesStore } from "./stores/stores/llmProfile";
-import { featureFlags } from "./featureFlags";
 
 const legacyDbNames = [
   "chat_db-v1",
@@ -933,6 +939,7 @@ const syncMessageFragments = debounce(async () => {
       WHERE message.id NOT IN ( SELECT entity_id FROM fragment WHERE entity_type = 'message')
   `);
 
+    let count = 0;
     for (const x of xs) {
       const fragments = await extractFragments(x.content);
       console.debug("[search fragments]", fragments);
@@ -941,6 +948,8 @@ const syncMessageFragments = debounce(async () => {
           `INSERT INTO fragment (entity_id, entity_type, attribute, VALUE) VALUES (?, ?, ?, ?)`,
           [x.id, "message", "content", fragment]
         );
+        count++;
+        fragmentSyncCount.set(count);
       }
     }
 

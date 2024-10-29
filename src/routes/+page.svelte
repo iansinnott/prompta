@@ -3,20 +3,18 @@
   import {
     currentThread,
     currentChatThread,
-    showSettings,
     syncStore,
     devStore,
     showInitScreen,
     messageText,
     pendingMessageStore,
     isNewThread,
-  } from "../lib/stores/stores";
+  } from "$lib/stores/stores";
   import { ArrowUpCircle, XCircle } from "lucide-svelte";
   import ThreadMenuList from "$lib/components/ThreadMenuList.svelte";
   import SmallSpinner from "$lib/components/SmallSpinner.svelte";
   import ThreadMenuButton from "$lib/components/ThreadMenuButton.svelte";
   import ChatMessageList from "$lib/components/ChatMessageList.svelte";
-  import ActionsMenu from "$lib/components/ActionsMenu.svelte";
   import { getSystem } from "$lib/gui";
   import { dev } from "$app/environment";
   import classNames from "classnames";

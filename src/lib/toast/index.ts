@@ -1,4 +1,3 @@
-import { writable } from "svelte/store";
 import { toast as _toast } from "svelte-sonner";
 
 export interface ToastProps {
