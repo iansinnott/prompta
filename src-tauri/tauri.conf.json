@@ -1,50 +1,15 @@
 {
-  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
-  "build": {
-    "beforeBuildCommand": "npm run ui:build-static",
-    "beforeDevCommand": "npm run ui:dev",
-    "frontendDist": "../build",
-    "devUrl": "http://localhost:5173"
-  },
-  "bundle": {
-    "active": true,
-    "category": "Productivity",
-    "copyright": "© 2024 Ian Sinnott",
-    "targets": "all",
-    "externalBin": [],
-    "icon": [
-      "icons/icon_32x32.png",
-      "icons/icon_128x128.png",
-      "icons/icon_128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ],
-    "windows": {
-      "certificateThumbprint": null,
-      "digestAlgorithm": "sha256",
-      "timestampUrl": ""
-    },
-    "longDescription": "Yet another UI for using the ChatGPT API",
-    "macOS": {
-      "entitlements": null,
-      "exceptionDomain": "",
-      "frameworks": [],
-      "providerShortName": null,
-      "signingIdentity": null
-    },
-    "resources": [],
-    "shortDescription": "",
-    "linux": {
-      "deb": {
-        "depends": []
-      }
-    }
-  },
+
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Prompta",
-  "mainBinaryName": "Prompta",
   "version": "4.1.7",
   "identifier": "com.prompta.dev",
-  "plugins": {},
+  "build": {
+    "frontendDist": "../build",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm run ui:dev",
+    "beforeBuildCommand": "npm run ui:build-static"
+  },
   "app": {
     "windows": [
       {
@@ -63,5 +28,23 @@
     "security": {
       "csp": null
     }
+  },
+  "bundle": {
+    "active": true,
+    "category": "Productivity",
+    "copyright": "© 2024 Ian Sinnott",
+    "longDescription": "Yet another UI for using the ChatGPT API",
+    "shortDescription": "",
+    "macOS": {
+      "entitlements": null
+    },
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
   }
 }
