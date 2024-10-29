@@ -26,6 +26,7 @@
     "@playwright/test": "^1.48.2",
     "@sveltejs/adapter-static": "^3.0.6",
     "@sveltejs/kit": "^2.7.3",
+    "@sveltejs/vite-plugin-svelte": "^4.0.0",
     "@tailwindcss/typography": "0.5.9",
     "@tauri-apps/cli": "^2.0.4",
     "@types/better-sqlite3": "7.6.8",
