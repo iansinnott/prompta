@@ -25,7 +25,13 @@ import { chatModels, llmProviders, openAiConfig } from "./llmProvider";
 import { activeProfileName, getOpenAi, gptProfileStore } from "./llmProfile";
 
 export const showSettings = writable(false);
-export const showInitScreen = writable(false);
+export const showInitScreen = writable<{
+  showing: boolean;
+  provider: "openai" | "anthropic" | null;
+}>({
+  showing: false,
+  provider: null,
+});
 export const fragmentSyncCount = writable(0);
 
 /**

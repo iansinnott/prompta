@@ -6,6 +6,9 @@
   import classNames from "classnames";
   import { onMount } from "svelte";
   import { fly } from "svelte/transition";
+  import IconOpenAI from "./IconOpenAI.svelte";
+  import IconAnthropic from "./IconAnthropic.svelte";
+
   let _class: string = "";
   export { _class as class };
 
@@ -33,20 +36,31 @@
         return;
       }
 
-      const valid = await verifyOpenAiApiKey(apiKey as string);
+      if ($showInitScreen.provider === "openai") {
+        const valid = await verifyOpenAiApiKey(apiKey);
 
-      if (valid) {
-        llmProviders.updateProvider("openai", {
-          apiKey: apiKey as string,
+        if (valid) {
+          llmProviders.updateProvider("openai", {
+            apiKey,
+            enabled: true,
+          });
+          buttonText = "Enabling OpenAI...";
+          await chatModels.refresh();
+          $gptProfileStore.model = "gpt-3.5-turbo-1106";
+        } else {
+          throw new Error("Invalid API key");
+        }
+      } else if ($showInitScreen.provider === "anthropic") {
+        // Note: You may want to add key verification for Anthropic
+        llmProviders.updateProvider("anthropic", {
+          apiKey,
           enabled: true,
         });
-        buttonText = "Enabling OpenAI...";
+        buttonText = "Enabling Anthropic...";
         await chatModels.refresh();
-        $gptProfileStore.model = "gpt-3.5-turbo-1106"; // The cheapest openai model
-        $showInitScreen = false;
-      } else {
-        throw new Error("Invalid API key");
       }
+
+      $showInitScreen = { showing: false, provider: null };
     } catch (err: any) {
       error = err.message;
       console.warn("Error storing api key", err);
@@ -62,8 +76,15 @@
   };
 
   const skipInitScreen = () => {
-    $showInitScreen = false;
+    $showInitScreen = { showing: false, provider: null };
   };
+
+  $: isOpenAI = $showInitScreen.provider === "openai";
+  $: isAnthropic = $showInitScreen.provider === "anthropic";
+  $: providerName = isOpenAI ? "OpenAI" : "Anthropic";
+  $: apiKeyLink = isOpenAI
+    ? "https://platform.openai.com/account/api-keys"
+    : "https://console.anthropic.com/account/keys";
 </script>
 
 <div
@@ -80,15 +101,20 @@
   <div
     in:fly|global={{ duration: 500, delay: 150, y: -100, opacity: 0 }}
     out:fly|global={{ duration: 500, y: 30, opacity: 0 }}
+    class="mb-4"
   >
-    <img src="icon_256x256.png" alt="Prompta Icon" class="w-32 h-32" />
+    {#if isOpenAI}
+      <IconOpenAI class="!w-12 !h-12" />
+    {:else if isAnthropic}
+      <IconAnthropic class="!w-12 !h-12" />
+    {/if}
   </div>
   <h1
     in:fly|global={{ duration: 300, delay: 200, y: 50, opacity: 0 }}
     out:fly|global={{ duration: 300, delay: 0, y: 50, opacity: 0 }}
     class="text-transparent bg-clip-text bg-gradient-to-br via-sky-400 to-indigo-500 from-blue-100 text-3xl font-extrabold tracking-wider"
   >
-    OpenAI Setup
+    {providerName} Setup
   </h1>
   <form
     on:submit|preventDefault={handleSubmit}
@@ -96,7 +122,7 @@
     out:fly|global={{ duration: 300, delay: 0, y: 50, opacity: 0 }}
     class="mt-8 max-w-[400px] flex flex-col space-y-4"
   >
-    <label for="sk"> To use OpenAI, enter an API key: </label>
+    <label for="sk"> To use {providerName}, enter an API key: </label>
     <div
       class={classNames("rounded p-px gradient-border", {
         error: error,
@@ -108,7 +134,7 @@
         id="sk"
         class="input rounded w-full focus:ring-0 focus:outline-none"
         type="password"
-        placeholder="sk-abc..."
+        placeholder={isOpenAI ? "sk-..." : "sk-ant-..."}
         data-testid="APIKeyInput"
         bind:value={apiKey}
         bind:this={input}
@@ -128,9 +154,9 @@
           class="text-blue-200 hover:underline"
           target="_blank"
           rel="noopener noreferrer"
-          href="https://platform.openai.com/account/api-keys"
+          href={apiKeyLink}
         >
-          https://platform.openai.com/account/api-keys
+          {apiKeyLink}
         </a>
       </small>
     </p>

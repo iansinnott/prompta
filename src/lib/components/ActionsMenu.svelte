@@ -80,7 +80,7 @@
       },
       icon: IconOpenAi,
       execute: () => {
-        showInitScreen.set(true);
+        showInitScreen.set({ showing: true, provider: "openai" });
       },
     },
     {
@@ -91,7 +91,7 @@
       },
       icon: IconAnthropic,
       execute: () => {
-        showInitScreen.set(true);
+        showInitScreen.set({ showing: true, provider: "anthropic" });
       },
     },
     {
