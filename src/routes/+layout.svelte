@@ -214,7 +214,7 @@
 
 <div
   class={classNames("overflow-hidden text-white bg-[#1B1B1B] border ", {
-    "rounded-lg": sys.isTauri,
+    "rounded-2xl": sys.isTauri,
   })}
 >
   {#if startupError}
