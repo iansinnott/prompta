@@ -1,7 +1,7 @@
 <script lang="ts">
   import "../app.postcss";
   import { syncStore } from "../lib/stores/stores";
-  import { onDestroy, onMount } from "svelte";
+  import { onMount } from "svelte";
   import {
     DatabaseMeta,
     getCurrentSchema,
@@ -23,9 +23,6 @@
   import { env } from "$env/dynamic/public";
   import { featureFlags } from "$lib/featureFlags";
   import ActionsMenu from "$lib/components/ActionsMenu.svelte";
-  import { ChevronLeftCircle } from "lucide-svelte";
-  import { page } from "$app/stores";
-  import { fly, slide } from "svelte/transition";
 
   const sys = getSystem();
   let startupError: Error | null = null;
