@@ -443,7 +443,7 @@ export const currentChatThread = (() => {
       ];
     }
 
-    const prompt: OpenAI.Chat.CompletionCreateParamsStreaming = {
+    const prompt: OpenAI.ChatCompletionCreateParamsStreaming = {
       messages: messageContext,
       model: modelId,
       // max_tokens: 100, // just for testing
