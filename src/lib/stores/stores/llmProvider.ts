@@ -7,6 +7,7 @@ import { gptProfileStore } from "./llmProfile";
 import { showSettings } from ".";
 import IconOpenAi from "$lib/components/IconOpenAI.svelte";
 import IconBrain from "$lib/components/IconBrain.svelte";
+import IconAnthropic from "$lib/components/IconAnthropic.svelte";
 
 import { env } from "$env/dynamic/public";
 import { initOpenAi } from "$lib/llm/openai";
@@ -31,7 +32,15 @@ const defaultProviders: LLMProvider[] = [
     name: "OpenAI",
     baseUrl: "https://api.openai.com/v1/",
     apiKey: "",
-    enabled: true,
+    enabled: false,
+    createdAt: new Date(0),
+  },
+  {
+    id: "anthropic",
+    name: "Anthropic",
+    baseUrl: "https://api.anthropic.com/v1/",
+    apiKey: "",
+    enabled: false,
     createdAt: new Date(0),
   },
 ];
@@ -188,6 +197,10 @@ export const llmProviders = (() => {
       return get(store).providers.find((p) => p.id === "openai")!;
     },
 
+    getAnthropic: () => {
+      return get(store).providers.find((p) => p.id === "anthropic")!;
+    },
+
     getSpecialProviders: () => {
       const models = get(chatModels).models;
       const providers = [
@@ -211,6 +224,16 @@ export const llmProviders = (() => {
                 provider: llmProviders.getOpenAi(),
               },
             ]),
+        ...(!llmProviders.byId("anthropic")?.apiKey || !llmProviders.byId("anthropic")?.enabled
+          ? [
+              {
+                value: "anthropic",
+                label: "Anthropic (claude-3, claude-2, ...)",
+                icon: { component: IconAnthropic },
+                provider: llmProviders.byId("anthropic")!,
+              },
+            ]
+          : []),
       ];
 
       return providers;
@@ -336,7 +359,11 @@ export const chatModels = (() => {
               .list()
               .then((x) => {
                 return (
-                  provider.id === "openai" ? x.data.filter((x) => x.id.startsWith("gpt")) : x.data
+                  provider.id === "openai"
+                    ? x.data.filter((x) => x.id.startsWith("gpt"))
+                    : provider.id === "anthropic"
+                    ? x.data.filter((x) => x.id.startsWith("claude"))
+                    : x.data
                 ).map((x) => ({ ...x, provider: { id: provider.id } }));
               })
               .catch((err) => {

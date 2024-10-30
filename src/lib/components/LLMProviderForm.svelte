@@ -12,8 +12,10 @@
   import { toast } from "$lib/toast";
   import { Trash } from "lucide-svelte";
   import IconOpenAi from "./IconOpenAI.svelte";
+  import IconAnthropic from "./IconAnthropic.svelte";
   import { verifyOpenAICompatibileProvider } from "$lib/stores/stores/llmProfile";
   import SmallSpinner from "./SmallSpinner.svelte";
+
   let _class: string = "";
   export { _class as class };
 
@@ -23,6 +25,7 @@
     prompta:
       "Home-grown Prompta AI! Free until the cost becomes prohibitive. Use this if you don't want to bring your own API key.",
     openai: "The most accurate LLMs thus far. Use this if you want to use your own OpenAI API key.",
+    anthropic: "Access to Claude models including Claude-3. Requires an Anthropic API key.",
   };
 
   // NOTE: Don't extract `enabled` from the provider object, it causes a bug where the switch doesn't update
@@ -39,6 +42,7 @@
   };
 
   const isNewProvider = (x: LLMProvider) => x.id === "new";
+  const isBuiltInProvider = (id: string) => ["openai", "anthropic"].includes(id);
 
   let loading = false;
 
@@ -55,7 +59,9 @@
       {#if provider.id === "prompta"}
         <IconBrain class="w-6 h-6 text-[#30CEC0] scale-[1.2]" />
       {:else if provider.id === "openai"}
-        <IconOpenAi class="w-6 h-6 " />
+        <IconOpenAi class="w-6 h-6" />
+      {:else if provider.id === "anthropic"}
+        <IconAnthropic class="w-6 h-6" />
       {/if}
       <span>
         {provider.name}
@@ -73,12 +79,12 @@
       {#if !isNewProvider(provider)}
         <Switch
           class="!ml-auto"
-          disabled={provider.id === "openai" && !provider.apiKey}
-          checked={provider.id === "openai"
+          disabled={isBuiltInProvider(provider.id) && !provider.apiKey}
+          checked={isBuiltInProvider(provider.id)
             ? Boolean(provider.apiKey && provider.enabled)
             : provider.enabled}
           onCheckedChange={async (checked) => {
-            if (provider.id === "openai" && !provider.apiKey) {
+            if (isBuiltInProvider(provider.id) && !provider.apiKey) {
               toast({
                 title: "API Key required",
                 message: "Please enter an API key to enable.",
@@ -106,7 +112,7 @@
     <Card.Content>
       <form>
         <div class="grid w-full items-center gap-4">
-          {#if provider.id !== "openai"}
+          {#if !isBuiltInProvider(provider.id)}
             <div class="flex flex-col space-y-1.5">
               <Input bind:value={name} placeholder="Name of the provider" />
             </div>
@@ -116,7 +122,7 @@
           {/if}
 
           <div class="flex flex-col space-y-1.5">
-            <Input bind:value={apiKey} placeholder="API Key (Optional)" type="password" />
+            <Input bind:value={apiKey} placeholder="API Key" type="password" />
           </div>
 
           {#if provider.id === "openai"}
@@ -131,6 +137,21 @@
                   href="https://platform.openai.com/account/api-keys"
                 >
                   https://platform.openai.com/account/api-keys
+                </a>
+              </small>
+            </p>
+          {:else if provider.id === "anthropic"}
+            <p class="leading-tight">
+              <small> You can find or regenerate your API key in the Anthropic console. </small>
+              <small>
+                See:
+                <a
+                  class="text-blue-200 hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href="https://console.anthropic.com/account/keys"
+                >
+                  https://console.anthropic.com/account/keys
                 </a>
               </small>
             </p>
@@ -151,38 +172,38 @@
           <Button on:click={cancelEdit} variant="outline">Cancel</Button>
           <Button
             on:click={async () => {
-              if (!name) {
-                toast({
-                  title: "Name is required",
-                  message: "Please enter a name.",
-                  type: "error",
-                });
-                return;
-              }
-              if (!baseUrl) {
-                toast({
-                  title: "Base URL is required",
-                  message: "Please enter a base URL.",
-                  type: "error",
-                });
-                return;
-              }
-              try {
-                new URL(baseUrl);
-              } catch (e) {
-                toast({
-                  title: "Invalid URL",
-                  message: "Please enter a valid URL.",
-                  type: "error",
-                });
-                return;
-              }
+              if (!isBuiltInProvider(provider.id)) {
+                if (!name) {
+                  toast({
+                    title: "Name is required",
+                    message: "Please enter a name.",
+                    type: "error",
+                  });
+                  return;
+                }
+                if (!baseUrl) {
+                  toast({
+                    title: "Base URL is required",
+                    message: "Please enter a base URL.",
+                    type: "error",
+                  });
+                  return;
+                }
+                try {
+                  new URL(baseUrl);
+                } catch (e) {
+                  toast({
+                    title: "Invalid URL",
+                    message: "Please enter a valid URL.",
+                    type: "error",
+                  });
+                  return;
+                }
 
-              if (!baseUrl.endsWith("/")) {
-                baseUrl += "/"; // Should probably handle this at the calling code, but the trailing slash is required
-              }
+                if (!baseUrl.endsWith("/")) {
+                  baseUrl += "/"; // Should probably handle this at the calling code, but the trailing slash is required
+                }
 
-              if (provider.id !== "openai") {
                 try {
                   loading = true;
                   const isCompatible = await verifyOpenAICompatibileProvider({
