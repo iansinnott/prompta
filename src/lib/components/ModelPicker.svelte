@@ -4,38 +4,28 @@
   import * as Popover from "$lib/components/ui/popover";
   import { Button } from "$lib/components/ui/button";
   import { cn, groupBy } from "$lib/utils";
-  import type { ComponentType } from "svelte";
+  import type { Component as SvelteComponent } from "svelte";
   import IconBrain from "$lib/components/IconBrain.svelte";
   import { onMount } from "svelte";
   import { llmProviders, chatModels, modelPickerOpen } from "$lib/stores/stores/llmProvider";
   import IconOpenAi from "./IconOpenAI.svelte";
   import { gptProfileStore } from "$lib/stores/stores/llmProfile";
   import { showInitScreen } from "$lib/stores/stores";
-  import { writable } from "svelte/store";
   import { toast } from "$lib/toast";
   let _class: string = "";
   export { _class as class };
 
-  type IconSource =
-    | { char: string }
-    | { component: ComponentType; class?: string }
-    | { src: string };
+  type IconSource = { component: SvelteComponent; class?: string };
 
-  type Status = {
-    value: string;
-    label: string;
-    icon?: IconSource;
-  };
-
-  $: options = $chatModels.models
-    .map((x) => {
+  $: options = [
+    ...$chatModels.models.map((x) => {
       const provider = llmProviders.byId(x.provider.id);
       let icon: IconSource | undefined = undefined;
 
       if (provider?.id === "prompta") {
         icon = { component: IconBrain, class: "w-5 h-5 text-[#30CEC0] " };
       } else if (provider?.id === "openai") {
-        icon = { component: IconOpenAi };
+        icon = { component: IconOpenAi, class: "" };
       }
 
       return {
@@ -44,8 +34,9 @@
         icon,
         provider,
       };
-    })
-    .concat(llmProviders.getSpecialProviders());
+    }),
+    ...llmProviders.getSpecialProviders(),
+  ];
   $: optionGroups = groupBy(options, (x) => x.provider?.name ?? "Other");
 
   let value = $gptProfileStore.model || "";
@@ -98,15 +89,15 @@
         })}
       >
         <!--  NOTE: Svelte is very anoyingly wrong about these TS errors. It cannot seem to discriminate types -->
-        {#if selectedStatus?.icon?.src}
-          <img src={selectedStatus.icon.src} class="h-4 w-4 shrink-0" alt="" />
-        {:else if selectedStatus?.icon?.component}
+        {#if selectedStatus?.icon?.component}
           <svelte:component
             this={selectedStatus.icon.component}
-            class={cn("h-4 w-4 shrink-0", selectedStatus.icon.class)}
+            class={cn(
+              "h-4 w-4 shrink-0",
+              // @ts-ignore
+              selectedStatus.icon.class
+            )}
           />
-        {:else if selectedStatus?.icon?.char}
-          <code class="text-xl inline-block">{selectedStatus.icon.char}</code>
         {:else}
           <IconBrain class="w-5 h-5 !text-[#30CEC0] scale-[1.2]" />
         {/if}
@@ -134,22 +125,12 @@
                     handleChange(currentValue);
                   }}
                 >
-                  {#if opt.icon?.char}
-                    <code class="text-xl inline-block">{opt.icon.char}</code>
-                  {:else if opt.icon?.src}
-                    <img
-                      src={opt.icon.src}
-                      class={cn(
-                        "mr-2 h-4 w-4",
-                        opt.value !== selectedStatus?.value && "text-foreground/40"
-                      )}
-                      alt=""
-                    />
-                  {:else if opt.icon?.component}
+                  {#if opt.icon?.component}
                     <svelte:component
                       this={opt.icon.component}
                       class={cn(
                         "mr-2 h-4 w-4",
+                        // @ts-ignore
                         opt.icon.class,
                         opt.value !== selectedStatus?.value && "text-foreground/40"
                       )}
