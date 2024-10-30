@@ -278,38 +278,34 @@ export const insertPendingMessage = ({ threadId = "", content = "", model = "" }
 
 export const inProgressMessageId = derived(pendingMessageStore, (x) => x?.id);
 
+interface StreamEvent {
+  data: OpenAI.Chat.ChatCompletionChunk;
+  id: string;
+  event: string;
+  retry: number;
+}
+
 /**
- * Handle inbound server sent events, sent by OpenAI's API. This is how we get
+ * Handle inbound stream events from the OpenAI API. This is how we get
  * the live-typing feel from the bot.
  */
-const handleSSE = (ev: EventSourceMessage) => {
-  const message = ev.data;
+const handleSSE = (ev: StreamEvent) => {
+  const chunk = ev.data;
+  const content = chunk.choices[0].delta.content;
 
-  console.debug("[SSE]", message);
-
-  if (message === "[DONE]") {
-    return; // Stream finished
+  if (!content) {
+    console.log("Contentless message", chunk.id, chunk.object);
+    return;
   }
 
-  try {
-    const parsed: OpenAI.Chat.ChatCompletionChunk = JSON.parse(message);
-    const content = parsed.choices[0].delta.content;
-    if (!content) {
-      console.log("Contentless message", parsed.id, parsed.object);
-      return;
+  pendingMessageStore.update((x) => {
+    if (!x) {
+      console.warn("should never happen", x);
+      return x;
     }
 
-    pendingMessageStore.update((x) => {
-      if (!x) {
-        console.warn("should never happen", x);
-        return x;
-      }
-
-      return { ...x, content: x.content + content };
-    });
-  } catch (error) {
-    console.error("Could not JSON parse stream message", message, error);
-  }
+    return { ...x, content: x.content + content };
+  });
 };
 
 export const currentlyEditingMessage = (() => {
@@ -453,9 +449,8 @@ export const currentChatThread = (() => {
       });
 
       for await (const chunk of stream) {
-        // Reuse existing handleSSE by constructing compatible event
         handleSSE({
-          data: JSON.stringify(chunk),
+          data: chunk,
           id: chunk.id,
           event: "",
           retry: 0,
