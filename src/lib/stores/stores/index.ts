@@ -13,7 +13,6 @@ import {
   LLMProvider,
 } from "$lib/db";
 import { nanoid } from "nanoid";
-import { fetchEventSource, type EventSourceMessage } from "@microsoft/fetch-event-source";
 import { getSystem } from "$lib/gui";
 import { dev } from "$app/environment";
 import { emit } from "$lib/capture";
@@ -23,8 +22,6 @@ import { createSyncer, getDefaultEndpoint, type Syncer } from "$lib/sync/vlcn";
 import { PENDING_THREAD_TITLE, hasThreadTitle, persistentStore } from "../storeUtils";
 import { chatModels, llmProviders, openAiConfig } from "./llmProvider";
 import { activeProfileName, getOpenAi, gptProfileStore } from "./llmProfile";
-import { base64FromFile } from "$lib/utils";
-import { processImageForAI } from "$lib/utils";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);

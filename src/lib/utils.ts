@@ -229,8 +229,8 @@ export async function processImageForAI(file: File): Promise<{ base64: string; f
   });
 
   // Target width for AI processing (adjust as needed)
-  const MAX_WIDTH = 1024;
-  const MAX_HEIGHT = 1024;
+  const MAX_WIDTH = 512;
+  const MAX_HEIGHT = 512;
 
   let width = img.width;
   let height = img.height;
