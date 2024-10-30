@@ -254,7 +254,7 @@
         e.preventDefault();
         handleSubmit($messageText);
       }}
-      class={classNames("flex flex-1 items-end rounded-lg border border-zinc-700", {
+      class={classNames("flex flex-1 rounded-lg border border-zinc-700", {
         "shadow-[0_0_0_2px_#5baba4] bg-teal-800/20 text-teal-200": isCommand,
         "bg-zinc-800": !isCommand,
       })}
@@ -288,22 +288,24 @@
           <SmallSpinner />
         </div>
       {:else}
-        <button
-          data-testid="ChatInputSubmit"
-          class="font-bold pl-4 pr-2 py-2 flex items-center text-xs uppercase leading-[22px]"
-          type="submit"
-        >
-          {#if isPending}
-            <span class="mr-2"> Cancel </span>
-          {/if}
-          <span class="inline-flex items-center space-x-1 text-white">
+        <div class="flex items-end h-auto pl-2">
+          <button
+            data-testid="ChatInputSubmit"
+            class="font-bold p-2 flex items-center text-xs uppercase leading-[22px]"
+            type="submit"
+          >
             {#if isPending}
-              <XCircle size={24} />
-            {:else}
-              <ArrowUpCircle size={24} />
+              <span class="mr-2"> Cancel </span>
             {/if}
-          </span>
-        </button>
+            <span class="inline-flex items-center space-x-1 text-white">
+              {#if isPending}
+                <XCircle size={24} />
+              {:else}
+                <ArrowUpCircle size={24} />
+              {/if}
+            </span>
+          </button>
+        </div>
       {/if}
     </form>
     <!-- This is a placeholder for the actions menu, which is absolutely positioned at the layout level -->

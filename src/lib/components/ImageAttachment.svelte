@@ -27,7 +27,7 @@
   }
 </script>
 
-<div class="flex items-center space-x-2 h-[40px] pr-[2px] border-r border-zinc-700">
+<div class="flex items-end pb-[2px] space-x-2 h-auto pr-[2px] border-r border-zinc-700 relative">
   <input
     type="file"
     accept="image/*"
@@ -41,8 +41,12 @@
   </label>
 
   {#if $attachedImage}
-    <div class="relative">
-      <img src={$attachedImage.base64} alt="Attached" class="w-12 h-12 object-cover rounded" />
+    <div class="absolute left-full bottom-[calc(100%+8px)] w-20 h-20 drop-shadow-lg">
+      <img
+        src={$attachedImage.base64}
+        alt="Attached"
+        class="w-full h-full object-cover rounded-lg"
+      />
       <button
         class="absolute -top-2 -right-2 bg-zinc-800 rounded-full"
         on:click={() => attachedImage.set(null)}
