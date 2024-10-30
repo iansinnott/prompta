@@ -12,6 +12,7 @@
   import { gptProfileStore } from "$lib/stores/stores/llmProfile";
   import { showInitScreen } from "$lib/stores/stores";
   import { toast } from "$lib/toast";
+  import { commandScore } from "./ui/command/command-score";
   let _class: string = "";
   export { _class as class };
 
@@ -74,6 +75,30 @@
   onMount(() => {
     chatModels.refresh();
   });
+
+  let searchValue = "";
+  let selectedItem = value;
+
+  $: filteredOptions = searchValue
+    ? options.filter((opt) => {
+        const score = commandScore(opt.label.toLowerCase(), searchValue.toLowerCase());
+        return score > 0;
+      })
+    : options;
+
+  $: filteredGroups = groupBy(filteredOptions, (x) => x.provider?.name ?? "Other");
+
+  function handleSearch(event: CustomEvent<string>) {
+    searchValue = event.detail;
+  }
+
+  function handleKeydown(event: CustomEvent<KeyboardEvent>) {
+    const e = event.detail;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      // The CommandPrimitive will handle the actual selection
+    }
+  }
 </script>
 
 <div class={classNames("", _class)}>
@@ -112,19 +137,14 @@
       side="bottom"
       align="start"
     >
-      <Command.Root>
-        <Command.Input placeholder={loading ? "Loading..." : "Model..."} />
+      <Command.Root on:keydown={handleKeydown}>
+        <Command.Input placeholder={loading ? "Loading..." : "Model..."} on:input={handleSearch} />
         <Command.List>
           <Command.Empty>No results found.</Command.Empty>
-          {#each Object.entries(optionGroups) as [name, models]}
+          {#each Object.entries(filteredGroups) as [name, models]}
             <Command.Group heading={name}>
               {#each models as opt}
-                <Command.Item
-                  value={opt.value}
-                  onSelect={(currentValue) => {
-                    handleChange(currentValue);
-                  }}
-                >
+                <Command.Item value={opt.value} onSelect={handleChange}>
                   {#if opt.icon?.component}
                     <svelte:component
                       this={opt.icon.component}
