@@ -9,11 +9,9 @@
   import MarkdownHtmlBlock from "./MarkdownHtmlBlock.svelte";
   import "./markdown.css";
   import { currentlyEditingMessage, inProgressMessageId } from "$lib/stores/stores";
-  import { onMount } from "svelte";
   import ChatMessageControls from "./ChatMessageControls.svelte";
   import { autosize } from "$lib/utils";
-  import { fly, slide } from "svelte/transition";
-  import { toast } from "$lib/toast";
+  import { slide } from "svelte/transition";
   let _class: string = "";
   export { _class as class };
   export let item: ChatMessage;
@@ -104,7 +102,11 @@
       {#if typeof item.content === "string" && item.content.startsWith("[{")}
         {#each JSON.parse(item.content) as part}
           {#if part.type === "image_url"}
-            <img src={part.image_url.url} alt="Attached image" class="max-w-sm rounded-lg my-2" />
+            <img
+              src={part.image_url.url}
+              alt="Attached image"
+              class="max-w-sm max-h-[200px] rounded-lg my-2 object-contain"
+            />
           {:else if part.type === "text"}
             <p class="whitespace-pre-wrap">{part.text}</p>
           {/if}

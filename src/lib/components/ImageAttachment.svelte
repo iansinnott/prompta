@@ -1,7 +1,7 @@
 <script lang="ts">
   import { XCircle, Image, Camera } from "lucide-svelte";
   import { attachedImage } from "$lib/stores/stores";
-  import { base64FromFile } from "$lib/utils";
+  import { processImageForAI } from "$lib/utils";
   import { toast } from "$lib/toast";
 
   async function handleFileSelect(event: Event) {
@@ -10,15 +10,19 @@
     if (!file) return;
 
     try {
-      const base64 = await base64FromFile(file);
-      attachedImage.set({ base64, file });
+      const processed = await processImageForAI(file);
+      attachedImage.set(processed);
     } catch (error) {
-      console.error("Error reading file:", error);
+      console.error("Error processing file:", error);
       toast({
         type: "error",
-        title: "Error reading file",
-        message: "Could not read the selected image file",
+        title: "Error processing image",
+        message:
+          error instanceof Error ? error.message : "Could not process the selected image file",
       });
+    } finally {
+      // Reset input so the same file can be selected again
+      input.value = "";
     }
   }
 
@@ -34,16 +38,19 @@
       canvas.height = video.videoHeight;
 
       const context = canvas.getContext("2d");
-      context?.drawImage(video, 0, 0);
+      if (!context) throw new Error("Could not get canvas context");
 
-      const base64 = canvas.toDataURL("image/jpeg");
+      context.drawImage(video, 0, 0);
 
-      // Convert base64 to File object
-      const res = await fetch(base64);
-      const blob = await res.blob();
+      // Convert canvas to blob
+      const blob = await new Promise<Blob>((resolve) =>
+        canvas.toBlob((blob) => resolve(blob!), "image/jpeg", 0.8)
+      );
+
       const file = new File([blob], "captured-image.jpg", { type: "image/jpeg" });
+      const processed = await processImageForAI(file);
 
-      attachedImage.set({ base64, file });
+      attachedImage.set(processed);
 
       stream.getTracks().forEach((track) => track.stop());
     } catch (error) {
@@ -51,7 +58,7 @@
       toast({
         type: "error",
         title: "Error capturing image",
-        message: "Could not access camera",
+        message: error instanceof Error ? error.message : "Could not access camera",
       });
     }
   }

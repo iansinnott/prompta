@@ -24,6 +24,7 @@ import { PENDING_THREAD_TITLE, hasThreadTitle, persistentStore } from "../storeU
 import { chatModels, llmProviders, openAiConfig } from "./llmProvider";
 import { activeProfileName, getOpenAi, gptProfileStore } from "./llmProfile";
 import { base64FromFile } from "$lib/utils";
+import { processImageForAI } from "$lib/utils";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
