@@ -78,3 +78,44 @@ export async function chooseAndOpenTextFile() {
     if (inputElement) document.body.removeChild(inputElement);
   });
 }
+
+export async function chooseAndOpenImageFile() {
+  let inputElement: HTMLInputElement;
+
+  return new Promise<{ name: string; data: Uint8Array } | undefined>((resolve, reject) => {
+    inputElement = document.createElement("input");
+    inputElement.type = "file";
+    inputElement.accept = "image/*";
+    inputElement.style.display = "none";
+
+    document.body.appendChild(inputElement);
+
+    inputElement.addEventListener("change", (event) => {
+      // @ts-ignore Poor typing on input events?
+      const file: File = event.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const arrayBuffer = reader.result as ArrayBuffer;
+        resolve({
+          name: file.name,
+          data: new Uint8Array(arrayBuffer),
+        });
+        // @ts-ignore
+        event.target.value = null;
+      };
+
+      reader.onerror = () => {
+        reject(reader.error);
+        // @ts-ignore
+        event.target.value = null;
+      };
+
+      reader.readAsArrayBuffer(file);
+    });
+
+    inputElement.click();
+  }).finally(() => {
+    if (inputElement) document.body.removeChild(inputElement);
+  });
+}

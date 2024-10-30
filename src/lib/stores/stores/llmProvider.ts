@@ -9,7 +9,7 @@ import IconOpenAi from "$lib/components/IconOpenAI.svelte";
 import IconBrain from "$lib/components/IconBrain.svelte";
 
 import { env } from "$env/dynamic/public";
-import { initOpenAi } from "$lib/llm/openai";
+import { initOpenAi, getProviderClient } from "$lib/llm/openai";
 
 const promptaBaseUrl = env.PUBLIC_PROMPTA_API_URL || "https://api.prompta.dev/v1/";
 
@@ -181,7 +181,15 @@ export const llmProviders = (() => {
     },
 
     byId: (id: string) => {
-      return get(store).providers.find((p) => p.id === id);
+      const provider = get(store).providers.find((p) => p.id === id);
+      if (provider) {
+        // Ensure provider has a client
+        return {
+          ...provider,
+          client: getProviderClient(provider),
+        };
+      }
+      return undefined;
     },
 
     getOpenAi: () => {

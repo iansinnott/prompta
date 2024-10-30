@@ -198,3 +198,83 @@ export const autosize = (node: HTMLElement) => {
     },
   };
 };
+
+export const base64FromFile = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
+};
+
+/**
+ * Resizes an image, maintaining aspect ratio, and returns base64 data
+ */
+export async function processImageForAI(file: File): Promise<{ base64: string; file: File }> {
+  // Check file size (10MB limit)
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error("Image size must be less than 10MB");
+  }
+
+  // Create an image element to load the file
+  const img = new Image();
+  const imageUrl = URL.createObjectURL(file);
+
+  await new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = reject;
+    img.src = imageUrl;
+  });
+
+  // Target width for AI processing (adjust as needed)
+  const MAX_WIDTH = 1024;
+  const MAX_HEIGHT = 1024;
+
+  let width = img.width;
+  let height = img.height;
+
+  // Calculate new dimensions maintaining aspect ratio
+  if (width > height) {
+    if (width > MAX_WIDTH) {
+      height = Math.round((height * MAX_WIDTH) / width);
+      width = MAX_WIDTH;
+    }
+  } else {
+    if (height > MAX_HEIGHT) {
+      width = Math.round((width * MAX_HEIGHT) / height);
+      height = MAX_HEIGHT;
+    }
+  }
+
+  // Create canvas and resize image
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not get canvas context");
+
+  ctx.drawImage(img, 0, 0, width, height);
+
+  // Convert to base64 with reduced quality
+  const base64 = canvas.toDataURL("image/jpeg", 0.8);
+
+  // Clean up
+  URL.revokeObjectURL(imageUrl);
+
+  // Convert base64 to File object
+  const byteString = atob(base64.split(",")[1]);
+  const mimeString = base64.split(",")[0].split(":")[1].split(";")[0];
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  const processedFile = new File([ab], file.name, { type: mimeString });
+
+  return {
+    base64,
+    file: processedFile,
+  };
+}

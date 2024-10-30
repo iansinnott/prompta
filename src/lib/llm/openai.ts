@@ -1,3 +1,4 @@
+import type { LLMProvider } from "$lib/db";
 import { OpenAI, type ClientOptions } from "openai";
 
 const headerWhitelist = new Set(["content-type", "authorization"]);
@@ -44,5 +45,17 @@ export const initOpenAi = (opts: ClientOptions) => {
     dangerouslyAllowBrowser: true,
     fetch: openAiFetchWrapper,
     ...opts,
+  });
+};
+
+export const getProviderClient = (provider: LLMProvider): OpenAI => {
+  // If provider already has a client instance, return it
+  if (provider.client) {
+    return provider.client;
+  }
+
+  return initOpenAi({
+    apiKey: provider.apiKey,
+    baseURL: provider.baseUrl,
   });
 };

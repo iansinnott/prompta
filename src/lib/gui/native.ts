@@ -33,6 +33,7 @@ export async function saveAs(filename: string, data: string) {
 export async function chooseAndOpenTextFile() {
   const file = await dialog.open({
     multiple: false,
+    directory: false,
     filters: [{ name: "JSON", extensions: ["json"] }],
   });
 
@@ -59,4 +60,28 @@ export async function alert(message: string) {
 
 export async function confirm(message: string) {
   return dialog.confirm(message, { kind: "warning" });
+}
+
+export async function chooseAndOpenImageFile() {
+  const file = await dialog.open({
+    multiple: false,
+    directory: false,
+    filters: [
+      {
+        name: "Images",
+        // Include all common image formats including SVG
+        extensions: ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "ico", "tiff"],
+      },
+    ],
+  });
+
+  if (!file) return;
+
+  const filePath = Array.isArray(file) ? file[0] : file;
+  const data = await fs.readFile(filePath);
+
+  return {
+    name: basename(filePath) as string,
+    data,
+  };
 }
