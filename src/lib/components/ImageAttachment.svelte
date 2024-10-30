@@ -2,6 +2,7 @@
   import { XCircle, Image, Camera } from "lucide-svelte";
   import { attachedImage } from "$lib/stores/stores";
   import { base64FromFile } from "$lib/utils";
+  import { toast } from "$lib/toast";
 
   async function handleFileSelect(event: Event) {
     const input = event.target as HTMLInputElement;

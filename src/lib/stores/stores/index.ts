@@ -398,7 +398,7 @@ export const currentChatThread = (() => {
 
   const promptGpt = async ({ threadId }: { threadId: string }) => {
     if (get(pendingMessageStore)) {
-      throw new Error("Already a message in progres");
+      throw new Error("Already a message in progress");
     }
 
     const { model: modelId, systemMessage } = get(gptProfileStore);
@@ -406,23 +406,17 @@ export const currentChatThread = (() => {
       throw new Error("No model. activeProfile=" + get(activeProfileName));
     }
 
-    const model = get(chatModels).models.find((x) => x.id === modelId);
-    if (!model) {
-      throw new Error("No model found for: " + modelId);
-    }
-
-    const provider = llmProviders.byId(model.provider.id);
-    if (!provider) {
-      throw new Error("No provider found for: " + model.provider.id);
-    }
-
-    insertPendingMessage({ threadId, model: modelId });
-
     const context = await ChatMessage.findThreadContext({ threadId });
-
     emit("chat message", { depth: context.length });
 
-    let messageContext = context.map((x) => ({ content: x.content, role: x.role }));
+    let messageContext = context.map((x) => {
+      // Parse content if it's a JSON string
+      const content =
+        typeof x.content === "string" && x.content.startsWith("[{")
+          ? JSON.parse(x.content)
+          : x.content;
+      return { content, role: x.role };
+    });
 
     if (systemMessage.trim()) {
       messageContext = [
@@ -434,73 +428,11 @@ export const currentChatThread = (() => {
       ];
     }
 
-    const prompt: OpenAI.ChatCompletionCreateParamsStreaming = {
+    const botMessage = await createChatCompletion({
       messages: messageContext,
+      threadId,
       model: modelId,
-      stream: true,
-    };
-
-    console.log("%cprompt", "color:salmon;font-size:13px;", prompt);
-
-    abortController = new AbortController();
-
-    provider.client.chat.completions.create({
-      model: modelId,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image_url",
-              image_url: {
-                url: "https://example.com/image.png", // URL or base64 encoded image data
-              },
-            },
-            {
-              type: "text",
-              text: "hey what is in my image?",
-            },
-          ],
-        },
-      ],
     });
-
-    try {
-      const stream = await provider.client.chat.completions.create(prompt, {
-        signal: abortController.signal,
-      });
-
-      for await (const chunk of stream) {
-        handleSSE({
-          data: chunk,
-          id: chunk.id,
-          event: "",
-          retry: 0,
-        });
-      }
-    } catch (err) {
-      console.error("Error in stream", err);
-      toast({
-        type: "error",
-        title: "Error in stream",
-        message: err.message,
-      });
-      pendingMessageStore.set(null);
-      throw err;
-    }
-
-    const botMessage = get(pendingMessageStore);
-
-    if (!botMessage) throw new Error("No pending message found when one was expected.");
-
-    // Store it fully in the db
-    await ChatMessage.create({
-      ...botMessage,
-      cancelled: abortController.signal.aborted,
-    });
-
-    // Clear the pending message. Do this afterwards because it invalidates the chat message list
-    pendingMessageStore.set(null);
 
     if (!hasThreadTitle(get(currentThread))) {
       console.log("Generating thread title...");
@@ -643,13 +575,27 @@ export const currentChatThread = (() => {
         threadList.invalidate();
       }
 
-      const newMessage = await ChatMessage.create(msg);
-      const backupText = get(messageText);
-      messageText.set("");
-
-      // Get attached image if any
       const image = get(attachedImage);
-      attachedImage.set(null); // Clear the image after sending
+      const content = image
+        ? JSON.stringify([
+            {
+              type: "image_url",
+              image_url: { url: image.base64 },
+            },
+            {
+              type: "text",
+              text: msg.content,
+            },
+          ])
+        : msg.content;
+
+      const newMessage = await ChatMessage.create({
+        ...msg,
+        content,
+      });
+
+      messageText.set("");
+      attachedImage.set(null);
 
       try {
         const { model: modelId } = get(gptProfileStore);
@@ -657,115 +603,29 @@ export const currentChatThread = (() => {
           throw new Error("No model. activeProfile=" + get(activeProfileName));
         }
 
-        const model = get(chatModels).models.find((x) => x.id === modelId);
-        if (!model) {
-          throw new Error("No model found for: " + modelId);
-        }
-
-        const provider = llmProviders.byId(model.provider.id);
-        if (!provider) {
-          throw new Error("No provider found for: " + model.provider.id);
-        }
-
-        insertPendingMessage({ threadId: msg.threadId as string, model: modelId });
-
-        const context = await ChatMessage.findThreadContext({ threadId: msg.threadId as string });
-        const messageContext = context.map((x) => ({ content: x.content, role: x.role }));
-
-        // Construct message content based on whether there's an image
-        const userMessage = image
-          ? {
-              role: "user" as const,
-              content: [
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: image.base64,
-                  },
-                },
-                {
-                  type: "text",
-                  text: msg.content,
-                },
-              ],
-            }
-          : {
-              role: "user" as const,
-              content: msg.content,
-            };
-
-        const prompt: OpenAI.ChatCompletionCreateParamsStreaming = {
-          messages: [...messageContext, userMessage],
-          model: modelId,
-          stream: true,
-        };
-
-        console.log("%cprompt", "color:salmon;font-size:13px;", prompt);
-
-        abortController = new AbortController();
-
-        provider.client.chat.completions.create({
-          model: modelId,
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: "https://example.com/image.png", // URL or base64 encoded image data
-                  },
-                },
-                {
-                  type: "text",
-                  text: "hey what is in my image?",
-                },
-              ],
-            },
-          ],
+        const context = await ChatMessage.findThreadContext({
+          threadId: msg.threadId as string,
         });
 
-        try {
-          const stream = await provider.client.chat.completions.create(prompt, {
-            signal: abortController.signal,
-          });
-
-          for await (const chunk of stream) {
-            handleSSE({
-              data: chunk,
-              id: chunk.id,
-              event: "",
-              retry: 0,
-            });
-          }
-        } catch (err) {
-          console.error("Error in stream", err);
-          toast({
-            type: "error",
-            title: "Error in stream",
-            message: err.message,
-          });
-          pendingMessageStore.set(null);
-          throw err;
-        }
-
-        const botMessage = get(pendingMessageStore);
-
-        if (!botMessage) throw new Error("No pending message found when one was expected.");
-
-        // Store it fully in the db
-        await ChatMessage.create({
-          ...botMessage,
-          cancelled: abortController.signal.aborted,
+        const messageContext = context.map((x) => {
+          // Parse content if it's a JSON string
+          const content =
+            typeof x.content === "string" && x.content.startsWith("[{")
+              ? JSON.parse(x.content)
+              : x.content;
+          return { content, role: x.role };
         });
 
-        // Clear the pending message. Do this afterwards because it invalidates the chat message list
-        pendingMessageStore.set(null);
+        await createChatCompletion({
+          messages: messageContext,
+          threadId: msg.threadId as string,
+          model: modelId,
+        });
 
         if (!hasThreadTitle(get(currentThread))) {
           console.log("Generating thread title...");
           try {
-            await generateThreadTitle({ threadId: botMessage.threadId });
+            await generateThreadTitle({ threadId: newMessage.threadId });
           } catch (error) {
             if (error instanceof OpenAI.APIError) {
               console.error({
@@ -796,7 +656,7 @@ export const currentChatThread = (() => {
           title: "Error sending message",
           message: err.message,
         });
-        messageText.set(backupText);
+        messageText.set(msg.content ?? "");
         return ChatMessage.delete({ where: { id: newMessage.id } });
       }
     },
@@ -1039,3 +899,90 @@ export const attachedImage = writable<{
   base64: string;
   file: File;
 } | null>(null);
+
+// Add type for message content
+type MessageContent =
+  | string
+  | Array<
+      | {
+          type: "text";
+          text: string;
+        }
+      | {
+          type: "image_url";
+          image_url: {
+            url: string;
+          };
+        }
+    >;
+
+// Extract common logic into a helper function
+const createChatCompletion = async ({
+  messages,
+  threadId,
+  model: modelId,
+}: {
+  messages: OpenAI.ChatCompletionCreateParamsStreaming["messages"];
+  threadId: string;
+  model: string;
+}) => {
+  const model = get(chatModels).models.find((x) => x.id === modelId);
+  if (!model) {
+    throw new Error("No model found for: " + modelId);
+  }
+
+  const provider = llmProviders.byId(model.provider.id);
+  if (!provider) {
+    throw new Error("No provider found for: " + model.provider.id);
+  }
+
+  insertPendingMessage({ threadId, model: modelId });
+
+  const prompt: OpenAI.ChatCompletionCreateParamsStreaming = {
+    messages,
+    model: modelId,
+    stream: true,
+  };
+
+  console.log("%cprompt", "color:salmon;font-size:13px;", prompt);
+
+  const abortController = new AbortController();
+
+  try {
+    const stream = await provider.client.chat.completions.create(prompt, {
+      signal: abortController.signal,
+    });
+
+    for await (const chunk of stream) {
+      handleSSE({
+        data: chunk,
+        id: chunk.id,
+        event: "",
+        retry: 0,
+      });
+    }
+  } catch (err) {
+    console.error("Error in stream", err);
+    toast({
+      type: "error",
+      title: "Error in stream",
+      message: err.message,
+    });
+    pendingMessageStore.set(null);
+    throw err;
+  }
+
+  const botMessage = get(pendingMessageStore);
+  if (!botMessage) throw new Error("No pending message found when one was expected.");
+
+  // Store it fully in the db
+  await ChatMessage.create({
+    ...botMessage,
+    cancelled: abortController.signal.aborted,
+  });
+
+  // Clear the pending message
+  pendingMessageStore.set(null);
+
+  return botMessage;
+};

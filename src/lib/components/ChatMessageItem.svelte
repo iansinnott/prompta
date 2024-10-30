@@ -101,8 +101,17 @@
         class="w-full bg-transparent outline-none resize-none mb-3"
       />
     {:else if item.role === "user"}
-      <!-- User input is not considered markdown, but whitespace should be respected -->
-      <p class="whitespace-pre-wrap">{item.content}</p>
+      {#if typeof item.content === "string" && item.content.startsWith("[{")}
+        {#each JSON.parse(item.content) as part}
+          {#if part.type === "image_url"}
+            <img src={part.image_url.url} alt="Attached image" class="max-w-sm rounded-lg my-2" />
+          {:else if part.type === "text"}
+            <p class="whitespace-pre-wrap">{part.text}</p>
+          {/if}
+        {/each}
+      {:else}
+        <p class="whitespace-pre-wrap">{item.content}</p>
+      {/if}
     {:else}
       <SvelteMarkdown
         source={item.content || NBSP}
