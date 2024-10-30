@@ -440,7 +440,6 @@ export const currentChatThread = (() => {
     const prompt: OpenAI.Chat.CompletionCreateParamsStreaming = {
       messages: messageContext,
       model: modelId,
-      // max_tokens: 100, // just for testing
       stream: true,
     };
 
@@ -448,40 +447,30 @@ export const currentChatThread = (() => {
 
     abortController = new AbortController();
 
-    // NOTE the lack of leading slash. Important for the URL to be relative to the base URL including its path
-    const endpoint = new URL("chat/completions", provider.baseUrl);
+    try {
+      const stream = await provider.client.chat.completions.create(prompt, {
+        signal: abortController.signal,
+      });
 
-    // @todo This could use the sdk now that the new version supports streaming
-    await fetchEventSource(endpoint.href, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${provider.apiKey}`, // This could be empty, but we assume that in such a case the server will ignore this header
-      },
-      method: "POST",
-      body: JSON.stringify(prompt),
-      signal: abortController.signal,
-      onerror(err) {
-        console.error("Error in stream", err);
-        toast({
-          type: "error",
-          title: "Error in stream",
-          message: err.message,
+      for await (const chunk of stream) {
+        // Reuse existing handleSSE by constructing compatible event
+        handleSSE({
+          data: JSON.stringify(chunk),
+          id: chunk.id,
+          event: "",
+          retry: 0,
         });
-        pendingMessageStore.set(null);
-        throw err;
-      },
-      onmessage: handleSSE,
-
-      // Very important. If the stream closes and reopens when the window is
-      // hidden (default behavior), then the chat completion with ChatGPT will
-      // get _RESTARTED_. So not only do you need to wait for a new completion,
-      // from the beginning, you're also getting overcharged since part of the
-      // explanation is likely to be the same. Also, on our end, it leads to
-      // mangled markdown since the message completion doesn't know that
-      // anything is amiss, even though the event stream starts firing off from
-      // the beginning.
-      openWhenHidden: true,
-    });
+      }
+    } catch (err) {
+      console.error("Error in stream", err);
+      toast({
+        type: "error",
+        title: "Error in stream",
+        message: err.message,
+      });
+      pendingMessageStore.set(null);
+      throw err;
+    }
 
     const botMessage = get(pendingMessageStore);
 

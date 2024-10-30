@@ -23,6 +23,7 @@ let schemaUrl = schema_0002;
 
 import { llmProviders, openAiConfig } from "./stores/stores/llmProvider";
 import { profilesStore } from "./stores/stores/llmProfile";
+import type OpenAI from "openai";
 
 const legacyDbNames = [
   "chat_db-v1",
@@ -306,6 +307,7 @@ export interface LLMProviderRow {
 export type LLMProvider = Omit<LLMProviderRow, "created_at" | "enabled"> & {
   createdAt: Date;
   enabled: boolean;
+  client?: OpenAI; // Optional client property for custom SDK instances
 };
 
 export interface VecToFragRow {
