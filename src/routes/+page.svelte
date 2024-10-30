@@ -28,6 +28,7 @@
   import SyncModal from "$lib/components/SyncModal.svelte";
   import ModelPicker from "$lib/components/ModelPicker.svelte";
   import { chatModels } from "$lib/stores/stores/llmProvider";
+  import ImageAttachment from "$lib/components/ImageAttachment.svelte";
 
   const sys = getSystem();
   let textarea: HTMLTextAreaElement | null = null;
@@ -258,6 +259,8 @@
         "bg-zinc-800": !isCommand,
       })}
     >
+      <ImageAttachment />
+
       <textarea
         data-chat-input
         data-testid="ChatInput"

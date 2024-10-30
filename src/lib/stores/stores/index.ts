@@ -23,6 +23,7 @@ import { createSyncer, getDefaultEndpoint, type Syncer } from "$lib/sync/vlcn";
 import { PENDING_THREAD_TITLE, hasThreadTitle, persistentStore } from "../storeUtils";
 import { chatModels, llmProviders, openAiConfig } from "./llmProvider";
 import { activeProfileName, getOpenAi, gptProfileStore } from "./llmProfile";
+import { base64FromFile } from "$lib/utils";
 
 export const showSettings = writable(false);
 export const showInitScreen = writable(false);
@@ -433,7 +434,7 @@ export const currentChatThread = (() => {
       ];
     }
 
-    const prompt: OpenAI.Chat.CompletionCreateParamsStreaming = {
+    const prompt: OpenAI.ChatCompletionCreateParamsStreaming = {
       messages: messageContext,
       model: modelId,
       stream: true,
@@ -442,6 +443,27 @@ export const currentChatThread = (() => {
     console.log("%cprompt", "color:salmon;font-size:13px;", prompt);
 
     abortController = new AbortController();
+
+    provider.client.chat.completions.create({
+      model: modelId,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: {
+                url: "https://example.com/image.png", // URL or base64 encoded image data
+              },
+            },
+            {
+              type: "text",
+              text: "hey what is in my image?",
+            },
+          ],
+        },
+      ],
+    });
 
     try {
       const stream = await provider.client.chat.completions.create(prompt, {
@@ -625,16 +647,158 @@ export const currentChatThread = (() => {
       const backupText = get(messageText);
       messageText.set("");
 
-      promptGpt({ threadId: msg.threadId as string }).catch((err) => {
+      // Get attached image if any
+      const image = get(attachedImage);
+      attachedImage.set(null); // Clear the image after sending
+
+      try {
+        const { model: modelId } = get(gptProfileStore);
+        if (!modelId) {
+          throw new Error("No model. activeProfile=" + get(activeProfileName));
+        }
+
+        const model = get(chatModels).models.find((x) => x.id === modelId);
+        if (!model) {
+          throw new Error("No model found for: " + modelId);
+        }
+
+        const provider = llmProviders.byId(model.provider.id);
+        if (!provider) {
+          throw new Error("No provider found for: " + model.provider.id);
+        }
+
+        insertPendingMessage({ threadId: msg.threadId as string, model: modelId });
+
+        const context = await ChatMessage.findThreadContext({ threadId: msg.threadId as string });
+        const messageContext = context.map((x) => ({ content: x.content, role: x.role }));
+
+        // Construct message content based on whether there's an image
+        const userMessage = image
+          ? {
+              role: "user" as const,
+              content: [
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: image.base64,
+                  },
+                },
+                {
+                  type: "text",
+                  text: msg.content,
+                },
+              ],
+            }
+          : {
+              role: "user" as const,
+              content: msg.content,
+            };
+
+        const prompt: OpenAI.ChatCompletionCreateParamsStreaming = {
+          messages: [...messageContext, userMessage],
+          model: modelId,
+          stream: true,
+        };
+
+        console.log("%cprompt", "color:salmon;font-size:13px;", prompt);
+
+        abortController = new AbortController();
+
+        provider.client.chat.completions.create({
+          model: modelId,
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: "https://example.com/image.png", // URL or base64 encoded image data
+                  },
+                },
+                {
+                  type: "text",
+                  text: "hey what is in my image?",
+                },
+              ],
+            },
+          ],
+        });
+
+        try {
+          const stream = await provider.client.chat.completions.create(prompt, {
+            signal: abortController.signal,
+          });
+
+          for await (const chunk of stream) {
+            handleSSE({
+              data: chunk,
+              id: chunk.id,
+              event: "",
+              retry: 0,
+            });
+          }
+        } catch (err) {
+          console.error("Error in stream", err);
+          toast({
+            type: "error",
+            title: "Error in stream",
+            message: err.message,
+          });
+          pendingMessageStore.set(null);
+          throw err;
+        }
+
+        const botMessage = get(pendingMessageStore);
+
+        if (!botMessage) throw new Error("No pending message found when one was expected.");
+
+        // Store it fully in the db
+        await ChatMessage.create({
+          ...botMessage,
+          cancelled: abortController.signal.aborted,
+        });
+
+        // Clear the pending message. Do this afterwards because it invalidates the chat message list
+        pendingMessageStore.set(null);
+
+        if (!hasThreadTitle(get(currentThread))) {
+          console.log("Generating thread title...");
+          try {
+            await generateThreadTitle({ threadId: botMessage.threadId });
+          } catch (error) {
+            if (error instanceof OpenAI.APIError) {
+              console.error({
+                status: error.status,
+                message: error.message,
+                code: error.code,
+                type: error.type,
+              });
+              toast({
+                type: "error",
+                title: "Error generating thread title",
+                message: error.message,
+              });
+            } else {
+              console.error(error);
+              toast({
+                type: "error",
+                title: "Unknown error generating thread title",
+                message: (error as any).message,
+              });
+            }
+          }
+        }
+      } catch (err) {
         console.error("[sendMessage]", err);
         toast({
           type: "error",
           title: "Error sending message",
           message: err.message,
         });
-        messageText.set(backupText); // Restore backup text
-        return ChatMessage.delete({ where: { id: newMessage.id } }); // Delete the message
-      });
+        messageText.set(backupText);
+        return ChatMessage.delete({ where: { id: newMessage.id } });
+      }
     },
   };
 })();
@@ -870,3 +1034,8 @@ ChatMessage.onTableChange(() => {
   console.debug("%cmessage table changed", "color:salmon;");
   currentChatThread.invalidate();
 });
+
+export const attachedImage = writable<{
+  base64: string;
+  file: File;
+} | null>(null);
