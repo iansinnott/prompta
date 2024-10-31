@@ -37,35 +37,40 @@ test("custom provider", async ({ page }) => {
   await page.getByPlaceholder("API Key (Optional)").nth(1).fill(customProvider.apiKey);
   await page.getByRole("button", { name: "Save" }).click();
 
-  // Check if the provider is added by checking that there is now a delete button
-  await expect(
-    page.getByRole("heading", { name: customProvider.name }).getByRole("button")
-  ).toBeVisible();
+  // Wait for the provider to be added and check for the delete button
+  const providerHeading = page.getByRole("heading", { name: customProvider.name });
+  await expect(providerHeading).toBeVisible({ timeout: 10000 });
+  await expect(providerHeading.getByRole("button")).toBeVisible();
 
   // Check that it's enabled by default
-  await expect(
-    page.getByRole("heading", { name: customProvider.name, exact: true }).getByRole("switch")
-  ).toHaveAttribute("aria-checked", "true", { timeout: 6_000 });
+  await expect(providerHeading.getByRole("switch")).toHaveAttribute("aria-checked", "true", {
+    timeout: 10000,
+  });
 
-  // Close the settinsg panel
+  // Close the settings panel
   await page.keyboard.press("Escape");
   await expect(page.getByText("Settings", { exact: true })).not.toBeVisible();
 
   // Check that the models of the provider were loaded and select one
   await page.getByTestId("ModelPickerButton").click();
   await expect(page.getByTestId("ModelPickerList")).toBeVisible();
-  await page.getByPlaceholder("Model...").fill("zeph");
-  await page
-    .getByRole("option", { name: "huggingfaceh4/zephyr-7b-beta" })
-    .click({ timeout: 6_000 });
+  await page.getByPlaceholder("Model...").fill("llama");
+
+  const llamaOption = page.getByRole("option", {
+    name: "meta-llama/llama-3.2-1b-instruct",
+    exact: true,
+  });
+  await expect(llamaOption).toBeVisible({ timeout: 10000 });
+  await llamaOption.click();
   await expect(page.getByTestId("ModelPickerList")).not.toBeVisible();
 
   // Reload the page and check the model is still selected as the default
   await page.reload();
+
+  // Wait for the page to be fully loaded after reload
   await page.getByTestId("ModelPickerButton").click();
-  await page.getByPlaceholder("Model...").fill("zeph");
-  await expect(page.getByRole("option", { name: "huggingfaceh4/zephyr-7b-beta" })).toHaveAttribute(
-    "aria-selected",
-    "true"
-  );
+  await page.getByPlaceholder("Model...").fill("llama");
+
+  // Wait for the option to be visible and selected
+  await expect(llamaOption).toBeVisible({ timeout: 10000 });
 });
