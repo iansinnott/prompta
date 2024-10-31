@@ -12,8 +12,7 @@ export const AppWindow = {
 
 export const toggleDevTools = noop;
 
-export async function saveAs(filename: string, data: string) {
-  const blob = new Blob([data], { type: "application/json" });
+export async function saveAs(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -21,6 +20,12 @@ export async function saveAs(filename: string, data: string) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+export async function saveAsJson(filename: string, data: string) {
+  const blob = new Blob([data], { type: "application/json" });
+  await saveAs(filename, blob);
 }
 
 export async function alert(message: string) {

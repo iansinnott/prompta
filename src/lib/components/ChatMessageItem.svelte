@@ -12,6 +12,8 @@
   import ChatMessageControls from "./ChatMessageControls.svelte";
   import { autosize } from "$lib/utils";
   import { slide } from "svelte/transition";
+  import ImageAttachment from "./ImageAttachment.svelte";
+  import ChatImageAttachment from "./ChatImageAttachment.svelte";
   let _class: string = "";
   export { _class as class };
   export let item: ChatMessage;
@@ -99,14 +101,10 @@
         class="w-full bg-transparent outline-none resize-none mb-3"
       />
     {:else if item.role === "user"}
-      {#if typeof item.content === "string" && item.content.startsWith("[{")}
+      {#if typeof item.content === "string" && item.content.startsWith("[")}
         {#each JSON.parse(item.content) as part}
           {#if part.type === "image_url"}
-            <img
-              src={part.image_url.url}
-              alt="Attached image"
-              class="max-w-sm max-h-[200px] rounded-lg my-2 object-contain"
-            />
+            <ChatImageAttachment imageUrl={part.image_url.url} {showControls} />
           {:else if part.type === "text"}
             <p class="whitespace-pre-wrap">{part.text}</p>
           {/if}

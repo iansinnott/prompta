@@ -64,7 +64,7 @@
       version,
     };
 
-    await sys.saveAs(`${Date.now()}_prompta.v${version}.json`, JSON.stringify(data));
+    await sys.saveAsJson(`${Date.now()}_prompta.v${version}.json`, JSON.stringify(data));
   };
 
   let importRowCount = 0;
