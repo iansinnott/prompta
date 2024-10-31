@@ -55,14 +55,14 @@ For macOS users you will need to right-click the app and select "Open" the first
 
 ## Developing
 
-`pnpm` is used for development. You cam try using `yarn`, `bun`, `npm`, etc but other package managers have not been tested and are not deliberately supported:
+`bun` is used for development. You cam try using `yarn`, `bun`, `npm`, etc but other package managers have not been tested and are not deliberately supported:
 
 ```bash
-pnpm install
-pnpm run dev
+bun install
+bun run dev
 
 # To devlop the Tuari desktop app as well:
-pnpm run dev:tauri
+bun run dev:tauri
 ```
 
 ## Building
@@ -70,13 +70,13 @@ pnpm run dev:tauri
 To create a production version of your app:
 
 ```bash
-pnpm run build
+bun run build
 ```
 
 If you want to build only for the browser, ignoring the desktop app:
 
 ```bash
-pnpm run ui:build-static
+bun run ui:build-static
 ```
 
 The advantage here is that you don't need any Rust dependencies which are required for building Tauri.
@@ -84,7 +84,7 @@ The advantage here is that you don't need any Rust dependencies which are requir
 ## Releasing a new Version
 
 ```bash
-pnpm run release
+bun run release
 ```
 
 You will be prompted to enter a new version number. New versions that don't contain a suffix such as `-beta` or `-alpha` will be published to GitHub.
