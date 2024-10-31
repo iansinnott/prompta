@@ -25,12 +25,12 @@ const config: PlaywrightTestConfig = {
         ...devices["iPhone 13 Mini"],
       },
     },
-    {
-      name: "desktop",
-      use: {
-        ...devices["Desktop Chrome"],
-      },
-    },
+    // {
+    //   name: "desktop",
+    //   use: {
+    //     ...devices["Desktop Chrome"],
+    //   },
+    // },
   ],
   webServer: {
     command: "npm run ui:dev",

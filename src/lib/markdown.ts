@@ -73,9 +73,33 @@ export interface TextFragment {
   type: string;
   text: string;
 }
+
+/**
+ * Extract searchable text from message content, handling both plain text and
+ * messages containing images with text
+ */
+export const extractSearchableText = (content: string): string => {
+  try {
+    // Check if content is JSON-formatted message with image
+    const parsed = JSON.parse(content);
+    if (Array.isArray(parsed)) {
+      // Find and return only the text portions
+      const textFragments = parsed.filter((item) => item.type === "text").map((item) => item.text);
+      return textFragments.join(" ");
+    }
+  } catch (e) {
+    // If not JSON or parsing fails, treat as plain text
+    return content;
+  }
+
+  // Fallback - return original content if no other case matches
+  return content;
+};
+
 export const extractFragments = async (s: string) => {
   const results = [] as string[];
-  const tokens = marked.lexer(s);
+  const searchableText = extractSearchableText(s);
+  const tokens = marked.lexer(searchableText);
 
   for (const token of tokens) {
     // @ts-expect-error types don't like this usage
@@ -84,8 +108,6 @@ export const extractFragments = async (s: string) => {
       results.push(token.text);
     }
   }
-
-  // debugger;
 
   return results;
 };

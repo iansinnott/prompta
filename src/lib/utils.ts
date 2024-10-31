@@ -71,16 +71,6 @@ export function groupBy<T, K extends string | number>(xs: T[], f: (x: T) => K) {
   return result;
 }
 
-export function chunk<T>(xs: T[], size: number): T[][] {
-  const result: T[][] = [];
-
-  for (let i = 0; i < xs.length; i += size) {
-    result.push(xs.slice(i, i + size));
-  }
-
-  return result;
-}
-
 export function debounce<T extends (...args: any) => any>(
   fn: T,
   wait: number

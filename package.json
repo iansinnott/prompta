@@ -17,10 +17,9 @@
     "release": "direnv reload && yarn version && ./scripts/release.sh",
     "gh:publish": "./scripts/publish.sh",
     "preview": "vite preview",
-    "test": "playwright test --retries=2",
+    "test:browser": "playwright test --retries=2",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "test:unit": "vitest"
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.2",
@@ -46,8 +45,7 @@
     "typescript": "^5.6.3",
     "vite": "^5.4.10",
     "vite-plugin-top-level-await": "1.4.4",
-    "vite-plugin-wasm": "3.3.0",
-    "vitest": "~2.1.4"
+    "vite-plugin-wasm": "3.3.0"
   },
   "type": "module",
   "dependencies": {
@@ -65,7 +63,7 @@
     "better-sqlite3": "9.2.2",
     "bits-ui": "^0.21.16",
     "classnames": "2.3.2",
-    "clsx": "2.0.0",
+    "clsx": "2.1.1",
     "cmdk-sv": "0.0.18",
     "fastify": "4.24.3",
     "lucide-svelte": "0.454.0",
