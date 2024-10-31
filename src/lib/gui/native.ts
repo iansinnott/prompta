@@ -24,10 +24,15 @@ export const toggleDevTools = async () => {
   await invoke("toggle_devtools");
 };
 
-export async function saveAs(filename: string, data: string) {
+export async function saveAsJson(filename: string, data: string) {
+  const blob = new Blob([data], { type: "application/json" });
+  await saveAs(filename, blob);
+}
+
+export async function saveAs(filename: string, blob: Blob) {
   const savePath = await dialog.save({ title: "Save as", defaultPath: filename });
   if (!savePath) return;
-  return fs.writeFile(savePath, new TextEncoder().encode(data));
+  return fs.writeFile(savePath, new Uint8Array(await blob.arrayBuffer()));
 }
 
 export async function chooseAndOpenTextFile() {

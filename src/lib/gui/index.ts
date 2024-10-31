@@ -11,7 +11,8 @@ interface SystemSpecificApi {
     close: () => Promise<void>;
   };
   toggleDevTools: () => Promise<void>;
-  saveAs: (filename: string, data: string) => Promise<void>;
+  saveAs: (filename: string, blob: Blob) => Promise<void>;
+  saveAsJson: (filename: string, data: string) => Promise<void>;
 
   /**
    * Open a dialog for the user to choose a file, then read that file.
