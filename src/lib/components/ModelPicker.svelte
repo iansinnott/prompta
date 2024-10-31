@@ -13,10 +13,39 @@
   import { showInitScreen } from "$lib/stores/stores";
   import { toast } from "$lib/toast";
   import { commandScore } from "./ui/command/command-score";
+  import { Star } from "lucide-svelte";
+  import { Preferences } from "$lib/db";
+  import { writable } from "svelte/store";
+
   let _class: string = "";
   export { _class as class };
 
   type IconSource = { component: SvelteComponent; class?: string };
+
+  const favoriteModels = writable<string[]>([]);
+
+  onMount(async () => {
+    // Load favorites from preferences
+    const favs = (await Preferences.get("favorite_models")) || [];
+    favoriteModels.set(favs);
+
+    chatModels.refresh();
+  });
+
+  async function toggleFavorite(modelId: string, event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const currentFavs = $favoriteModels;
+    const newFavs = currentFavs.includes(modelId)
+      ? currentFavs.filter((id) => id !== modelId)
+      : [...currentFavs, modelId];
+
+    console.debug("[ModelPicker] toggling favorite:", { modelId, currentFavs, newFavs });
+
+    favoriteModels.set(newFavs);
+    await Preferences.set("favorite_models", newFavs);
+  }
 
   $: options = [
     ...$chatModels.models.map((x) => {
@@ -34,11 +63,23 @@
         label: x.id,
         icon,
         provider,
+        isFavorite: $favoriteModels.includes(x.id),
       };
     }),
     ...llmProviders.getSpecialProviders(),
   ];
-  $: optionGroups = groupBy(options, (x) => x.provider?.name ?? "Other");
+
+  let optionGroups: Record<string, typeof options> = {};
+
+  $: {
+    const favorites = options.filter((x) => x.isFavorite);
+    const nonFavorites = options.filter((x) => !x.isFavorite);
+    const nonFavoriteGroups = groupBy(nonFavorites, (x) => x.provider?.name ?? "Other");
+
+    optionGroups = favorites.length
+      ? { Favorites: favorites, ...nonFavoriteGroups }
+      : nonFavoriteGroups;
+  }
 
   let value = $gptProfileStore.model || "";
   $: {
@@ -72,10 +113,6 @@
     $gptProfileStore.model = x;
   }
 
-  onMount(() => {
-    chatModels.refresh();
-  });
-
   let searchValue = "";
   let selectedItem = value;
 
@@ -86,7 +123,17 @@
       })
     : options;
 
-  $: filteredGroups = groupBy(filteredOptions, (x) => x.provider?.name ?? "Other");
+  $: filteredGroups = (() => {
+    const favorites = filteredOptions.filter((x) => x.isFavorite);
+    const nonFavorites = filteredOptions.filter((x) => !x.isFavorite);
+    const nonFavoriteGroups = groupBy(nonFavorites, (x) => x.provider?.name ?? "Other");
+
+    return favorites.length ? { Favorites: favorites, ...nonFavoriteGroups } : nonFavoriteGroups;
+  })();
+
+  $: {
+    console.debug("[ModelPicker] favorites changed:", $favoriteModels);
+  }
 
   function handleSearch(event: CustomEvent<string>) {
     searchValue = event.detail;
@@ -144,22 +191,42 @@
           {#each Object.entries(filteredGroups) as [name, models]}
             <Command.Group heading={name}>
               {#each models as opt}
-                <Command.Item value={opt.value} onSelect={handleChange}>
-                  {#if opt.icon?.component}
-                    <svelte:component
-                      this={opt.icon.component}
-                      class={cn(
-                        "mr-2 h-4 w-4",
-                        // @ts-ignore
-                        opt.icon.class,
-                        opt.value !== selectedStatus?.value && "text-foreground/40"
-                      )}
-                    />
-                  {/if}
+                <Command.Item
+                  value={opt.value}
+                  onSelect={handleChange}
+                  class="flex items-center justify-between"
+                >
+                  <div class="flex items-center">
+                    {#if opt.icon?.component}
+                      <svelte:component
+                        this={opt.icon.component}
+                        class={cn(
+                          "mr-2 h-4 w-4",
+                          // @ts-ignore
+                          opt.icon.class,
+                          opt.value !== selectedStatus?.value && "text-foreground/40"
+                        )}
+                      />
+                    {/if}
+                    <span>{opt.label}</span>
+                  </div>
 
-                  <span>
-                    {opt.label}
-                  </span>
+                  <!-- Only show star for actual models, not special providers -->
+                  {#if opt.provider}
+                    <button
+                      class="flex items-center justify-center p-1 rounded-sm hover:bg-accent"
+                      on:click={(e) => toggleFavorite(opt.value, e)}
+                    >
+                      <Star
+                        class={cn(
+                          "h-4 w-4",
+                          opt.isFavorite
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-muted-foreground"
+                        )}
+                      />
+                    </button>
+                  {/if}
                 </Command.Item>
               {/each}
             </Command.Group>

@@ -196,6 +196,10 @@ export const llmProviders = (() => {
       return get(store).providers.find((p) => p.id === "openai")!;
     },
 
+    /**
+     * Returns a list of special providers that are not in the database. These
+     * are actually just buttons that are used to aid discoverability.
+     */
     getSpecialProviders: () => {
       const models = get(chatModels).models;
       const providers = [
@@ -207,6 +211,7 @@ export const llmProviders = (() => {
                 label: "Enable Prompta",
                 icon: { component: IconBrain },
                 provider: llmProviders.byId("prompta")!,
+                isFavorite: false,
               },
             ]),
         ...(llmProviders.getOpenAi().apiKey || !llmProviders.getOpenAi().enabled
@@ -214,9 +219,10 @@ export const llmProviders = (() => {
           : [
               {
                 value: "openai",
-                label: "OpenAI (gpt-4, gpt-3.5, ...)",
+                label: "OpenAI (gpt-4o, o1, ...)",
                 icon: { component: IconOpenAi },
                 provider: llmProviders.getOpenAi(),
+                isFavorite: false,
               },
             ]),
       ];
