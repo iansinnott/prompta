@@ -9,11 +9,11 @@
   import MarkdownHtmlBlock from "./MarkdownHtmlBlock.svelte";
   import "./markdown.css";
   import { currentlyEditingMessage, inProgressMessageId } from "$lib/stores/stores";
-  import { onMount } from "svelte";
   import ChatMessageControls from "./ChatMessageControls.svelte";
   import { autosize } from "$lib/utils";
-  import { fly, slide } from "svelte/transition";
-  import { toast } from "$lib/toast";
+  import { slide } from "svelte/transition";
+  import ImageAttachment from "./ImageAttachment.svelte";
+  import ChatImageAttachment from "./ChatImageAttachment.svelte";
   let _class: string = "";
   export { _class as class };
   export let item: ChatMessage;
@@ -101,8 +101,17 @@
         class="w-full bg-transparent outline-none resize-none mb-3"
       />
     {:else if item.role === "user"}
-      <!-- User input is not considered markdown, but whitespace should be respected -->
-      <p class="whitespace-pre-wrap">{item.content}</p>
+      {#if typeof item.content === "string" && item.content.startsWith("[")}
+        {#each JSON.parse(item.content) as part}
+          {#if part.type === "image_url"}
+            <ChatImageAttachment imageUrl={part.image_url.url} {showControls} />
+          {:else if part.type === "text"}
+            <p class="whitespace-pre-wrap">{part.text}</p>
+          {/if}
+        {/each}
+      {:else}
+        <p class="whitespace-pre-wrap">{item.content}</p>
+      {/if}
     {:else}
       <SvelteMarkdown
         source={item.content || NBSP}

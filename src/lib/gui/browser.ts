@@ -12,8 +12,7 @@ export const AppWindow = {
 
 export const toggleDevTools = noop;
 
-export async function saveAs(filename: string, data: string) {
-  const blob = new Blob([data], { type: "application/json" });
+export async function saveAs(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -21,6 +20,12 @@ export async function saveAs(filename: string, data: string) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+export async function saveAsJson(filename: string, data: string) {
+  const blob = new Blob([data], { type: "application/json" });
+  await saveAs(filename, blob);
 }
 
 export async function alert(message: string) {
@@ -71,6 +76,47 @@ export async function chooseAndOpenTextFile() {
 
       // Read the file as a UTF-8 encoded string
       reader.readAsText(file, "UTF-8");
+    });
+
+    inputElement.click();
+  }).finally(() => {
+    if (inputElement) document.body.removeChild(inputElement);
+  });
+}
+
+export async function chooseAndOpenImageFile() {
+  let inputElement: HTMLInputElement;
+
+  return new Promise<{ name: string; data: Uint8Array } | undefined>((resolve, reject) => {
+    inputElement = document.createElement("input");
+    inputElement.type = "file";
+    inputElement.accept = "image/*";
+    inputElement.style.display = "none";
+
+    document.body.appendChild(inputElement);
+
+    inputElement.addEventListener("change", (event) => {
+      // @ts-ignore Poor typing on input events?
+      const file: File = event.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const arrayBuffer = reader.result as ArrayBuffer;
+        resolve({
+          name: file.name,
+          data: new Uint8Array(arrayBuffer),
+        });
+        // @ts-ignore
+        event.target.value = null;
+      };
+
+      reader.onerror = () => {
+        reject(reader.error);
+        // @ts-ignore
+        event.target.value = null;
+      };
+
+      reader.readAsArrayBuffer(file);
     });
 
     inputElement.click();

@@ -1,15 +1,18 @@
 FROM node:20 as builder
 
-RUN apt-get update; apt install -y curl python-is-python3 pkg-config build-essential
+# Install Bun
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:${PATH}"
+
+RUN apt-get update; apt install -y python-is-python3 pkg-config build-essential
 RUN mkdir /app
 WORKDIR /app
 
 COPY . .
 
-RUN npm install -g pnpm
-RUN pnpm install
-RUN pnpm run build:server
-
+# Use Bun instead of PNPM for package management
+RUN bun install --frozen-lockfile
+RUN bun run build:server
 
 FROM node:20-slim as dist
 

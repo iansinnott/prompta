@@ -1,6 +1,6 @@
 {
   "name": "prompta",
-  "version": "5.0.1",
+  "version": "5.2.2",
   "private": true,
   "scripts": {
     "dev:tauri": "tauri dev",
@@ -8,19 +8,18 @@
     "//build:debug": "this can be done easily from the CLI, so this is more for documentation",
     "build:debug": "tauri build --debug",
     "dev": "vite dev --host 0.0.0.0",
-    "ui:dev": "pnpm run dev",
+    "ui:dev": "bun run dev",
     "ui:build": "cross-env NODE_ENV=production vite build",
     "ui:build-static": "cross-env NODE_ENV=production SVELTE_ADAPTER=static vite build",
-    "dev:server": "pnpm tsx --tsconfig ./tsconfig.server.json --watch ./sync-server/server.ts",
+    "dev:server": "bunx tsx --tsconfig ./tsconfig.server.json --watch ./sync-server/server.ts",
     "prod:server": "tsc -p ./tsconfig.server.json; NODE_ENV=production node ./dist-server/server.js",
     "build:server": "tsc -p ./tsconfig.server.json",
     "release": "direnv reload && yarn version && ./scripts/release.sh",
     "gh:publish": "./scripts/publish.sh",
     "preview": "vite preview",
-    "test": "playwright test --retries=2",
+    "test:browser": "playwright test --retries=2",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "test:unit": "vitest"
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.2",
@@ -34,7 +33,6 @@
     "@types/prismjs": "1.26.0",
     "autoprefixer": "~10.4.20",
     "cross-env": "7.0.3",
-    "pino-pretty": "10.2.3",
     "postcss": "~8.4.47",
     "postcss-load-config": "~4.0.2",
     "posthog-js": "1.56.0",
@@ -47,13 +45,11 @@
     "typescript": "^5.6.3",
     "vite": "^5.4.10",
     "vite-plugin-top-level-await": "1.4.4",
-    "vite-plugin-wasm": "3.3.0",
-    "vitest": "~2.1.4"
+    "vite-plugin-wasm": "3.3.0"
   },
   "type": "module",
   "dependencies": {
     "@fastify/cors": "8.4.2",
-    "@microsoft/fetch-event-source": "2.0.1",
     "@radix-ui/react-progress": "1.0.3",
     "@tauri-apps/api": "^2.0.3",
     "@tauri-apps/plugin-dialog": "^2.0.1",
@@ -67,7 +63,7 @@
     "better-sqlite3": "9.2.2",
     "bits-ui": "^0.21.16",
     "classnames": "2.3.2",
-    "clsx": "2.0.0",
+    "clsx": "2.1.1",
     "cmdk-sv": "0.0.18",
     "fastify": "4.24.3",
     "lucide-svelte": "0.454.0",
@@ -82,7 +78,6 @@
     "svelte-sonner": "0.3.28",
     "tailwind-merge": "2.1.0",
     "tailwind-variants": "0.1.19",
-    "uuid": "9.0.0",
-    "victor-db": "0.1.3"
+    "uuid": "9.0.0"
   }
 }

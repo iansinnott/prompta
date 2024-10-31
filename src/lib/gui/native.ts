@@ -24,15 +24,21 @@ export const toggleDevTools = async () => {
   await invoke("toggle_devtools");
 };
 
-export async function saveAs(filename: string, data: string) {
+export async function saveAsJson(filename: string, data: string) {
+  const blob = new Blob([data], { type: "application/json" });
+  await saveAs(filename, blob);
+}
+
+export async function saveAs(filename: string, blob: Blob) {
   const savePath = await dialog.save({ title: "Save as", defaultPath: filename });
   if (!savePath) return;
-  return fs.writeFile(savePath, new TextEncoder().encode(data));
+  return fs.writeFile(savePath, new Uint8Array(await blob.arrayBuffer()));
 }
 
 export async function chooseAndOpenTextFile() {
   const file = await dialog.open({
     multiple: false,
+    directory: false,
     filters: [{ name: "JSON", extensions: ["json"] }],
   });
 
@@ -59,4 +65,28 @@ export async function alert(message: string) {
 
 export async function confirm(message: string) {
   return dialog.confirm(message, { kind: "warning" });
+}
+
+export async function chooseAndOpenImageFile() {
+  const file = await dialog.open({
+    multiple: false,
+    directory: false,
+    filters: [
+      {
+        name: "Images",
+        // Include all common image formats including SVG
+        extensions: ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "ico", "tiff"],
+      },
+    ],
+  });
+
+  if (!file) return;
+
+  const filePath = Array.isArray(file) ? file[0] : file;
+  const data = await fs.readFile(filePath);
+
+  return {
+    name: basename(filePath) as string,
+    data,
+  };
 }

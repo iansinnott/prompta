@@ -1,18 +1,19 @@
-fly.toml
-Dockerfile
-.dockerignore
 node_modules
+Dockerfile*
+docker-compose*
+.dockerignore
 .git
-dbs
-.github
+.gitignore
+README.md
+LICENSE
 .vscode
-.svelte-kit
-build
-dist-server
-playwright
-test-results
-tests
-tmp
+Makefile
+helm-charts
+.env
+.editorconfig
+.idea
+coverage*
+dist
 
 # NOTE for now the dockerfile is just for the server, so we don't want/need this code
 src-tauri

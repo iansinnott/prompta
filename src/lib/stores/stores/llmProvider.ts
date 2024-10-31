@@ -10,7 +10,7 @@ import IconBrain from "$lib/components/IconBrain.svelte";
 import IconAnthropic from "$lib/components/IconAnthropic.svelte";
 
 import { env } from "$env/dynamic/public";
-import { initOpenAi } from "$lib/llm/openai";
+import { initOpenAi, getProviderClient } from "$lib/llm/openai";
 
 const promptaBaseUrl = env.PUBLIC_PROMPTA_API_URL || "https://api.prompta.dev/v1/";
 
@@ -190,7 +190,15 @@ export const llmProviders = (() => {
     },
 
     byId: (id: string) => {
-      return get(store).providers.find((p) => p.id === id);
+      const provider = get(store).providers.find((p) => p.id === id);
+      if (provider) {
+        // Ensure provider has a client
+        return {
+          ...provider,
+          client: getProviderClient(provider),
+        };
+      }
+      return undefined;
     },
 
     getOpenAi: () => {
@@ -201,6 +209,10 @@ export const llmProviders = (() => {
       return get(store).providers.find((p) => p.id === "anthropic")!;
     },
 
+    /**
+     * Returns a list of special providers that are not in the database. These
+     * are actually just buttons that are used to aid discoverability.
+     */
     getSpecialProviders: () => {
       const models = get(chatModels).models;
       const providers = [
@@ -212,6 +224,7 @@ export const llmProviders = (() => {
                 label: "Enable Prompta",
                 icon: { component: IconBrain },
                 provider: llmProviders.byId("prompta")!,
+                isFavorite: false,
               },
             ]),
         ...(llmProviders.getOpenAi().apiKey || !llmProviders.getOpenAi().enabled
@@ -219,9 +232,10 @@ export const llmProviders = (() => {
           : [
               {
                 value: "openai",
-                label: "OpenAI (gpt-4, gpt-3.5, ...)",
+                label: "OpenAI (gpt-4o, o1, ...)",
                 icon: { component: IconOpenAi },
                 provider: llmProviders.getOpenAi(),
+                isFavorite: false,
               },
             ]),
         ...(!llmProviders.byId("anthropic")?.apiKey || !llmProviders.byId("anthropic")?.enabled
