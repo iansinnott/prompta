@@ -32,11 +32,16 @@
     chatModels.refresh();
   });
 
-  async function toggleFavorite(modelId: string) {
+  async function toggleFavorite(modelId: string, event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+
     const currentFavs = $favoriteModels;
     const newFavs = currentFavs.includes(modelId)
       ? currentFavs.filter((id) => id !== modelId)
       : [...currentFavs, modelId];
+
+    console.debug("[ModelPicker] toggling favorite:", { modelId, currentFavs, newFavs });
 
     favoriteModels.set(newFavs);
     await Preferences.set("favorite_models", newFavs);
@@ -118,7 +123,17 @@
       })
     : options;
 
-  $: filteredGroups = groupBy(filteredOptions, (x) => x.provider?.name ?? "Other");
+  $: filteredGroups = (() => {
+    const favorites = filteredOptions.filter((x) => x.isFavorite);
+    const nonFavorites = filteredOptions.filter((x) => !x.isFavorite);
+    const nonFavoriteGroups = groupBy(nonFavorites, (x) => x.provider?.name ?? "Other");
+
+    return favorites.length ? { Favorites: favorites, ...nonFavoriteGroups } : nonFavoriteGroups;
+  })();
+
+  $: {
+    console.debug("[ModelPicker] favorites changed:", $favoriteModels);
+  }
 
   function handleSearch(event: CustomEvent<string>) {
     searchValue = event.detail;
@@ -187,6 +202,7 @@
                         this={opt.icon.component}
                         class={cn(
                           "mr-2 h-4 w-4",
+                          // @ts-ignore
                           opt.icon.class,
                           opt.value !== selectedStatus?.value && "text-foreground/40"
                         )}
@@ -199,7 +215,7 @@
                   {#if opt.provider}
                     <button
                       class="flex items-center justify-center p-1 rounded-sm hover:bg-accent"
-                      on:click|stopPropagation={() => toggleFavorite(opt.value)}
+                      on:click={(e) => toggleFavorite(opt.value, e)}
                     >
                       <Star
                         class={cn(
