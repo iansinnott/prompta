@@ -80,10 +80,15 @@ export const isDefaultProvider = ({ id }: { id: string }) => {
 
 export const llmProviders = (() => {
   const initialProviders = defaultProviders.map((x) => {
-    console.log("Checking if provider is enabled", x);
+    // Get both enabled state and API key from localStorage
+    const storedApiKey = localStorage.getItem(`llm-provider-${x.id}-apiKey`);
+    const isEnabled = localStorage.getItem(`llm-provider-${x.id}-enabled`) !== "false";
+
     return {
       ...x,
-      enabled: localStorage.getItem(`llm-provider-${x.id}-enabled`) !== "false",
+      enabled: isEnabled,
+      // Use stored API key if it exists, otherwise keep default empty string
+      apiKey: storedApiKey || x.apiKey,
     };
   });
 
@@ -219,13 +224,19 @@ export const llmProviders = (() => {
           if (index !== -1) {
             const nextVal = { ...state.providers[index], ...provider };
             state.providers[index] = nextVal;
+
+            // Store both enabled state and API key
             localStorage.setItem(`llm-provider-${id}-enabled`, nextVal.enabled ? "true" : "false");
+            if (provider.apiKey !== undefined) {
+              // Only update if apiKey is in the update
+              localStorage.setItem(`llm-provider-${id}-apiKey`, provider.apiKey);
+            }
           } else {
             console.error(`Provider with id ${id} not found`);
           }
 
-          // Keep the other openai store in sync for now
-          if (id === "openai") {
+          // Keep the legacy store in sync
+          if (id === "openai" && provider.apiKey !== undefined) {
             openAiConfig.update((x) => ({ ...x, apiKey: provider.apiKey }));
           }
 

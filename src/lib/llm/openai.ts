@@ -80,7 +80,9 @@ export class AnthropicClient implements MinimalLLMClient {
   chat = {
     completions: {
       create: async (
-        params: OpenAI.ChatCompletionCreateParamsStreaming,
+        params:
+          | OpenAI.ChatCompletionCreateParamsStreaming
+          | OpenAI.ChatCompletionCreateParamsNonStreaming,
         options?: { signal?: AbortSignal }
       ) => {
         // Convert OpenAI format to Anthropic format
@@ -154,14 +156,43 @@ export class AnthropicClient implements MinimalLLMClient {
           {
             // @ts-ignore
             messages,
-            model: params.model.replace("gpt", "claude"),
-            stream: true,
+            model: params.model,
+            stream: params.stream,
             max_tokens: 4096,
           },
           {
             signal: options?.signal,
           }
         );
+
+        // Handle non-streaming case
+        if (!params.stream) {
+          let res = stream as Anthropic.Message;
+          return {
+            choices: [
+              {
+                message: {
+                  // @ts-ignore
+                  content: res.content[0].text,
+                  role: res.role,
+                },
+                index: 0,
+                logprobs: null,
+                finish_reason: "stop" as const,
+                id: res.id,
+                model: params.model,
+                object: "chat.completion",
+                created: Date.now(),
+                system_fingerprint: null,
+              },
+            ],
+            id: res.id,
+            model: params.model,
+            object: "chat.completion",
+            created: Date.now(),
+            system_fingerprint: null,
+          };
+        }
 
         // Convert Anthropic stream format to OpenAI format
         return {
@@ -192,12 +223,11 @@ export class AnthropicClient implements MinimalLLMClient {
       // Anthropic doesn't have a models endpoint yet
       return {
         data: [
+          { id: "claude-3-5-sonnet-latest" },
+          { id: "claude-3-5-haiku-latest" }, // NOTE: as of this writing this won't work, but i'm guessing this will be the name once released
           { id: "claude-3-opus-latest" },
-          { id: "claude-3-sonnet-latest" },
-          { id: "claude-3-haiku-latest" },
-          { id: "claude-2.1" },
-          { id: "claude-2.0" },
-          { id: "claude-instant-1.2" },
+          { id: "claude-3-sonnet-20240229" },
+          { id: "claude-3-haiku-20240307" },
         ],
       };
     },

@@ -15,8 +15,9 @@
     _get_db_instance,
     VecToFrag,
   } from "$lib/db";
-  import { currentChatThread, currentThread, insertPendingMessage } from "$lib/stores/stores";
+  import { currentThread, insertPendingMessage } from "$lib/stores/stores";
   import { featureFlags } from "$lib/featureFlags";
+  import * as stores from "$lib/stores/stores";
 
   onMount(() => {
     // This used to be locked behind a dev flag but I find it useful to have access to it for debugging in the prod app.
@@ -30,6 +31,7 @@
       ["VecToFrag", VecToFrag],
       ["db", _get_db_instance()],
       ["featureFlags", featureFlags],
+      ["stores", stores],
       [
         "insertPendingMessage",
         ({ content = "" }) => {
