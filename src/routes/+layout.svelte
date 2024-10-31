@@ -224,8 +224,8 @@
 </svelte:head>
 
 <div
-  class={classNames("overflow-hidden text-white bg-[#1B1B1B] border ", {
-    "rounded-2xl": sys.isTauri,
+  class={classNames("overflow-hidden text-white bg-[#1B1B1B]", {
+    "rounded-2xl border": sys.isTauri,
   })}
 >
   {#if startupError}
