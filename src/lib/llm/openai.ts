@@ -1,5 +1,8 @@
-import type { LLMProvider } from "$lib/db";
+import type { LLMProvider, MinimalLLMClient } from "$lib/db";
+import { Anthropic } from "@anthropic-ai/sdk";
 import { OpenAI, type ClientOptions } from "openai";
+import { nanoid } from "nanoid";
+import { env } from "$env/dynamic/public";
 
 const headerWhitelist = new Set(["content-type", "authorization"]);
 
@@ -48,10 +51,13 @@ export const initOpenAi = (opts: ClientOptions) => {
   });
 };
 
-export const getProviderClient = (provider: LLMProvider): OpenAI => {
+export const getProviderClient = (provider: LLMProvider): MinimalLLMClient => {
   // If provider already has a client instance, return it
-  if (provider.client) {
-    return provider.client;
+  if (provider.createClient) {
+    return provider.createClient({
+      apiKey: provider.apiKey,
+      baseURL: provider.baseUrl,
+    });
   }
 
   return initOpenAi({
@@ -59,3 +65,176 @@ export const getProviderClient = (provider: LLMProvider): OpenAI => {
     baseURL: provider.baseUrl,
   });
 };
+
+export class AnthropicClient implements MinimalLLMClient {
+  private anthropic: Anthropic;
+
+  constructor(apiKey: string, baseURL?: string) {
+    this.anthropic = new Anthropic({
+      apiKey,
+      baseURL,
+      dangerouslyAllowBrowser: true,
+    });
+  }
+
+  chat = {
+    completions: {
+      create: async (
+        params: OpenAI.ChatCompletionCreateParamsStreaming,
+        options?: { signal?: AbortSignal }
+      ) => {
+        // Convert OpenAI format to Anthropic format
+        const messages = params.messages.map((msg) => {
+          let content;
+
+          // Handle array content (already parsed)
+          if (Array.isArray(msg.content)) {
+            content = msg.content.map((item) => {
+              if (item.type === "image_url") {
+                // Extract base64 data from the URL
+                const base64Data = item.image_url.url.split(",")[1];
+                return {
+                  type: "image",
+                  source: {
+                    type: "base64",
+                    media_type: "image/jpeg",
+                    data: base64Data,
+                  },
+                };
+              } else if (item.type === "text") {
+                return {
+                  type: "text",
+                  text: item.text,
+                };
+              }
+              return item;
+            });
+          }
+          // Handle string content that might be JSON
+          else if (typeof msg.content === "string" && msg.content.startsWith("[{")) {
+            try {
+              const parsed = JSON.parse(msg.content);
+              content = parsed.map((item: any) => {
+                if (item.type === "image_url") {
+                  const base64Data = item.image_url.url.split(",")[1];
+                  return {
+                    type: "image",
+                    source: {
+                      type: "base64",
+                      media_type: "image/jpeg",
+                      data: base64Data,
+                    },
+                  };
+                } else if (item.type === "text") {
+                  return {
+                    type: "text",
+                    text: item.text,
+                  };
+                }
+                return item;
+              });
+            } catch (e) {
+              console.error("Error parsing message content:", e);
+              // Fall back to treating it as plain text
+              content = msg.content;
+            }
+          }
+          // Handle plain text content
+          else {
+            content = msg.content;
+          }
+
+          return {
+            role: msg.role === "assistant" ? "assistant" : "user",
+            content,
+          };
+        });
+
+        const stream = await this.anthropic.messages.create(
+          {
+            // @ts-ignore
+            messages,
+            model: params.model.replace("gpt", "claude"),
+            stream: true,
+            max_tokens: 4096,
+          },
+          {
+            signal: options?.signal,
+          }
+        );
+
+        // Convert Anthropic stream format to OpenAI format
+        return {
+          async *[Symbol.asyncIterator]() {
+            for await (const chunk of stream) {
+              if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+                yield {
+                  id: nanoid(),
+                  choices: [
+                    {
+                      delta: {
+                        content: chunk.delta?.text || "",
+                      },
+                    },
+                  ],
+                  object: "chat.completion.chunk",
+                } as OpenAI.ChatCompletionChunk;
+              }
+            }
+          },
+        };
+      },
+    },
+  };
+
+  models = {
+    list: async () => {
+      // Anthropic doesn't have a models endpoint yet
+      return {
+        data: [
+          { id: "claude-3-opus-latest" },
+          { id: "claude-3-sonnet-latest" },
+          { id: "claude-3-haiku-latest" },
+          { id: "claude-2.1" },
+          { id: "claude-2.0" },
+          { id: "claude-instant-1.2" },
+        ],
+      };
+    },
+  };
+}
+
+export const promptaBaseUrl = env.PUBLIC_PROMPTA_API_URL || "https://api.prompta.dev/v1/";
+if (env.PUBLIC_PROMPTA_API_URL) {
+  console.log("Using Prompta API URL via env var", promptaBaseUrl);
+}
+
+export const defaultProviders: LLMProvider[] = [
+  {
+    id: "prompta",
+    name: "Prompta",
+    baseUrl: promptaBaseUrl,
+    apiKey: "",
+    enabled: true,
+    createdAt: new Date(0),
+  },
+  {
+    id: "openai",
+    name: "OpenAI",
+    baseUrl: "https://api.openai.com/v1/",
+    apiKey: "",
+    enabled: false,
+    createdAt: new Date(0),
+  },
+  {
+    id: "anthropic",
+    name: "Anthropic",
+    baseUrl: "https://api.anthropic.com/",
+    apiKey: "",
+    enabled: false,
+    createdAt: new Date(0),
+    createClient: ({ apiKey, baseURL }) => {
+      return new AnthropicClient(apiKey, baseURL);
+    },
+  },
+];

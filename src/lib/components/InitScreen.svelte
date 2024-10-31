@@ -46,7 +46,7 @@
           });
           buttonText = "Enabling OpenAI...";
           await chatModels.refresh();
-          $gptProfileStore.model = "gpt-3.5-turbo-1106";
+          $gptProfileStore.model = "gpt-4o-mini";
         } else {
           throw new Error("Invalid API key");
         }
@@ -58,6 +58,7 @@
         });
         buttonText = "Enabling Anthropic...";
         await chatModels.refresh();
+        $gptProfileStore.model = "claude-3-5-sonnet-latest";
       }
 
       $showInitScreen = { showing: false, provider: null };

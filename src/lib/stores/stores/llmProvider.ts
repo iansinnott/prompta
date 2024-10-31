@@ -1,6 +1,5 @@
-import { DatabaseMeta, LLMProvider } from "$lib/db";
+import { DatabaseMeta, LLMProvider, type MinimalLLMClient } from "$lib/db";
 import { get, writable } from "svelte/store";
-import { dev } from "$app/environment";
 import type { ClientOptions, OpenAI } from "openai";
 import { toast } from "$lib/toast";
 import { gptProfileStore } from "./llmProfile";
@@ -9,41 +8,7 @@ import IconOpenAi from "$lib/components/IconOpenAI.svelte";
 import IconBrain from "$lib/components/IconBrain.svelte";
 import IconAnthropic from "$lib/components/IconAnthropic.svelte";
 
-import { env } from "$env/dynamic/public";
-import { initOpenAi, getProviderClient } from "$lib/llm/openai";
-
-const promptaBaseUrl = env.PUBLIC_PROMPTA_API_URL || "https://api.prompta.dev/v1/";
-
-if (env.PUBLIC_PROMPTA_API_URL) {
-  console.log("Using Prompta API URL via env var", promptaBaseUrl);
-}
-
-const defaultProviders: LLMProvider[] = [
-  {
-    id: "prompta",
-    name: "Prompta",
-    baseUrl: promptaBaseUrl,
-    apiKey: "",
-    enabled: true,
-    createdAt: new Date(0),
-  },
-  {
-    id: "openai",
-    name: "OpenAI",
-    baseUrl: "https://api.openai.com/v1/",
-    apiKey: "",
-    enabled: false,
-    createdAt: new Date(0),
-  },
-  {
-    id: "anthropic",
-    name: "Anthropic",
-    baseUrl: "https://api.anthropic.com/v1/",
-    apiKey: "",
-    enabled: false,
-    createdAt: new Date(0),
-  },
-];
+import { defaultProviders, getProviderClient } from "$lib/llm/openai";
 
 type OpenAiAppConfig = Partial<ClientOptions> & {
   siteId: string;
@@ -191,14 +156,7 @@ export const llmProviders = (() => {
 
     byId: (id: string) => {
       const provider = get(store).providers.find((p) => p.id === id);
-      if (provider) {
-        // Ensure provider has a client
-        return {
-          ...provider,
-          client: getProviderClient(provider),
-        };
-      }
-      return undefined;
+      return provider;
     },
 
     getOpenAi: () => {
@@ -367,9 +325,9 @@ export const chatModels = (() => {
         // Fetch models for all active providers
         const xss = await Promise.all(
           providers.map((provider) => {
-            const openai = initOpenAi({ apiKey: provider.apiKey, baseURL: provider.baseUrl });
+            const client = getProviderClient(provider);
 
-            return openai.models
+            return client.models
               .list()
               .then((x) => {
                 return (
@@ -396,7 +354,12 @@ export const chatModels = (() => {
 
         _chatModels.sort((a, b) => a.id.localeCompare(b.id));
 
-        update((x) => ({ ...x, models: _chatModels, loadingState: "loaded", error: null }));
+        update((x) => ({
+          ...x,
+          models: _chatModels as ModelWithProvider[],
+          loadingState: "loaded",
+          error: null,
+        }));
 
         // Handle the edge case where the user removes the provider of a model they were using
         const currentProfile = get(gptProfileStore);
@@ -405,7 +368,7 @@ export const chatModels = (() => {
           if (nextModel) {
             toast({
               title: "Model not found",
-              message: `The model you were using (${currentProfile.model}) was not found. Defaulting to the next available model (${nextModel}).`,
+              message: `The model you were using (${currentProfile.model}) was not found. Defaulting to the next available model (${nextModel.id}).`,
               type: "info",
             });
             console.warn(

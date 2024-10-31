@@ -1,4 +1,4 @@
-import { initOpenAi } from "$lib/llm/openai";
+import { getProviderClient, initOpenAi } from "$lib/llm/openai";
 import { writable, derived, get } from "svelte/store";
 import { persistentStore } from "../storeUtils";
 import { chatModels, llmProviders } from "./llmProvider";
@@ -78,7 +78,7 @@ export const getOpenAi = () => {
     throw new Error("No API URL");
   }
 
-  return initOpenAi({ apiKey, baseURL: baseUrl });
+  return getProviderClient(provider);
 };
 
 export const verifyOpenAICompatibileProvider = async ({
