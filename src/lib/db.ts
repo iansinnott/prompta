@@ -18,7 +18,6 @@ import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
 
 import schema_0002 from "$lib/migrations/0002_schema.sql?url";
 
-// Default schema. May be overwritten via feature flags (see references)
 let schemaUrl = schema_0002;
 
 import { llmProviders, openAiConfig } from "./stores/stores/llmProvider";

@@ -20,8 +20,6 @@
   import { debounce, wrapError } from "$lib/utils";
   import DevTooling from "$lib/components/DevTooling.svelte";
   import { openAiConfig } from "$lib/stores/stores/llmProvider";
-  import { env } from "$env/dynamic/public";
-  import { featureFlags } from "$lib/featureFlags";
   import ActionsMenu from "$lib/components/ActionsMenu.svelte";
 
   const sys = getSystem();
@@ -54,18 +52,6 @@
   let teardown: any;
 
   const handleStartup = async () => {
-    // Initialize feature flags. Feature flags may be used during app bootstrap,
-    // which is why they are initialized first.
-    if (env.PUBLIC_STATSIG_CLIENT_SDK_KEY) {
-      try {
-        await featureFlags.initialize(env.PUBLIC_STATSIG_CLIENT_SDK_KEY, {
-          appVersion: env.PUBLIC_VERSION_STRING,
-        });
-      } catch (error) {
-        console.error("featureFlags error", error);
-      }
-    }
-
     // throw up after a time if the app is hanging
     let _timeout = setTimeout(() => {
       throw new Error("Timed out trying to initialize");

@@ -16,7 +16,6 @@
     VecToFrag,
   } from "$lib/db";
   import { currentThread, insertPendingMessage } from "$lib/stores/stores";
-  import { featureFlags } from "$lib/featureFlags";
   import * as stores from "$lib/stores/stores";
 
   onMount(() => {
@@ -30,7 +29,6 @@
       ["LLMProvider", LLMProvider],
       ["VecToFrag", VecToFrag],
       ["db", _get_db_instance()],
-      ["featureFlags", featureFlags],
       ["stores", stores],
       [
         "insertPendingMessage",
