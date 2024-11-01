@@ -82,7 +82,8 @@ export const llmProviders = (() => {
   const initialProviders = defaultProviders.map((x) => {
     // Get both enabled state and API key from localStorage
     const storedApiKey = localStorage.getItem(`llm-provider-${x.id}-apiKey`);
-    const isEnabled = localStorage.getItem(`llm-provider-${x.id}-enabled`) !== "false";
+    const isEnabled =
+      x.id === "prompta" || localStorage.getItem(`llm-provider-${x.id}-enabled`) === "true";
 
     return {
       ...x,
@@ -164,18 +165,6 @@ export const llmProviders = (() => {
       return provider;
     },
 
-    getOpenAi: () => {
-      return get(store).providers.find((p) => p.id === "openai")!;
-    },
-
-    getAnthropic: () => {
-      return get(store).providers.find((p) => p.id === "anthropic")!;
-    },
-
-    /**
-     * Returns a list of special providers that are not in the database. These
-     * are actually just buttons that are used to aid discoverability.
-     */
     getSpecialProviders: () => {
       const models = get(chatModels).models;
       const providers = [
@@ -190,17 +179,17 @@ export const llmProviders = (() => {
                 isFavorite: false,
               },
             ]),
-        ...(llmProviders.getOpenAi().apiKey || !llmProviders.getOpenAi().enabled
-          ? []
-          : [
+        ...(!llmProviders.byId("openai")?.apiKey || !llmProviders.byId("openai")?.enabled
+          ? [
               {
                 value: "openai",
                 label: "OpenAI (gpt-4o, o1, ...)",
                 icon: { component: IconOpenAi },
-                provider: llmProviders.getOpenAi(),
+                provider: llmProviders.byId("openai")!,
                 isFavorite: false,
               },
-            ]),
+            ]
+          : []),
         ...(!llmProviders.byId("anthropic")?.apiKey || !llmProviders.byId("anthropic")?.enabled
           ? [
               {

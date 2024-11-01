@@ -117,7 +117,6 @@
   }
 
   let searchValue = "";
-  let selectedItem = value;
 
   $: filteredOptions = searchValue
     ? options.filter((opt) => {

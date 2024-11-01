@@ -87,8 +87,8 @@
     {
       name: "Enable OpenAI",
       when: () => {
-        const oai = llmProviders.getOpenAi();
-        return !oai.apiKey && isHomePage();
+        const oai = llmProviders.byId("openai");
+        return !oai?.apiKey && isHomePage();
       },
       icon: IconOpenAi,
       execute: () => {

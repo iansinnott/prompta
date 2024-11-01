@@ -24,7 +24,7 @@
   const descriptions = {
     prompta:
       "Home-grown Prompta AI! Free until the cost becomes prohibitive. Use this if you don't want to bring your own API key.",
-    openai: "The most accurate LLMs thus far. Use this if you want to use your own OpenAI API key.",
+    openai: "Access to OpenAI models including gpt-4o, o1, etc. Requires an OpenAI API key.",
     anthropic: "Access to Claude models including Claude-3. Requires an Anthropic API key.",
   };
 
@@ -171,7 +171,8 @@
         <Card.Footer class="flex justify-between">
           <Button on:click={cancelEdit} variant="outline">Cancel</Button>
           <Button
-            on:click={async () => {
+            on:click={async (e) => {
+              e.preventDefault();
               if (!isBuiltInProvider(provider.id)) {
                 if (!name) {
                   toast({
@@ -214,7 +215,7 @@
                     toast({
                       title: "Incompatible API",
                       message:
-                        "The provided API key is not compatible with the selected provider. Prompta requires ",
+                        "The provided API key is not compatible with the selected provider. Prompta requires the OpenAI API format.",
                       type: "error",
                     });
                     return;
@@ -243,6 +244,7 @@
                   name,
                   baseUrl,
                   apiKey,
+                  enabled: Boolean(apiKey),
                 });
               }
 

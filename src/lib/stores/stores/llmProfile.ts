@@ -1,4 +1,4 @@
-import { getProviderClient, initOpenAi } from "$lib/llm/openai";
+import { getProviderClient } from "$lib/llm/openai";
 import { writable, derived, get } from "svelte/store";
 import { persistentStore } from "../storeUtils";
 import { chatModels, llmProviders } from "./llmProvider";
@@ -111,7 +111,10 @@ export const verifyOpenAICompatibileProvider = async ({
  * i genericized it to check other endpoints.
  */
 export const verifyOpenAiApiKey = async (apiKey: string) => {
-  const conf = llmProviders.getOpenAi();
-  const baseUrl = conf.baseUrl;
+  const conf = llmProviders.byId("openai");
+  const baseUrl = conf?.baseUrl;
+  if (!baseUrl) {
+    return false;
+  }
   return verifyOpenAICompatibileProvider({ apiKey, baseUrl });
 };

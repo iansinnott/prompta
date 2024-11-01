@@ -1,23 +1,27 @@
 <script lang="ts">
-  import classNames from "classnames";
   import LlmProviderForm from "./LLMProviderForm.svelte";
   import { llmProviders } from "$lib/stores/stores/llmProvider";
   import { Button } from "./ui/button";
-  import IconOpenAI from "./IconOpenAI.svelte";
-  import IconAnthropic from "./IconAnthropic.svelte";
-
-  let _class: string = "";
-  export { _class as class };
 
   $: showNewProviderButton = $llmProviders.providers.at(-1)?.id !== "new";
+  $: prompta = $llmProviders.providers.find((p) => p.id === "prompta");
   $: openai = $llmProviders.providers.find((p) => p.id === "openai");
   $: anthropic = $llmProviders.providers.find((p) => p.id === "anthropic");
   $: customProviders = $llmProviders.providers.filter(
-    (p) => !["openai", "anthropic", "prompta"].includes(p.id)
+    (p) =>
+      !llmProviders
+        .getSpecialProviders()
+        .map((x) => x.value)
+        .includes(p.id)
   );
 </script>
 
 <div class="flex flex-col space-y-4">
+  <!-- Prompta Section -->
+  {#if prompta}
+    <LlmProviderForm provider={prompta} />
+  {/if}
+
   <!-- OpenAI Section -->
   {#if openai}
     <LlmProviderForm provider={openai} />
