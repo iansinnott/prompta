@@ -15,8 +15,10 @@
     _get_db_instance,
     VecToFrag,
   } from "$lib/db";
-  import { currentChatThread, currentThread, insertPendingMessage } from "$lib/stores/stores";
-  import { featureFlags } from "$lib/featureFlags";
+  import { currentThread, insertPendingMessage } from "$lib/stores/stores";
+  import * as stores from "$lib/stores/stores";
+  import { chatModels, llmProviders } from "$lib/stores/stores/llmProvider";
+  import { get } from "svelte/store";
 
   onMount(() => {
     // This used to be locked behind a dev flag but I find it useful to have access to it for debugging in the prod app.
@@ -29,7 +31,15 @@
       ["LLMProvider", LLMProvider],
       ["VecToFrag", VecToFrag],
       ["db", _get_db_instance()],
-      ["featureFlags", featureFlags],
+      [
+        "stores",
+        {
+          ...stores,
+          llmProviders,
+          chatModels,
+        },
+      ],
+      ["getStore", get],
       [
         "insertPendingMessage",
         ({ content = "" }) => {

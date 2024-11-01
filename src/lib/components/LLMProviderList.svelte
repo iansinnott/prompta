@@ -1,18 +1,43 @@
 <script lang="ts">
-  import classNames from "classnames";
   import LlmProviderForm from "./LLMProviderForm.svelte";
   import { llmProviders } from "$lib/stores/stores/llmProvider";
   import { Button } from "./ui/button";
-  let _class: string = "";
-  export { _class as class };
 
   $: showNewProviderButton = $llmProviders.providers.at(-1)?.id !== "new";
+  $: prompta = $llmProviders.providers.find((p) => p.id === "prompta");
+  $: openai = $llmProviders.providers.find((p) => p.id === "openai");
+  $: anthropic = $llmProviders.providers.find((p) => p.id === "anthropic");
+  $: customProviders = $llmProviders.providers.filter(
+    (p) =>
+      !llmProviders
+        .getSpecialProviders()
+        .map((x) => x.value)
+        .includes(p.id)
+  );
 </script>
 
 <div class="flex flex-col space-y-4">
-  {#each $llmProviders.providers as provider}
-    <LlmProviderForm {provider} />
-  {/each}
+  <!-- Prompta Section -->
+  {#if prompta}
+    <LlmProviderForm provider={prompta} />
+  {/if}
+
+  <!-- OpenAI Section -->
+  {#if openai}
+    <LlmProviderForm provider={openai} />
+  {/if}
+
+  <!-- Anthropic Section -->
+  {#if anthropic}
+    <LlmProviderForm provider={anthropic} />
+  {/if}
+
+  <!-- Custom Providers Section -->
+  {#if customProviders.length > 0}
+    {#each customProviders as provider}
+      <LlmProviderForm {provider} />
+    {/each}
+  {/if}
 
   {#if showNewProviderButton}
     <Button on:click={llmProviders.addNewProvider} variant="outline" class="border border-zinc-700"

@@ -1,40 +1,14 @@
-import { DatabaseMeta, LLMProvider } from "$lib/db";
+import { DatabaseMeta, LLMProvider, type MinimalLLMClient } from "$lib/db";
 import { get, writable } from "svelte/store";
-import { dev } from "$app/environment";
 import type { ClientOptions, OpenAI } from "openai";
 import { toast } from "$lib/toast";
 import { gptProfileStore } from "./llmProfile";
 import { showSettings } from ".";
 import IconOpenAi from "$lib/components/IconOpenAI.svelte";
 import IconBrain from "$lib/components/IconBrain.svelte";
+import IconAnthropic from "$lib/components/IconAnthropic.svelte";
 
-import { env } from "$env/dynamic/public";
-import { initOpenAi, getProviderClient } from "$lib/llm/openai";
-
-const promptaBaseUrl = env.PUBLIC_PROMPTA_API_URL || "https://api.prompta.dev/v1/";
-
-if (env.PUBLIC_PROMPTA_API_URL) {
-  console.log("Using Prompta API URL via env var", promptaBaseUrl);
-}
-
-const defaultProviders: LLMProvider[] = [
-  {
-    id: "prompta",
-    name: "Prompta",
-    baseUrl: promptaBaseUrl,
-    apiKey: "",
-    enabled: true,
-    createdAt: new Date(0),
-  },
-  {
-    id: "openai",
-    name: "OpenAI",
-    baseUrl: "https://api.openai.com/v1/",
-    apiKey: "",
-    enabled: true,
-    createdAt: new Date(0),
-  },
-];
+import { defaultProviders, getProviderClient } from "$lib/llm/openai";
 
 type OpenAiAppConfig = Partial<ClientOptions> & {
   siteId: string;
@@ -106,10 +80,16 @@ export const isDefaultProvider = ({ id }: { id: string }) => {
 
 export const llmProviders = (() => {
   const initialProviders = defaultProviders.map((x) => {
-    console.log("Checking if provider is enabled", x);
+    // Get both enabled state and API key from localStorage
+    const storedApiKey = localStorage.getItem(`llm-provider-${x.id}-apiKey`);
+    const isEnabled =
+      x.id === "prompta" || localStorage.getItem(`llm-provider-${x.id}-enabled`) === "true";
+
     return {
       ...x,
-      enabled: localStorage.getItem(`llm-provider-${x.id}-enabled`) !== "false",
+      enabled: isEnabled,
+      // Use stored API key if it exists, otherwise keep default empty string
+      apiKey: storedApiKey || x.apiKey,
     };
   });
 
@@ -182,24 +162,9 @@ export const llmProviders = (() => {
 
     byId: (id: string) => {
       const provider = get(store).providers.find((p) => p.id === id);
-      if (provider) {
-        // Ensure provider has a client
-        return {
-          ...provider,
-          client: getProviderClient(provider),
-        };
-      }
-      return undefined;
+      return provider;
     },
 
-    getOpenAi: () => {
-      return get(store).providers.find((p) => p.id === "openai")!;
-    },
-
-    /**
-     * Returns a list of special providers that are not in the database. These
-     * are actually just buttons that are used to aid discoverability.
-     */
     getSpecialProviders: () => {
       const models = get(chatModels).models;
       const providers = [
@@ -214,17 +179,27 @@ export const llmProviders = (() => {
                 isFavorite: false,
               },
             ]),
-        ...(llmProviders.getOpenAi().apiKey || !llmProviders.getOpenAi().enabled
-          ? []
-          : [
+        ...(!llmProviders.byId("openai")?.apiKey || !llmProviders.byId("openai")?.enabled
+          ? [
               {
                 value: "openai",
                 label: "OpenAI (gpt-4o, o1, ...)",
                 icon: { component: IconOpenAi },
-                provider: llmProviders.getOpenAi(),
+                provider: llmProviders.byId("openai")!,
                 isFavorite: false,
               },
-            ]),
+            ]
+          : []),
+        ...(!llmProviders.byId("anthropic")?.apiKey || !llmProviders.byId("anthropic")?.enabled
+          ? [
+              {
+                value: "anthropic",
+                label: "Anthropic (opus, sonnet, ...)",
+                icon: { component: IconAnthropic },
+                provider: llmProviders.byId("anthropic")!,
+              },
+            ]
+          : []),
       ];
 
       return providers;
@@ -238,13 +213,19 @@ export const llmProviders = (() => {
           if (index !== -1) {
             const nextVal = { ...state.providers[index], ...provider };
             state.providers[index] = nextVal;
+
+            // Store both enabled state and API key
             localStorage.setItem(`llm-provider-${id}-enabled`, nextVal.enabled ? "true" : "false");
+            if (provider.apiKey !== undefined) {
+              // Only update if apiKey is in the update
+              localStorage.setItem(`llm-provider-${id}-apiKey`, provider.apiKey);
+            }
           } else {
             console.error(`Provider with id ${id} not found`);
           }
 
-          // Keep the other openai store in sync for now
-          if (id === "openai") {
+          // Keep the legacy store in sync
+          if (id === "openai" && provider.apiKey !== undefined) {
             openAiConfig.update((x) => ({ ...x, apiKey: provider.apiKey }));
           }
 
@@ -325,8 +306,11 @@ export const chatModels = (() => {
       const providers = get(llmProviders)
         .providers.filter((x) => x.enabled)
         .filter((x) => {
-          if (x.id === "openai" && !x.apiKey) {
-            console.debug("OpenAI filter out of providers because no API key. Implicitly disabled");
+          // These providers are present without being added, so we don't fetch for them unless they have an API key
+          if ((x.id === "openai" || x.id === "anthropic") && !x.apiKey) {
+            console.debug(
+              `${x.name} filtered out of providers because no API key. Implicitly disabled`
+            );
             return false;
           }
 
@@ -344,13 +328,21 @@ export const chatModels = (() => {
         // Fetch models for all active providers
         const xss = await Promise.all(
           providers.map((provider) => {
-            const openai = initOpenAi({ apiKey: provider.apiKey, baseURL: provider.baseUrl });
+            const client = getProviderClient(provider);
 
-            return openai.models
+            return client.models
               .list()
               .then((x) => {
+                // OpenAI has a lot of non-LLM models that we don't want to show since the system doesn't support them
                 return (
-                  provider.id === "openai" ? x.data.filter((x) => x.id.startsWith("gpt")) : x.data
+                  provider.id === "openai"
+                    ? x.data.filter(
+                        (x) =>
+                          !["dall-e", "babbage", "whisper", "tts", "embedding"].some((y) =>
+                            x.id.includes(y)
+                          )
+                      )
+                    : x.data
                 ).map((x) => ({ ...x, provider: { id: provider.id } }));
               })
               .catch((err) => {
@@ -369,7 +361,12 @@ export const chatModels = (() => {
 
         _chatModels.sort((a, b) => a.id.localeCompare(b.id));
 
-        update((x) => ({ ...x, models: _chatModels, loadingState: "loaded", error: null }));
+        update((x) => ({
+          ...x,
+          models: _chatModels as ModelWithProvider[],
+          loadingState: "loaded",
+          error: null,
+        }));
 
         // Handle the edge case where the user removes the provider of a model they were using
         const currentProfile = get(gptProfileStore);
@@ -378,7 +375,7 @@ export const chatModels = (() => {
           if (nextModel) {
             toast({
               title: "Model not found",
-              message: `The model you were using (${currentProfile.model}) was not found. Defaulting to the next available model (${nextModel}).`,
+              message: `The model you were using (${currentProfile.model}) was not found. Defaulting to the next available model (${nextModel.id}).`,
               type: "info",
             });
             console.warn(

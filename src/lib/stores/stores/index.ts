@@ -22,9 +22,16 @@ import { createSyncer, getDefaultEndpoint, type Syncer } from "$lib/sync/vlcn";
 import { PENDING_THREAD_TITLE, hasThreadTitle, persistentStore } from "../storeUtils";
 import { chatModels, llmProviders, openAiConfig } from "./llmProvider";
 import { activeProfileName, getOpenAi, gptProfileStore } from "./llmProfile";
+import { getProviderClient } from "$lib/llm/openai";
 
 export const showSettings = writable(false);
-export const showInitScreen = writable(false);
+export const showInitScreen = writable<{
+  showing: boolean;
+  provider: "openai" | "anthropic" | null;
+}>({
+  showing: false,
+  provider: null,
+});
 export const fragmentSyncCount = writable(0);
 
 /**
@@ -35,7 +42,7 @@ export const devStore = persistentStore<{ showDebug: boolean }>("dev", {
 });
 
 export const generateThreadTitle = async ({ threadId }: { threadId: string }) => {
-  const openAi = getOpenAi();
+  const llm = getOpenAi();
   const context = await ChatMessage.findThreadContext({ threadId });
   const messageContext = context.map((x) => ({ content: x.content, role: x.role }));
   const modelName = get(gptProfileStore).model;
@@ -67,7 +74,7 @@ Do not provide a word count or add quotation marks.
   };
 
   // Generate a thread title
-  const res = await openAi.chat.completions.create(prompt);
+  const res = (await llm.chat.completions.create(prompt)) as OpenAI.ChatCompletion;
 
   let newTitle = res.choices[0].message?.content || "Untitled";
 
@@ -947,9 +954,10 @@ const createChatCompletion = async ({
   const abortController = new AbortController();
 
   try {
-    const stream = await provider.client.chat.completions.create(prompt, {
+    const llm = getProviderClient(provider);
+    const stream = (await llm.chat.completions.create(prompt, {
       signal: abortController.signal,
-    });
+    })) as AsyncIterable<OpenAI.ChatCompletionChunk>;
 
     for await (const chunk of stream) {
       handleSSE({

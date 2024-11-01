@@ -16,6 +16,7 @@
   import { Star } from "lucide-svelte";
   import { Preferences } from "$lib/db";
   import { writable } from "svelte/store";
+  import IconAnthropic from "./IconAnthropic.svelte";
 
   let _class: string = "";
   export { _class as class };
@@ -56,6 +57,8 @@
         icon = { component: IconBrain, class: "w-5 h-5 text-[#30CEC0] " };
       } else if (provider?.id === "openai") {
         icon = { component: IconOpenAi, class: "" };
+      } else if (provider?.id === "anthropic") {
+        icon = { component: IconAnthropic, class: "" };
       }
 
       return {
@@ -95,8 +98,8 @@
   function handleChange(x: string) {
     $modelPickerOpen = false;
 
-    if (x === "openai") {
-      showInitScreen.set(true);
+    if (["openai", "anthropic"].includes(x)) {
+      showInitScreen.set({ showing: true, provider: x as "openai" | "anthropic" });
       return;
     } else if (x === "prompta") {
       llmProviders.updateProvider("prompta", {
@@ -114,7 +117,6 @@
   }
 
   let searchValue = "";
-  let selectedItem = value;
 
   $: filteredOptions = searchValue
     ? options.filter((opt) => {
@@ -126,7 +128,12 @@
   $: filteredGroups = (() => {
     const favorites = filteredOptions.filter((x) => x.isFavorite);
     const nonFavorites = filteredOptions.filter((x) => !x.isFavorite);
-    const nonFavoriteGroups = groupBy(nonFavorites, (x) => x.provider?.name ?? "Other");
+    const nonFavoriteGroups = groupBy(nonFavorites, (x) => {
+      if (x.provider?.enabled === false) {
+        return "Disabled";
+      }
+      return x.provider?.name ?? "Other";
+    });
 
     return favorites.length ? { Favorites: favorites, ...nonFavoriteGroups } : nonFavoriteGroups;
   })();
@@ -212,7 +219,7 @@
                   </div>
 
                   <!-- Only show star for actual models, not special providers -->
-                  {#if opt.provider}
+                  {#if opt.provider && opt.provider.enabled}
                     <button
                       class="flex items-center justify-center p-1 rounded-sm hover:bg-accent"
                       on:click={(e) => toggleFavorite(opt.value, e)}

@@ -18,12 +18,12 @@ import tblrx, { TblRx } from "@vlcn.io/rx-tbl";
 
 import schema_0002 from "$lib/migrations/0002_schema.sql?url";
 
-// Default schema. May be overwritten via feature flags (see references)
 let schemaUrl = schema_0002;
 
 import { llmProviders, openAiConfig } from "./stores/stores/llmProvider";
 import { profilesStore } from "./stores/stores/llmProfile";
 import type OpenAI from "openai";
+import type { ChatCompletionChunk } from "openai/resources/chat/completions";
 
 const legacyDbNames = [
   "chat_db-v1",
@@ -304,10 +304,32 @@ export interface LLMProviderRow {
   enabled: 0 | 1;
   created_at: string;
 }
+
+export interface MinimalLLMClient {
+  chat: {
+    completions: {
+      create(
+        params:
+          | OpenAI.ChatCompletionCreateParamsStreaming
+          | OpenAI.ChatCompletionCreateParamsNonStreaming,
+        options?: { signal?: AbortSignal }
+      ): Promise<AsyncIterable<ChatCompletionChunk> | OpenAI.ChatCompletion>;
+    };
+  };
+  models: {
+    list(): Promise<{
+      data: Array<{
+        id: string;
+        [key: string]: any;
+      }>;
+    }>;
+  };
+}
+
 export type LLMProvider = Omit<LLMProviderRow, "created_at" | "enabled"> & {
   createdAt: Date;
   enabled: boolean;
-  client?: OpenAI; // Optional client property for custom SDK instances
+  createClient?: (opts: { apiKey: string; baseURL?: string }) => MinimalLLMClient;
 };
 
 export interface VecToFragRow {

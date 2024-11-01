@@ -10,7 +10,7 @@
     syncStore,
     threadMenu,
   } from "$lib/stores/stores";
-  import { tick } from "svelte";
+  import { tick, type Component } from "svelte";
   import IconSparkle from "./IconSparkle.svelte";
   import IconGear from "./IconGear.svelte";
   import IconHistoryClock from "./IconHistoryClock.svelte";
@@ -34,10 +34,10 @@
   import { chatModels, llmProviders, modelPickerOpen } from "$lib/stores/stores/llmProvider";
   import IconOpenAi from "./IconOpenAI.svelte";
   import IconBrain from "./IconBrain.svelte";
-  import { Atom, Command as CommandIcon, FlaskConical, Flag } from "lucide-svelte";
+  import { Command as CommandIcon } from "lucide-svelte";
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
-  import { featureFlags } from "$lib/featureFlags";
+  import IconAnthropic from "./IconAnthropic.svelte";
   let _class: string = "";
   export { _class as class };
 
@@ -50,7 +50,20 @@
   const isMenuActive = () => menuOpen && input === document.activeElement;
   const isHomePage = () => $page.url.pathname === "/" || $page.url.pathname === "";
 
-  let actionItems = [
+  interface ActionItem {
+    name: string;
+    icon?: Component;
+    when?: () => boolean;
+    execute: () => void;
+    keyboard?: {
+      shortcut: string;
+      when?: () => boolean;
+    };
+    altFilterText?: string;
+    color?: string;
+  }
+
+  let actionItems: ActionItem[] = [
     {
       name: "Generate Title...",
       icon: IconThreadTitle,
@@ -74,12 +87,23 @@
     {
       name: "Enable OpenAI",
       when: () => {
-        const oai = llmProviders.getOpenAi();
-        return !oai.apiKey && oai.enabled && isHomePage();
+        const oai = llmProviders.byId("openai");
+        return !oai?.apiKey && isHomePage();
       },
       icon: IconOpenAi,
       execute: () => {
-        showInitScreen.set(true);
+        showInitScreen.set({ showing: true, provider: "openai" });
+      },
+    },
+    {
+      name: "Enable Anthropic",
+      when: () => {
+        const anthropic = llmProviders.byId("anthropic");
+        return !anthropic?.apiKey && isHomePage();
+      },
+      icon: IconAnthropic,
+      execute: () => {
+        showInitScreen.set({ showing: true, provider: "anthropic" });
       },
     },
     {
@@ -138,8 +162,7 @@
     {
       name: "Archive Chat",
       icon: IconArchiveIn,
-      when: () =>
-        !$currentThread.archived && !isNewThread($currentThread) && isHomePage(),
+      when: () => !$currentThread.archived && !isNewThread($currentThread) && isHomePage(),
       execute: currentThread.archive,
     },
     {
@@ -161,23 +184,6 @@
       when: () => !isHomePage(),
       execute: () => {
         goto("/");
-      },
-    },
-    {
-      name: "Feature Flags",
-      icon: Flag,
-      altFilterText: "beta alpha experimental lab",
-      when: () => $page.url.pathname !== "/dev/feature-flags",
-      execute: () => {
-        goto("/dev/feature-flags");
-      },
-    },
-    {
-      name: "Dev Experiments",
-      icon: FlaskConical,
-      when: () => $page.url.pathname !== "/dev" && featureFlags.check("dev_experiments"),
-      execute: () => {
-        goto("/dev");
       },
     },
     {

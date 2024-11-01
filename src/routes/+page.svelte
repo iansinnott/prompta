@@ -312,7 +312,7 @@
     <div class="w-[42px] h-[42px]"></div>
   </footer>
 
-  {#if $showInitScreen}
+  {#if $showInitScreen.showing}
     <div
       out:fly|global={{ duration: 200, opacity: 0, delay: 300 }}
       class="fixed inset-0 z-30 bg-zinc-800 rounded-lg"

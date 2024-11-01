@@ -2,6 +2,17 @@ import { sveltekit } from "@sveltejs/kit/vite";
 import { defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
+import * as fs from "fs";
+
+const httpsConfig =
+  process.env.VITE_SSL_KEY_PATH && process.env.VITE_SSL_CERT_PATH
+    ? {
+        https: {
+          key: fs.readFileSync(process.env.VITE_SSL_KEY_PATH),
+          cert: fs.readFileSync(process.env.VITE_SSL_CERT_PATH),
+        },
+      }
+    : {};
 
 export default defineConfig({
   plugins: [sveltekit(), wasm(), topLevelAwait()],
@@ -18,5 +29,8 @@ export default defineConfig({
   },
   test: {
     include: ["src/**/*.{test,spec}.{js,ts}"],
+  },
+  server: {
+    ...httpsConfig,
   },
 });
