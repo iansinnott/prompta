@@ -344,11 +344,15 @@ export const chatModels = (() => {
             return client.models
               .list()
               .then((x) => {
+                // OpenAI has a lot of non-LLM models that we don't want to show since the system doesn't support them
                 return (
                   provider.id === "openai"
-                    ? x.data.filter((x) => x.id.startsWith("gpt"))
-                    : provider.id === "anthropic"
-                    ? x.data.filter((x) => x.id.startsWith("claude"))
+                    ? x.data.filter(
+                        (x) =>
+                          !["dall-e", "babbage", "whisper", "tts", "embedding"].some((y) =>
+                            x.id.includes(y)
+                          )
+                      )
                     : x.data
                 ).map((x) => ({ ...x, provider: { id: provider.id } }));
               })
