@@ -205,7 +205,7 @@ export const llmProviders = (() => {
           ? [
               {
                 value: "anthropic",
-                label: "Anthropic (claude-3, claude-2, ...)",
+                label: "Anthropic (opus, sonnet, ...)",
                 icon: { component: IconAnthropic },
                 provider: llmProviders.byId("anthropic")!,
               },
@@ -317,8 +317,11 @@ export const chatModels = (() => {
       const providers = get(llmProviders)
         .providers.filter((x) => x.enabled)
         .filter((x) => {
-          if (x.id === "openai" && !x.apiKey) {
-            console.debug("OpenAI filter out of providers because no API key. Implicitly disabled");
+          // These providers are present without being added, so we don't fetch for them unless they have an API key
+          if ((x.id === "openai" || x.id === "anthropic") && !x.apiKey) {
+            console.debug(
+              `${x.name} filtered out of providers because no API key. Implicitly disabled`
+            );
             return false;
           }
 
