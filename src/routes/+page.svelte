@@ -128,22 +128,23 @@
       return;
     }
 
+    $messageText = "";
+    await tick();
+    resizeChatInput();
+
     if (command) {
-      await currentChatThread.sendCommand({
+      currentChatThread.sendCommand({
         threadId: $currentThread.id,
         command,
         args,
       });
     } else {
-      await currentChatThread.sendMessage({
+      currentChatThread.sendMessage({
         threadId: $currentThread.id,
         role: "user",
         content: args.join(" "),
       });
     }
-
-    await tick();
-    resizeChatInput();
   }
 
   // Generally we don't auto-focus on mobile
