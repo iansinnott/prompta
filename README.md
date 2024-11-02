@@ -8,7 +8,7 @@
 Yet another interface for chatting with ChatGPT (or GPT-4).
 
 [Website](https://www.prompta.dev)
-| [Downloads](releases)
+| [Downloads](https://github.com/iansinnott/prompta/releases)
 | [Launch App](https://chat.prompta.dev)
 
 </div>
@@ -42,8 +42,8 @@ Yet another interface for chatting with ChatGPT (or GPT-4).
 
 ## How to use
 
-- Use in your web browser: [chat.prompta.dev](https://chat.prompta.dev)
-- Download the desktop app: Download the latest build from the [releases page](releases)
+- In your web browser: [chat.prompta.dev](https://chat.prompta.dev)
+- Desktop app: download the latest build from [the releases page](https://github.com/iansinnott/prompta/releases)
 
 ### Running on macOS
 
