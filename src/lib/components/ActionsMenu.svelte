@@ -38,6 +38,7 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import IconAnthropic from "./IconAnthropic.svelte";
+  import IconGitHubSponsor from "./IconGitHubSponsor.svelte";
   let _class: string = "";
   export { _class as class };
 
@@ -284,6 +285,15 @@
       name: "View Source Code",
       execute: () => {
         sys.openExternal("https://github.com/iansinnott/prompta");
+      },
+    },
+    {
+      name: "Sponsor Project",
+      icon: IconGitHubSponsor,
+      color: "pink",
+      altFilterText: "donate patreon",
+      execute: () => {
+        sys.openExternal("https://github.com/sponsors/iansinnott");
       },
     },
     {
@@ -566,5 +576,8 @@
   }
   .danger {
     @apply text-red-400;
+  }
+  .pink {
+    @apply text-pink-400;
   }
 </style>
