@@ -180,11 +180,15 @@ export const autosize = (node: HTMLElement) => {
   node.addEventListener("input", resize);
 
   // Call resize initially to adjust to initial content
-  resize();
+  setTimeout(resize, 0);
 
   return {
     destroy() {
       node.removeEventListener("input", resize);
+    },
+    update() {
+      // Also resize when the node is updated
+      resize();
     },
   };
 };
