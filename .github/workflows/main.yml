@@ -47,25 +47,20 @@ jobs:
         with:
           workspaces: "./src-tauri -> target"
 
-      - uses: pnpm/action-setup@v2
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: 8
-
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "lts/*"
-          cache: "pnpm"
+          bun-version: latest
 
       - name: Install frontend dependencies
-        run: pnpm install
+        run: bun install
 
       - name: Populate the version strings
         id: versions
         run: |
           echo "PUBLIC_VERSION_STRING=$(git describe --tags --always --dirty)" >> $GITHUB_ENV
-          echo "PUBLIC_TAURI_VERSION=$(pnpm tsx scripts/get-versions.ts | grep PUBLIC_TAURI_VERSION | cut -d= -f2)" >> $GITHUB_ENV
-          echo "PUBLIC_SVELTE_VERSION=$(pnpm tsx scripts/get-versions.ts | grep PUBLIC_SVELTE_VERSION | cut -d= -f2)" >> $GITHUB_ENV
+          echo "PUBLIC_TAURI_VERSION=$(bun scripts/get-versions.ts | grep PUBLIC_TAURI_VERSION | cut -d= -f2)" >> $GITHUB_ENV
+          echo "PUBLIC_SVELTE_VERSION=$(bun scripts/get-versions.ts | grep PUBLIC_SVELTE_VERSION | cut -d= -f2)" >> $GITHUB_ENV
 
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
@@ -85,4 +80,4 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
-          tauriScript: pnpm
+          tauriScript: bun
