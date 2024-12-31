@@ -34,15 +34,31 @@
   let codeElement: HTMLElement;
   let highlighted = "";
   let fetchedLanguages = new Set();
+  let isLanguageLoaded = false;
+  let renderKey = 0;
 
-  // NOTE Since we're using auto-loader we need to trigger a load (the auto is
-  // not auto). It's only auto if we use prismjs to highlight an element. This
-  // will trigger the auto fetcher to fetch our language.
-  // https://github.com/PrismJS/prism/blob/be909b18faa0afa899bb71ac1ab1f06c499277ce/plugins/autoloader/prism-autoloader.js#L409
-  $: if (language && codeElement && !fetchedLanguages.has(language)) {
-    console.debug("FETCH LANGUAGE", language);
-    Prism.hooks.run("complete", { language, code: text, element: codeElement });
-    fetchedLanguages.add(language);
+  async function loadLanguage(lang: string) {
+    if (!lang || fetchedLanguages.has(lang)) return;
+    console.debug("FETCH LANGUAGE", lang);
+    isLanguageLoaded = false;
+    await new Promise<void>((resolve) => {
+      Prism.hooks.run("complete", {
+        language: lang,
+        code: text,
+        element: codeElement,
+        callbacks: [
+          () => {
+            fetchedLanguages.add(lang);
+            isLanguageLoaded = true;
+            resolve();
+          },
+        ],
+      });
+    });
+  }
+
+  $: if (language && codeElement) {
+    loadLanguage(language);
   }
 
   $: if (language && Prism.languages[language]) {
@@ -56,6 +72,7 @@
   } else {
     highlighted = text;
   }
+  $: console.log("highlighted", highlighted, text, language);
 </script>
 
 <div class="CodeBlock content relative my-7 first:mt-0">
