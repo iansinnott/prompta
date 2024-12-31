@@ -2,7 +2,7 @@
 
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Prompta",
-  "version": "5.4.2",
+  "version": "5.4.3",
   "identifier": "com.prompta.dev",
   "build": {
     "frontendDist": "../build",
