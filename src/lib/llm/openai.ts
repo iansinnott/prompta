@@ -77,6 +77,7 @@ export class AnthropicClient implements MinimalLLMClient {
     });
   }
 
+  // @ts-expect-error Just deal with it TS...
   chat = {
     completions: {
       create: async (
@@ -152,6 +153,7 @@ export class AnthropicClient implements MinimalLLMClient {
           };
         });
 
+        // @ts-expect-error Just deal with it TS...
         const stream = await this.anthropic.messages.create(
           {
             // @ts-ignore
@@ -220,14 +222,12 @@ export class AnthropicClient implements MinimalLLMClient {
 
   models = {
     list: async () => {
-      // Anthropic doesn't have a models endpoint yet
+      const res = await this.anthropic.models.list();
       return {
         data: [
+          ...res.data.map((m) => ({ id: m.id })),
           { id: "claude-3-5-sonnet-latest" },
-          { id: "claude-3-5-haiku-latest" }, // NOTE: as of this writing this won't work, but i'm guessing this will be the name once released
-          { id: "claude-3-opus-latest" },
-          { id: "claude-3-sonnet-20240229" },
-          { id: "claude-3-haiku-20240307" },
+          { id: "claude-3-5-haiku-latest" },
         ],
       };
     },
@@ -263,6 +263,7 @@ export const defaultProviders: LLMProvider[] = [
     apiKey: "",
     enabled: false,
     createdAt: new Date(0),
+    // @ts-expect-error Just deal with it TS...
     createClient: ({ apiKey, baseURL }) => {
       return new AnthropicClient(apiKey, baseURL);
     },
