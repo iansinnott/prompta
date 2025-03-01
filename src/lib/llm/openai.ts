@@ -4,7 +4,11 @@ import { OpenAI, type ClientOptions } from "openai";
 import { nanoid } from "nanoid";
 import { env } from "$env/dynamic/public";
 
-const headerWhitelist = new Set(["content-type", "authorization"]);
+const headerWhitelist = new Set([
+  "content-type",
+  "authorization",
+  "anthropic-dangerous-direct-browser-access",
+]);
 
 /**
  * A fetch wrapper to strip certain custom headers. The custom headers caused
