@@ -12,6 +12,7 @@ COPY . .
 
 # Use Bun instead of PNPM for package management
 RUN bun install --frozen-lockfile
+RUN bun pm trust --all
 RUN bun run build:server
 
 FROM node:20-slim as dist
