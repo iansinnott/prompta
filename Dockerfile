@@ -50,8 +50,8 @@ COPY --chown=prompta:prompta . .
 # Make client app's default sync-server URI relative to URI on which it's hosted
 RUN sed -r -i.bak "s|return.*https://prompta-production.up.railway.app.*$|return window.location.href.replace(/(https?:\\\/\\\/[^\\\/]+)(\\\/.*)?$/, \"\$1$SYNC_SERVER_PATH\");|" src/lib/sync/vlcn.ts
 
-# Disable telemetry
-RUN [ "$TELEMETRY" = 0 ] && sed -r -i.bak 's!(cap\(|window.posthog.capture\()!return; // &!' src/lib/capture.ts
+# Optionally disable telemetry
+RUN if [ "$TELEMETRY" = "0" ]; then sed -r -i.bak 's!(cap\(|window.posthog.capture\()!return; // &!' src/lib/capture.ts; fi
 
 # # Use Bun instead of PNPM for package management
 RUN bun install --frozen-lockfile && \
