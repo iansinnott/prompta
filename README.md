@@ -16,6 +16,8 @@
 > For that reason, I've decided to archive the project. The code will remain available on GitHub and the [web app](https://chat.prompta.dev) will stay online, but I will no longer be working on it.
 >
 > Thank you to everyone who used the app, filed issues, and provided feedback. If you're interested in taking over the project, please feel free to reach out.
+>
+> If you want more context: https://notes.iansinnott.com/blog/posts/Sunsetting+Prompta+-+My+LLM+Chat+App
 
 ---
 
