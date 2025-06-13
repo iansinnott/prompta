@@ -5,13 +5,25 @@
 
 # Prompta
 
-Yet another interface for chatting with ChatGPT (or GPT-4).
+</div>
+
+> [!NOTE] > **This project is no longer maintained.**
+>
+> [Raycast recently announced](https://www.raycast.com/changelog/1-100-0) that you can bring your own API key. Raycast offers a much more polished and actively maintained interface for chatting with LLMs. This change fully addresses the original problem that Prompta was designed to solve.
+>
+> I created Prompta to solve my own need: a fast, keyboard-centric way to chat with LLMs using my own API key. For many months, it was my primary AI chat app and it was a joy to build something that solved my own problem and was useful to others.
+>
+> For that reason, I've decided to archive the project. The code will remain available on GitHub and the [web app](https://chat.prompta.dev) will stay online, but I will no longer be working on it.
+>
+> Thank you to everyone who used the app, filed issues, and provided feedback. If you're interested in taking over the project, please feel free to reach out.
+
+---
+
+Yet another interface for chatting with LLMs via API.
 
 [Website](https://www.prompta.dev)
 | [Downloads](https://github.com/iansinnott/prompta/releases)
 | [Launch App](https://chat.prompta.dev)
-
-</div>
 
 <div align="center">
 
@@ -34,11 +46,6 @@ Yet another interface for chatting with ChatGPT (or GPT-4).
 - [x] Chat with the latest models (updated dynamically)
 - [x] Use local LLMs like Llama, Mistral, etc
 - [x] Customize the system message
-
-## Roadmap
-
-- [ ] Context-window compression (See #1)
-- [ ] Chat history awareness (See #2)
 
 ## How to use
 
